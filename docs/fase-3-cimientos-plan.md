@@ -2,7 +2,7 @@
 
 Plan de la fase antes de escribir código de producción, conforme a la regla de trabajo 1. Cubre RF-01 y RNF-03 a RNF-07 (sección 18 del prompt maestro). Al cerrar esta fase el sistema no hace nada del negocio todavía, pero ya es seguro y ya mide.
 
-**Bloqueante real antes de programar:** [ADR-0007](adr/0007-bibliotecas-fundacionales.md) (JWT, esquema OpenAPI, CORS) está **propuesto, no aceptado**. No se instala nada de esa lista hasta que se confirme, igual que se hizo con ADR-0005 en la Fase 1.
+~~**Bloqueante real antes de programar:** [ADR-0007](adr/0007-bibliotecas-fundacionales.md) (JWT, esquema OpenAPI, CORS) está **propuesto, no aceptado**. No se instala nada de esa lista hasta que se confirme, igual que se hizo con ADR-0005 en la Fase 1.~~ **Confirmado — ver la sección "Cierre" al final de este documento.**
 
 ## 1. Estructura de repositorio a crear
 
@@ -130,9 +130,44 @@ Comando `seed_fase3` (no el comando de demostración completo de la sección 16,
 
 Commits pequeños, `feat:`/`chore:`/`test:`/`ci:`, en la rama `fase-03-cimientos`.
 
-## Punto de control
+## Punto de control (antes de programar)
 
-Antes de escribir el primer archivo de código de esta fase, falta:
+Antes de escribir el primer archivo de código de esta fase, faltaba:
 
-1. **Confirmar ADR-0007** (JWT, esquema OpenAPI, CORS) — es lo único que bloquea literalmente empezar, porque el primer `requirements/base.txt` depende de esta decisión.
-2. Luz verde para crear la estructura de repositorio de la sección 1.
+1. ~~Confirmar ADR-0007~~ — confirmado.
+2. ~~Luz verde para crear la estructura de repositorio de la sección 1~~ — recibida ("si confirmo").
+
+---
+
+## Cierre de la Fase 3
+
+Las 7 tareas de la sección "Orden de trabajo" están hechas, en la rama `fase-03-cimientos`:
+
+| # | Tarea | Resultado |
+|---|---|---|
+| 1 | Estructura de repositorio + entornos | `backend/config/settings/{base,local,test,production}.py`, `backend/apps/` con las 11 apps (2 con código real, 9 en esqueleto), `frontend/src/{app,design,features,pages,shared}/`, `.env.example` |
+| 2 | CI mínimo | `.github/workflows/ci.yml` con jobs `backend` (ruff + pytest con cobertura) y `frontend` (eslint + vue-tsc + vitest + build) |
+| 3 | `core`: bitácora, registro de acceso, permisos base | `AuditLog`/`AccessLog` (solo escritura, ADR-0004), `PermisoPorArea`/`DenyAll`, `ScopedQuerysetMixin`, `RegistraAccesoMixin` |
+| 4 | `accounts`: autenticación completa | `Role`/`User`, login/refresh/logout/change-password con JWT + cookie de refresco, bloqueo temporal creciente (RNF-05), `manage.py create_initial_user` |
+| 5 | Componentes base del frontend | 9 componentes (`AppButton`, `TagPill`, `ListRow`, `DayTabs`, `TopAppBar`, `BottomTabBar`, `EmptyState`, `ErrorBanner`, `FormField`) con tokens de la Propuesta B |
+| 6 | Semilla + pruebas | `manage.py seed_fase3` (8 roles + 1 usuario de prueba por rol); 45 pruebas de backend, 23 de frontend |
+| 7 | Flujo de Playwright de inicio de sesión | `frontend/e2e/iniciar-sesion.spec.ts`, verificado en vivo contra el backend y el frontend reales (no solo en CI) |
+
+**Verificación real, no solo revisión de código:**
+
+- Backend: `ruff check`/`ruff format --check` limpios, 45 pruebas en verde, cobertura de `domain/` + `services/` al 100 % (umbral exigido: 80 %), esquema OpenAPI válido (`manage.py spectacular --validate`), migraciones aplicadas contra SQLite local.
+- Frontend: `eslint`, `vue-tsc --noEmit` y `vite build` limpios; 23 pruebas de componentes en verde.
+- Extremo a punta: con el backend real corriendo en `:8000` y el frontend en `:5173`, `npx playwright test` pasó los dos casos (inicio de sesión correcto con redirección por rol, y contraseña incorrecta con mensaje de error) contra el sistema real, no contra mocks.
+
+**Decisiones tomadas durante la construcción, no solo planeadas:**
+
+- El token de acceso vive en memoria del frontend (nunca en `localStorage`); el de refresco es una cookie `HttpOnly` que el navegador maneja solo.
+- `PermisoPorArea` bloquea cualquier endpoint de área si `must_change_password` sigue en `true` — así se hace cumplir en el servidor, no solo en la pantalla, que la contraseña temporal se cambie antes de usar el sistema.
+- `manage.py createsuperuser` no funciona en este proyecto a propósito (no hay `is_staff`/`is_superuser`); el primer usuario real de un entorno se crea con `manage.py create_initial_user`, que pide la contraseña de forma interactiva y nunca la deja en un archivo.
+- Cobertura de `domain/`+`services/` medida con un `.coveragerc` dedicado (`include = */domain/*, */services/*` y sus variantes de archivo plano), para que el umbral del 80 % de la sección 16 se aplique donde el prompt maestro lo pide y no se diluya con el resto del código.
+
+**Lo que esta fase deliberadamente no hace todavía** (según su propio alcance): ningún modelo de negocio (`Student`, `Grade`, `Payment`, etc.), ningún dato maestro, ninguna pantalla más allá de login/cambio de contraseña. Eso empieza en la Fase 4.
+
+### Punto de control de cierre
+
+Antes de pasar a la Fase 4 (datos maestros): ¿revisás el código de esta fase (podés pedirme un resumen más técnico, o revisarlo vos directamente en `backend/apps/accounts`, `backend/apps/core` y `frontend/src`), o avanzo directo?
