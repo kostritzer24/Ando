@@ -2,6 +2,10 @@
 
 Documento de diseño exigido por la sección 15.1 del prompt maestro: paleta con nombre, tipografías y su papel, escala tipográfica, escala de espaciado, radios, sombras y principios — más las **dos propuestas distintas** con la pantalla de ejemplo (calendario semanal del portal público, RF-28), para que el equipo elija una antes de construir los componentes base en la Fase 3.
 
+## Decisión
+
+**Se elige la Propuesta B — "Trámite claro".** Es la que se usa desde la Fase 3 en adelante para la biblioteca de componentes base y para todas las pantallas de producción. La Propuesta A queda documentada como referencia histórica de la Fase 2, no se descarta el archivo pero no se construye nada más sobre ella.
+
 ## Punto de partida: el logo
 
 RNF-08 exige usar los colores oficiales del centro, no una paleta genérica. Se extrajeron por muestreo de píxeles del archivo `docs/LOGO LOS PATOJOS VECTORIZADOsin fondo.png` (documentado en `docs/fase-1-plan-maestro.md`):
