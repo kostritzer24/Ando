@@ -11,24 +11,54 @@ Ordenadas por lo que más bloquea el avance hacia la Fase 1 (modelo de datos y p
 ### Bloquean el modelo de datos (Fase 1)
 
 1. **¿Los talleres de la tarde usan la misma estructura de Sección/Inscripción que la jornada matutina, o es un mecanismo de registro distinto?** Las 25 entidades no incluyen una tabla separada para "participante de taller". Curso tiene un atributo `tipo` que podría distinguir "académico" de "taller", pero Sección se describe con `grado, letra, tipo` — no queda claro si un taller tiene su propia "sección" (p. ej. "Taller de panadería — grupo único") o si el participante se inscribe directo al Curso sin pasar por Sección. Esto determina si Inscripción, Asistencia y Calificación aplican igual a los ~40 participantes de talleres o si necesitan una variante.
+
+    Los talleres de la tarde si tienen seccion tambien porque muchas veces son por grupos y en algunos casos son pues un solo grupo que sria seccion unica.
+
 2. **¿Un estudiante puede tener más de un Encargado con cuenta propia?** (p. ej. madre y padre, cada uno con su usuario). El modelo lista Encargado con un campo `usuario` (singular) y RF-04 dice "vincular a un encargado con uno o varios estudiantes", pero no dice si la relación Encargado↔Estudiante es muchos-a-muchos en ambos sentidos. Esto define si hace falta una tabla intermedia explícita y si dos cuentas distintas pueden ver al mismo estudiante.
+
+    La cuenta se le da a un encargado, y a esa cuenta se le asignan los niños/estudiantes que tengan es decir es una cuenta familiar.
+
 3. **¿Los talleristas califican algo, o el taller es solo asistencia?** RF-16 y RF-21 cubren asistencia de talleres; ningún RF menciona notas de taller. Si un tallerista nunca define Actividades ni Calificaciones, el modelo de Asignación docente / Actividad debería dejarlo fuera desde el diseño, no solo por permisos.
+
+    Es solo asistencia.
 
 ### Bloquean la Fase 2 (dirección visual)
 
 4. **Falta el logo y la paleta de colores institucional de El Patojismo**, requeridos explícitamente por RNF-08 y por la sección 15.1 del documento ("pide al equipo el logo y la paleta institucional... deriva de ahí, no de una paleta genérica"). Sin esto no se puede iniciar la Fase 2 conforme a la instrucción.
 
+    Ya estan en la carpeta bajo "LOGO LOS PATOJOS VECTORIZADOsin fondo.png" y en base a este logo, en un estilo minimalista saca los colores. En docs
+ 
 ### Bloquean cimientos técnicos (Fase 3) pero no el diseño
 
 5. **¿Ya existe un repositorio remoto en GitHub para el proyecto?** Si sí, necesito la URL y si debo usarlo directamente o crear uno nuevo. Si no existe, ¿bajo qué cuenta/organización se crea y quién más necesita acceso (los ingenieros revisores de la facultad)?
+
+    git remote add origin https://github.com/kostritzer24/Ando.git
+    git branch -M main
+    git push -u origin main
+
 6. **¿Existen ya proyectos creados en Render y en Neon**, o se dejan configurados para que el equipo los cree en la Fase 14? Afecta si preparo nombres de variables de entorno genéricos o si integro credenciales reales más adelante.
+
+    No hay nada creado aun en Render y Neon
+
 7. **¿Hay datos históricos** (notas, asistencia, pagos) en las hojas de cálculo y cuadernos actuales que deban migrarse al arrancar en producción, o el sistema inicia en blanco con el ciclo escolar vigente? Si hay migración, es un proceso adicional no descrito en las 14 fases.
+
+    El sistema incia en blanco, pero luego se importara con exceles los datos.
+    
 8. **Cuenta de administrador inicial:** ¿quién es la persona (encargado del laboratorio) que recibirá el primer usuario de Administrador del sistema, y con qué nombre de usuario se crea en el entorno de producción? En desarrollo se usará un usuario de siembra ficticio de todas formas.
+
+    Correo: pgabriel@elpatojismo.edu.gt
+    Nombre de usuario: pgabriel
+    Contraseña: [omitida del repositorio por seguridad — regla de trabajo 10. Se define directamente en el entorno de producción al crear la cuenta, o se comunica por un canal fuera de este documento. En desarrollo se usa una contraseña de siembra ficticia.]
 
 ### No bloquean, pero conviene confirmar temprano
 
 9. Confirmo el supuesto de zona horaria `America/Guatemala` e idioma único (español de Guatemala) para toda fecha, hora y mensaje del sistema, salvo objeción.
+
+    si.
+
 10. RN-04 dice "cuatro pruebas cortas de 10 puntos" — ¿son siempre exactamente 4 actividades de tipo "prueba corta" por unidad y curso, con los 60 puntos restantes repartidos en cualquier número de actividades adicionales que el docente decida? Asumo que sí; lo marco para confirmar en la Fase 1 al definir el dominio de Actividad.
+
+    No, va variando avece son mas pruebas cortar pero minimo son 4, depende del catedrático.
 
 ---
 
@@ -52,7 +82,7 @@ Cada uno queda además como `TODO(confirmar)` en el documento de Fase 1 correspo
 ## 3. Estructura de carpetas propuesta para el repositorio
 
 ```
-el-patojismo-cdo/
+ando/
 ├── backend/
 │   ├── config/                     # settings por entorno (local, pruebas, producción), urls raíz, wsgi/asgi
 │   ├── apps/
