@@ -1,0 +1,15 @@
+[run]
+source = apps
+
+[report]
+# Cobertura mínima del 80% exigida por la sección 16 del prompt maestro
+# aplica a domain/ y services/ — el resto (api/, models.py, selectors/,
+# comandos de administración) se mide pero no exige el mismo umbral.
+include =
+    */domain/*
+    */domain.py
+    */services/*
+    */services.py
+omit =
+    */migrations/*
+    */tests/*

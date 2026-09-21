@@ -1,7 +1,7 @@
 # ADR-0007: Bibliotecas fundacionales para autenticación, esquema de API, CORS y seguridad de cabeceras
 
-**Fecha:** 2026-09-20
-**Estado:** Propuesto — pendiente de confirmación antes de escribir código en la Fase 3
+**Fecha:** 2026-09-20 (confirmado 2026-09-20)
+**Estado:** Aceptado — `djangorestframework-simplejwt`, `drf-spectacular` y `django-cors-headers` confirmados
 
 ## Contexto
 
@@ -48,7 +48,7 @@ No hay alternativa razonable con menos peso para este problema puntual.
 
 ## Decisión
 
-Pendiente de confirmación del equipo, igual que ADR-0005. Mientras no haya confirmación explícita, no se instala ninguna de estas bibliotecas.
+Confirmado por el equipo. Se instalan en `backend/requirements/base.txt` al construir la Fase 3.
 
 ## Consecuencias
 

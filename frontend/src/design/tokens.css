@@ -1,0 +1,73 @@
+/*
+ * Tokens de la dirección visual elegida — Propuesta B, "Trámite claro"
+ * (docs/diseno/direccion-visual.md). Un solo tema: esta dirección se
+ * comprometió deliberadamente con un único aspecto visual, claro y
+ * funcional, no con modo oscuro.
+ */
+
+:root {
+  /* Color */
+  --color-accion: #1c6ea4;
+  --color-tinta: #14181c;
+  --color-tinta-suave: #5b6570;
+  --color-linea: #d8dde1;
+  --color-papel: #ffffff;
+  --color-fondo: #eef1f3;
+
+  --color-etiqueta-taller-fondo: #e4f1de;
+  --color-etiqueta-taller-texto: #24531a;
+  --color-etiqueta-aviso-fondo: #fcf0c9;
+  --color-etiqueta-aviso-texto: #6b4e00;
+  --color-etiqueta-hoy-fondo: #dbeaf3;
+  --color-etiqueta-hoy-texto: #114a6b;
+  --color-etiqueta-alerta-fondo: #fbe1e1;
+  --color-etiqueta-alerta-texto: #8a1f1f;
+
+  /* Tipografía */
+  --fuente-titulo: "Archivo", system-ui, sans-serif;
+  --fuente-cuerpo: "Public Sans", system-ui, sans-serif;
+
+  --texto-2xs: 0.64rem;
+  --texto-xs: 0.72rem;
+  --texto-sm: 0.8rem;
+  --texto-base: 0.88rem;
+  --texto-md: 1.05rem;
+  --texto-numeral: 2.6rem;
+
+  /* Espaciado (compacto a propósito — ver docs/diseno/direccion-visual.md) */
+  --espacio-2xs: 0.15rem;
+  --espacio-xs: 0.3rem;
+  --espacio-sm: 0.5rem;
+  --espacio-md: 0.65rem;
+  --espacio-lg: 0.9rem;
+  --espacio-xl: 1.1rem;
+
+  /* Forma */
+  --radio-sm: 3px;
+  --radio-md: 6px;
+  --radio-lg: 8px;
+
+  /* Área táctil mínima (sección 15.2 del prompt maestro) */
+  --area-tactil-minima: 44px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--color-fondo);
+  color: var(--color-tinta);
+  font-family: var(--fuente-cuerpo);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
