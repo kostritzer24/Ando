@@ -1,0 +1,626 @@
+<title>Propuesta A — Comunidad</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Work+Sans:ital,wght@0,400;0,500;0,600;0,700;1,500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --canvas: #eef2f4;
+    --canvas-panel: #ffffff;
+    --ink: #16232b;
+    --ink-soft: #4c5a62;
+    --line: #d7dee1;
+    --brand-blue: #1f8fc2;
+    --brand-blue-deep: #146690;
+    --brand-green: #4f9a33;
+    --brand-gold: #b9821a;
+    --brand-red: #c53a3a;
+    --shadow-frame: 0 24px 48px -20px rgba(20, 30, 36, 0.35);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --canvas: #12181b;
+      --canvas-panel: #1b2327;
+      --ink: #eef3f5;
+      --ink-soft: #a9b7bd;
+      --line: #303c41;
+      --shadow-frame: 0 24px 48px -20px rgba(0, 0, 0, 0.6);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --canvas: #12181b;
+    --canvas-panel: #1b2327;
+    --ink: #eef3f5;
+    --ink-soft: #a9b7bd;
+    --line: #303c41;
+    --shadow-frame: 0 24px 48px -20px rgba(0, 0, 0, 0.6);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--canvas);
+    color: var(--ink);
+    font-family: "Work Sans", system-ui, sans-serif;
+    padding: 2.5rem 1.25rem 4rem;
+  }
+
+  .wrap {
+    max-width: 68rem;
+    margin: 0 auto;
+    display: grid;
+    gap: 2.5rem;
+  }
+
+  header.pitch h1 {
+    font-family: "Baloo 2", system-ui, sans-serif;
+    font-size: clamp(1.9rem, 1.4rem + 2vw, 2.6rem);
+    font-weight: 700;
+    margin: 0 0 0.35rem;
+    text-wrap: balance;
+  }
+
+  header.pitch p {
+    margin: 0;
+    max-width: 42rem;
+    color: var(--ink-soft);
+    line-height: 1.55;
+  }
+
+  .tag {
+    display: inline-block;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--brand-blue-deep);
+    background: color-mix(in srgb, var(--brand-blue) 14%, var(--canvas-panel));
+    border-radius: 999px;
+    padding: 0.3rem 0.8rem;
+    margin-bottom: 0.9rem;
+  }
+
+  .system {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+    gap: 1.25rem;
+  }
+
+  .system-card {
+    background: var(--canvas-panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 1.1rem 1.2rem;
+  }
+
+  .system-card h2 {
+    font-family: "Baloo 2", system-ui, sans-serif;
+    font-size: 0.95rem;
+    margin: 0 0 0.7rem;
+  }
+
+  .swatches { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+
+  .swatch {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.78rem;
+    color: var(--ink-soft);
+  }
+
+  .swatch i {
+    width: 1.15rem;
+    height: 1.15rem;
+    border-radius: 6px;
+    display: block;
+    flex: none;
+  }
+
+  .type-sample-display {
+    font-family: "Baloo 2", system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 1.3rem;
+    margin: 0 0 0.2rem;
+  }
+
+  .type-sample-body {
+    font-family: "Work Sans", system-ui, sans-serif;
+    font-size: 0.92rem;
+    color: var(--ink-soft);
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  .stage {
+    display: flex;
+    justify-content: center;
+  }
+
+  /* ---- marco del teléfono ---- */
+  .phone {
+    width: 23rem;
+    max-width: 100%;
+    border-radius: 2.4rem;
+    background: #0f1417;
+    padding: 0.55rem;
+    box-shadow: var(--shadow-frame);
+  }
+
+  .screen {
+    /* Pantalla fija en modo claro a propósito: es una vista previa de la
+       app tal como la vería la familia, no una superficie de lectura del
+       artifact que deba responder al tema del visor. */
+    background: #fbfdfe;
+    color: #16232b;
+    border-radius: 1.9rem;
+    overflow: hidden;
+    height: 47rem;
+    display: flex;
+    flex-direction: column;
+    font-family: "Work Sans", system-ui, sans-serif;
+  }
+
+  .status-bar {
+    height: 1.6rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: #7c8890;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .app-header {
+    padding: 0.15rem 1.15rem 0.9rem;
+    border-bottom: 1px solid #e6ebed;
+  }
+
+  .brand-row {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .brand-row span {
+    font-family: "Baloo 2", system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 1.02rem;
+    color: #16232b;
+  }
+
+  .student-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+  }
+
+  .student-id {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-width: 0;
+  }
+
+  .avatar {
+    width: 2.3rem;
+    height: 2.3rem;
+    border-radius: 50%;
+    background: #e4d6b8;
+    color: #6b4e00;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: "Baloo 2", system-ui, sans-serif;
+    font-weight: 700;
+    flex: none;
+  }
+
+  .student-id div p {
+    margin: 0;
+    line-height: 1.25;
+  }
+
+  .student-id .name {
+    font-weight: 600;
+    font-size: 0.92rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .student-id .section {
+    font-size: 0.76rem;
+    color: #6c7982;
+  }
+
+  .switch-btn {
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #146690;
+    background: #e7f2f7;
+    border: none;
+    border-radius: 999px;
+    padding: 0.45rem 0.8rem;
+    flex: none;
+  }
+
+  .screen-title {
+    font-family: "Baloo 2", system-ui, sans-serif;
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin: 0.95rem 0 0;
+  }
+
+  .screen-sub { margin: 0.15rem 0 0; font-size: 0.82rem; color: #6c7982; }
+
+  .day-picker {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.85rem 1.15rem 0.2rem;
+    overflow-x: auto;
+  }
+
+  .day-chip {
+    flex: none;
+    width: 3rem;
+    height: 3.4rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.15rem;
+    border: none;
+    background: #eef2f4;
+    color: #4c5a62;
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    font-family: "Work Sans", system-ui, sans-serif;
+  }
+
+  .day-chip .d { font-size: 0.66rem; font-weight: 600; }
+  .day-chip .n { font-family: "Baloo 2", system-ui, sans-serif; font-size: 1.05rem; font-weight: 700; }
+
+  .day-chip.active { background: #1f8fc2; color: #ffffff; }
+  .day-chip.today .n::after {
+    content: "";
+    display: block;
+    width: 0.3rem;
+    height: 0.3rem;
+    border-radius: 50%;
+    background: #f2b705;
+    margin: 0.15rem auto 0;
+  }
+
+  .agenda {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.4rem 1.15rem 1.2rem;
+  }
+
+  .next-up {
+    margin-top: 0.6rem;
+    display: flex;
+    gap: 0.85rem;
+    align-items: center;
+    background: #16232b;
+    color: #fbfdfe;
+    border-radius: 1.1rem;
+    padding: 0.9rem 1rem;
+  }
+
+  .hexmark {
+    flex: none;
+    width: 2.6rem;
+    height: 2.6rem;
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    background: #1f8fc2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .hexmark span {
+    font-family: "Baloo 2", system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 0.72rem;
+    color: #fff;
+    text-align: center;
+    line-height: 1.05;
+  }
+
+  .next-up p { margin: 0; }
+  .next-up .eyebrow { font-size: 0.72rem; color: #9fb0b8; margin-bottom: 0.1rem; }
+  .next-up .course { font-family: "Baloo 2", system-ui, sans-serif; font-weight: 700; font-size: 1rem; }
+  .next-up .meta { font-size: 0.78rem; color: #c3d0d6; margin-top: 0.1rem; }
+
+  .block-group { margin-top: 1.3rem; }
+
+  .block-group h3 {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #8a969d;
+    margin: 0 0 0.55rem;
+  }
+
+  .class-row {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid #eef2f4;
+  }
+
+  .class-row:last-child { border-bottom: none; }
+
+  .dot {
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 50%;
+    flex: none;
+  }
+
+  .dot.matematica { background: #1f8fc2; }
+  .dot.lenguaje { background: #4f9a33; }
+  .dot.ciencias { background: #b9821a; }
+  .dot.sociales { background: #c53a3a; }
+  .dot.taller { background: #4f9a33; }
+  .dot.institucional { background: #b9821a; }
+
+  .class-time {
+    font-variant-numeric: tabular-nums;
+    font-size: 0.78rem;
+    color: #4c5a62;
+    width: 3.4rem;
+    flex: none;
+  }
+
+  .class-info { min-width: 0; }
+  .class-info .course { font-weight: 600; font-size: 0.9rem; margin: 0; }
+  .class-info .teacher { font-size: 0.78rem; color: #6c7982; margin: 0.1rem 0 0; }
+
+  .recess-row {
+    padding: 0.45rem 0;
+    font-size: 0.78rem;
+    color: #8a969d;
+    font-style: italic;
+  }
+
+  .special-row {
+    margin-top: 0.6rem;
+    display: flex;
+    gap: 0.7rem;
+    align-items: flex-start;
+    background: #f7f1e2;
+    border-radius: 0.9rem;
+    padding: 0.7rem 0.85rem;
+  }
+
+  .special-row .dot { margin-top: 0.35rem; }
+  .special-row .course { font-weight: 600; font-size: 0.86rem; margin: 0; }
+  .special-row .teacher { font-size: 0.78rem; color: #6c7982; margin: 0.15rem 0 0; }
+
+  .tabbar {
+    display: flex;
+    border-top: 1px solid #e6ebed;
+    padding: 0.5rem 0.4rem 0.75rem;
+  }
+
+  .tabbar a {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.64rem;
+    color: #8a969d;
+    text-decoration: none;
+  }
+
+  .tabbar a.active { color: #1f8fc2; }
+  .tabbar svg { width: 1.25rem; height: 1.25rem; }
+
+  figcaption {
+    text-align: center;
+    color: var(--ink-soft);
+    font-size: 0.85rem;
+    margin-top: 1rem;
+    max-width: 26rem;
+    margin-inline: auto;
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="pitch">
+    <span class="tag">Propuesta A de 2 · dirección visual</span>
+    <h1>Comunidad</h1>
+    <p>
+      Parte del propio hexágono de cintas del logo: los cuatro colores de la marca
+      se usan como categorías dentro de la agenda, no como decoración. Tipografía
+      redondeada y cálida para acercarse al tono de una familia, sin perder
+      claridad en pantallas chicas ni contraste para leer con el sol de frente.
+    </p>
+  </header>
+
+  <section class="system">
+    <div class="system-card">
+      <h2>Paleta</h2>
+      <div class="swatches">
+        <span class="swatch"><i style="background:#1f8fc2"></i>Azul Patojismo</span>
+        <span class="swatch"><i style="background:#4f9a33"></i>Verde Patojismo</span>
+        <span class="swatch"><i style="background:#b9821a"></i>Dorado Patojismo</span>
+        <span class="swatch"><i style="background:#c53a3a"></i>Rojo Patojismo</span>
+        <span class="swatch"><i style="background:#16232b"></i>Tinta</span>
+        <span class="swatch"><i style="background:#fbfdfe;border:1px solid #d7dee1"></i>Papel</span>
+      </div>
+    </div>
+    <div class="system-card">
+      <h2>Tipografía</h2>
+      <p class="type-sample-display">Buenos días, familia</p>
+      <p class="type-sample-body">Baloo 2 para títulos, Work Sans para el resto — dos familias, nunca tres, para que nada compita con la lectura.</p>
+    </div>
+    <div class="system-card">
+      <h2>Forma</h2>
+      <p class="type-sample-body">El hexágono del logo se aplana en chips de día y en la insignia de "próxima clase". El resto de la interfaz usa esquinas suaves de 12–18px, sin tarjetas idénticas ni sombra repetida.</p>
+    </div>
+  </section>
+
+  <div class="stage">
+    <figure style="margin:0">
+      <div class="phone">
+        <div class="screen">
+          <div class="status-bar">9:14</div>
+          <div class="app-header">
+            <div class="brand-row">
+              <svg width="26" height="26" viewBox="0 0 40 40" aria-hidden="true">
+                <polygon points="20,3 35,11.5 35,28.5 20,37 5,28.5 5,11.5" fill="none" stroke="#eef2f4" stroke-width="0"/>
+                <line x1="21" y1="4" x2="33.5" y2="11" stroke="#b9821a" stroke-width="4.5" stroke-linecap="round"/>
+                <line x1="35.5" y1="12.5" x2="35.5" y2="27.5" stroke="#1f8fc2" stroke-width="4.5" stroke-linecap="round"/>
+                <line x1="34.5" y1="29" x2="21.5" y2="36" stroke="#c53a3a" stroke-width="4.5" stroke-linecap="round"/>
+                <line x1="19" y1="36" x2="6.5" y2="29" stroke="#c53a3a" stroke-width="4.5" stroke-linecap="round"/>
+                <line x1="5" y1="27.5" x2="5" y2="12.5" stroke="#4f9a33" stroke-width="4.5" stroke-linecap="round"/>
+                <line x1="6" y1="11" x2="19" y2="4" stroke="#b9821a" stroke-width="4.5" stroke-linecap="round"/>
+              </svg>
+              <span>El Patojismo</span>
+            </div>
+            <div class="student-row">
+              <div class="student-id">
+                <div class="avatar">MX</div>
+                <div>
+                  <p class="name">María Ximena Pérez Tzul</p>
+                  <p class="section">Segundo básico A</p>
+                </div>
+              </div>
+              <button class="switch-btn">Cambiar</button>
+            </div>
+          </div>
+
+          <h1 class="screen-title">Calendario de la semana</h1>
+          <p class="screen-sub">Lo que María tiene esta semana, día por día.</p>
+
+          <div class="day-picker">
+            <button class="day-chip"><span class="d">Lun</span><span class="n">15</span></button>
+            <button class="day-chip active today"><span class="d">Mar</span><span class="n">16</span></button>
+            <button class="day-chip"><span class="d">Mié</span><span class="n">17</span></button>
+            <button class="day-chip"><span class="d">Jue</span><span class="n">18</span></button>
+            <button class="day-chip"><span class="d">Vie</span><span class="n">19</span></button>
+          </div>
+
+          <div class="agenda">
+
+            <div class="next-up">
+              <div class="hexmark"><span>08<br>40</span></div>
+              <p>
+                <span class="eyebrow">Sigue en 12 minutos</span><br>
+                <span class="course">Comunicación y lenguaje</span><br>
+                <span class="meta">Licda. Xitumul · Período 2</span>
+              </p>
+            </div>
+
+            <div class="block-group">
+              <h3>Jornada matutina</h3>
+
+              <div class="class-row">
+                <span class="dot matematica"></span>
+                <span class="class-time">8:00</span>
+                <div class="class-info">
+                  <p class="course">Matemática</p>
+                  <p class="teacher">Lic. Herrera</p>
+                </div>
+              </div>
+
+              <div class="class-row">
+                <span class="dot lenguaje"></span>
+                <span class="class-time">8:40</span>
+                <div class="class-info">
+                  <p class="course">Comunicación y lenguaje</p>
+                  <p class="teacher">Licda. Xitumul</p>
+                </div>
+              </div>
+
+              <div class="class-row">
+                <span class="dot ciencias"></span>
+                <span class="class-time">9:20</span>
+                <div class="class-info">
+                  <p class="course">Ciencias naturales</p>
+                  <p class="teacher">Lic. Cabrera</p>
+                </div>
+              </div>
+
+              <div class="recess-row">10:00 — Receso</div>
+
+              <div class="class-row">
+                <span class="dot sociales"></span>
+                <span class="class-time">10:40</span>
+                <div class="class-info">
+                  <p class="course">Ciencias sociales</p>
+                  <p class="teacher">Licda. Pérez</p>
+                </div>
+              </div>
+
+              <div class="class-row">
+                <span class="dot matematica"></span>
+                <span class="class-time">11:20</span>
+                <div class="class-info">
+                  <p class="course">Idioma extranjero — inglés</p>
+                  <p class="teacher">Lic. Morales</p>
+                </div>
+              </div>
+
+              <div class="class-row">
+                <span class="dot lenguaje"></span>
+                <span class="class-time">12:00</span>
+                <div class="class-info">
+                  <p class="course">Educación física</p>
+                  <p class="teacher">Lic. Ramírez</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="block-group">
+              <h3>Taller de la tarde</h3>
+              <div class="special-row">
+                <span class="dot taller"></span>
+                <div>
+                  <p class="course">Taller de panadería — 14:00 a 15:30</p>
+                  <p class="teacher">Tallerista Ana Con — grupo único</p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <nav class="tabbar">
+            <a class="active" href="#">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9h12v-9"/></svg>
+              Inicio
+            </a>
+            <a href="#">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 4h11a2 2 0 0 1 2 2v14l-7.5-3L5 20V4Z"/></svg>
+              Notas
+            </a>
+            <a href="#">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12.5 9 17l11-11"/></svg>
+              Asistencia
+            </a>
+            <a href="#">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg>
+              Pagos
+            </a>
+            <a href="#">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 4 7v6c0 4.5 3.4 7.7 8 8 4.6-.3 8-3.5 8-8V7Z"/></svg>
+              Avisos
+            </a>
+          </nav>
+
+        </div>
+      </div>
+      <figcaption>Portal público · pantalla de entrada (RF-28) · vista fija en modo claro, tal como la vería la familia.</figcaption>
+    </figure>
+  </div>
+
+</div>

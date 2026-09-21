@@ -1,0 +1,381 @@
+<title>Propuesta B — Trámite claro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800;900&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --canvas: #eef1f3;
+    --canvas-panel: #ffffff;
+    --ink: #14181c;
+    --ink-soft: #5b6570;
+    --line: #d8dde1;
+    --primary: #1c6ea4;
+    --shadow-frame: 0 24px 48px -20px rgba(20, 24, 28, 0.32);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --canvas: #101315;
+      --canvas-panel: #1a1e21;
+      --ink: #f1f3f4;
+      --ink-soft: #a7b0b6;
+      --line: #313a3f;
+      --shadow-frame: 0 24px 48px -20px rgba(0, 0, 0, 0.6);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --canvas: #101315;
+    --canvas-panel: #1a1e21;
+    --ink: #f1f3f4;
+    --ink-soft: #a7b0b6;
+    --line: #313a3f;
+    --shadow-frame: 0 24px 48px -20px rgba(0, 0, 0, 0.6);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--canvas);
+    color: var(--ink);
+    font-family: "Public Sans", system-ui, sans-serif;
+    padding: 2.5rem 1.25rem 4rem;
+  }
+
+  .wrap { max-width: 68rem; margin: 0 auto; display: grid; gap: 2.5rem; }
+
+  header.pitch h1 {
+    font-family: "Archivo", system-ui, sans-serif;
+    font-weight: 800;
+    font-size: clamp(1.9rem, 1.4rem + 2vw, 2.6rem);
+    margin: 0 0 0.35rem;
+    text-wrap: balance;
+  }
+
+  header.pitch p { margin: 0; max-width: 42rem; color: var(--ink-soft); line-height: 1.55; }
+
+  .tag-eyebrow {
+    display: inline-block;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--primary);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 0.3rem 0.8rem;
+    margin-bottom: 0.9rem;
+  }
+
+  .system { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: 1.25rem; }
+
+  .system-card { background: var(--canvas-panel); border: 1px solid var(--line); border-radius: 8px; padding: 1.1rem 1.2rem; }
+
+  .system-card h2 { font-family: "Archivo", system-ui, sans-serif; font-weight: 700; font-size: 0.92rem; margin: 0 0 0.7rem; }
+
+  .swatches { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+  .swatch { display: flex; align-items: center; gap: 0.45rem; font-size: 0.78rem; color: var(--ink-soft); }
+  .swatch i { width: 1.1rem; height: 1.1rem; border-radius: 3px; display: block; flex: none; border: 1px solid rgba(0,0,0,0.08); }
+
+  .type-sample-display { font-family: "Archivo", system-ui, sans-serif; font-weight: 800; font-size: 1.3rem; margin: 0 0 0.2rem; }
+  .type-sample-body { font-family: "Public Sans", system-ui, sans-serif; font-size: 0.92rem; color: var(--ink-soft); line-height: 1.5; margin: 0; }
+
+  .stage { display: flex; justify-content: center; }
+
+  .phone {
+    width: 23rem;
+    max-width: 100%;
+    border-radius: 1.6rem;
+    background: #0e1113;
+    padding: 0.5rem;
+    box-shadow: var(--shadow-frame);
+  }
+
+  .screen {
+    background: #ffffff;
+    color: #14181c;
+    border-radius: 1.15rem;
+    overflow: hidden;
+    height: 47rem;
+    display: flex;
+    flex-direction: column;
+    font-family: "Public Sans", system-ui, sans-serif;
+  }
+
+  .status-bar {
+    height: 1.6rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: #8b959d;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .app-header { padding: 0 1.1rem 0.75rem; border-bottom: 1px solid #dfe3e6; }
+
+  .brand-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.8rem; }
+  .brand-row span { font-family: "Archivo", system-ui, sans-serif; font-weight: 700; font-size: 0.95rem; }
+
+  .student-row { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; }
+
+  .student-id { min-width: 0; }
+  .student-id .name { margin: 0; font-weight: 600; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .student-id .section { margin: 0.1rem 0 0; font-size: 0.76rem; color: #5b6570; }
+
+  .switch-btn {
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #1c6ea4;
+    background: none;
+    border: 1px solid #b9cddb;
+    border-radius: 4px;
+    padding: 0.4rem 0.7rem;
+    flex: none;
+  }
+
+  .masthead { padding: 1rem 1.1rem 0.3rem; }
+  .masthead .label { margin: 0; font-size: 0.8rem; color: #5b6570; }
+  .masthead .date-row { display: flex; align-items: baseline; gap: 0.5rem; margin-top: 0.1rem; }
+  .masthead .weekday { font-family: "Archivo", system-ui, sans-serif; font-weight: 700; font-size: 1.05rem; }
+  .masthead .daynum { font-family: "Archivo", system-ui, sans-serif; font-weight: 900; font-size: 2.6rem; line-height: 1; font-variant-numeric: tabular-nums; }
+  .masthead .month { font-size: 0.9rem; color: #5b6570; }
+
+  .day-tabs {
+    display: flex;
+    gap: 1.1rem;
+    padding: 0.9rem 1.1rem 0;
+    border-bottom: 1px solid #dfe3e6;
+    overflow-x: auto;
+  }
+
+  .day-tabs button {
+    flex: none;
+    background: none;
+    border: none;
+    font-family: "Public Sans", system-ui, sans-serif;
+    font-size: 0.82rem;
+    color: #5b6570;
+    padding: 0 0 0.6rem;
+    border-bottom: 3px solid transparent;
+  }
+
+  .day-tabs button.active { color: #14181c; font-weight: 700; border-color: #1c6ea4; }
+
+  .agenda { flex: 1; overflow-y: auto; padding: 0.2rem 1.1rem 1.2rem; }
+
+  .block-group h3 {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #8b959d;
+    margin: 1.1rem 0 0.1rem;
+  }
+
+  .class-row {
+    display: grid;
+    grid-template-columns: 3.4rem 1fr auto;
+    align-items: baseline;
+    gap: 0.7rem;
+    padding: 0.65rem 0;
+    border-bottom: 1px solid #eceff1;
+  }
+
+  .class-time { font-variant-numeric: tabular-nums; font-size: 0.8rem; color: #5b6570; }
+  .class-info .course { margin: 0; font-weight: 600; font-size: 0.88rem; }
+  .class-info .teacher { margin: 0.15rem 0 0; font-size: 0.78rem; color: #5b6570; }
+
+  .pill {
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.2rem 0.55rem;
+    border-radius: 4px;
+    white-space: nowrap;
+    align-self: center;
+  }
+
+  .pill.taller { background: #e4f1de; color: #24531a; }
+  .pill.aviso { background: #fcf0c9; color: #6b4e00; }
+  .pill.hoy { background: #dbeaf3; color: #114a6b; }
+
+  .recess-row {
+    padding: 0.55rem 0;
+    font-size: 0.8rem;
+    color: #8b959d;
+    border-bottom: 1px solid #eceff1;
+  }
+
+  .tabbar { display: flex; border-top: 1px solid #dfe3e6; padding: 0.5rem 0.4rem 0.75rem; }
+  .tabbar a { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.25rem; font-size: 0.64rem; color: #8b959d; text-decoration: none; }
+  .tabbar a.active { color: #1c6ea4; }
+  .tabbar svg { width: 1.2rem; height: 1.2rem; }
+
+  figcaption { text-align: center; color: var(--ink-soft); font-size: 0.85rem; margin-top: 1rem; max-width: 26rem; margin-inline: auto; }
+</style>
+
+<div class="wrap">
+
+  <header class="pitch">
+    <span class="tag-eyebrow">Propuesta B de 2 · dirección visual</span>
+    <h1>Trámite claro</h1>
+    <p>
+      Cercana al lenguaje de un trámite de gobierno bien hecho: fila en vez de
+      tarjeta, jerarquía tipográfica en vez de color decorativo. El color de
+      marca queda reservado a lo funcional — el enlace activo y las etiquetas
+      de estado — para que nada distraiga de la hora y el nombre del curso.
+    </p>
+  </header>
+
+  <section class="system">
+    <div class="system-card">
+      <h2>Paleta</h2>
+      <div class="swatches">
+        <span class="swatch"><i style="background:#1c6ea4"></i>Azul de acción</span>
+        <span class="swatch"><i style="background:#24531a;background-color:#e4f1de;border-color:#24531a"></i>Etiqueta taller</span>
+        <span class="swatch"><i style="background:#6b4e00;background-color:#fcf0c9;border-color:#6b4e00"></i>Etiqueta aviso</span>
+        <span class="swatch"><i style="background:#14181c"></i>Tinta</span>
+        <span class="swatch"><i style="background:#ffffff;border-color:#d8dde1"></i>Papel</span>
+      </div>
+    </div>
+    <div class="system-card">
+      <h2>Tipografía</h2>
+      <p class="type-sample-display">Martes 16</p>
+      <p class="type-sample-body">Archivo para números y títulos, Public Sans para todo lo que se lee corrido — la misma pareja que usan los portales de trámites en línea, por su probada claridad.</p>
+    </div>
+    <div class="system-card">
+      <h2>Forma</h2>
+      <p class="type-sample-body">Filas separadas por una línea fina, sin sombra ni tarjeta. El color solo aparece en el enlace activo y en las tres etiquetas de estado.</p>
+    </div>
+  </section>
+
+  <div class="stage">
+    <figure style="margin:0">
+      <div class="phone">
+        <div class="screen">
+          <div class="status-bar">9:14</div>
+
+          <div class="app-header">
+            <div class="brand-row">
+              <svg width="22" height="22" viewBox="0 0 40 40" aria-hidden="true">
+                <line x1="21" y1="4" x2="33.5" y2="11" stroke="#8b959d" stroke-width="4.5" stroke-linecap="round"/>
+                <line x1="35.5" y1="12.5" x2="35.5" y2="27.5" stroke="#1c6ea4" stroke-width="4.5" stroke-linecap="round"/>
+                <line x1="34.5" y1="29" x2="21.5" y2="36" stroke="#8b959d" stroke-width="4.5" stroke-linecap="round"/>
+                <line x1="19" y1="36" x2="6.5" y2="29" stroke="#8b959d" stroke-width="4.5" stroke-linecap="round"/>
+                <line x1="5" y1="27.5" x2="5" y2="12.5" stroke="#1c6ea4" stroke-width="4.5" stroke-linecap="round"/>
+                <line x1="6" y1="11" x2="19" y2="4" stroke="#8b959d" stroke-width="4.5" stroke-linecap="round"/>
+              </svg>
+              <span>El Patojismo</span>
+            </div>
+            <div class="student-row">
+              <div class="student-id">
+                <p class="name">María Ximena Pérez Tzul</p>
+                <p class="section">Segundo básico A</p>
+              </div>
+              <button class="switch-btn">Cambiar estudiante</button>
+            </div>
+          </div>
+
+          <div class="masthead">
+            <p class="label">Calendario de la semana</p>
+            <div class="date-row">
+              <span class="daynum">16</span>
+              <span>
+                <span class="weekday" style="display:block">martes</span>
+                <span class="month">septiembre de 2026</span>
+              </span>
+            </div>
+          </div>
+
+          <nav class="day-tabs">
+            <button>lun 15</button>
+            <button class="active">mar 16</button>
+            <button>mié 17</button>
+            <button>jue 18</button>
+            <button>vie 19</button>
+          </nav>
+
+          <div class="agenda">
+
+            <div class="block-group">
+              <h3>Jornada matutina</h3>
+
+              <div class="class-row">
+                <span class="class-time">8:00</span>
+                <div class="class-info"><p class="course">Matemática</p><p class="teacher">Lic. Herrera</p></div>
+                <span></span>
+              </div>
+
+              <div class="class-row">
+                <span class="class-time">8:40</span>
+                <div class="class-info"><p class="course">Comunicación y lenguaje</p><p class="teacher">Licda. Xitumul</p></div>
+                <span class="pill hoy">Ahora</span>
+              </div>
+
+              <div class="class-row">
+                <span class="class-time">9:20</span>
+                <div class="class-info"><p class="course">Ciencias naturales</p><p class="teacher">Lic. Cabrera</p></div>
+                <span></span>
+              </div>
+
+              <div class="recess-row">10:00 — Receso</div>
+
+              <div class="class-row">
+                <span class="class-time">10:40</span>
+                <div class="class-info"><p class="course">Ciencias sociales</p><p class="teacher">Licda. Pérez</p></div>
+                <span></span>
+              </div>
+
+              <div class="class-row">
+                <span class="class-time">11:20</span>
+                <div class="class-info"><p class="course">Idioma extranjero — inglés</p><p class="teacher">Lic. Morales</p></div>
+                <span></span>
+              </div>
+
+              <div class="class-row" style="border-bottom:none">
+                <span class="class-time">12:00</span>
+                <div class="class-info"><p class="course">Educación física</p><p class="teacher">Lic. Ramírez</p></div>
+                <span></span>
+              </div>
+            </div>
+
+            <div class="block-group">
+              <h3>Taller de la tarde</h3>
+              <div class="class-row" style="border-bottom:none">
+                <span class="class-time">14:00</span>
+                <div class="class-info"><p class="course">Taller de panadería</p><p class="teacher">Tallerista Ana Con — grupo único</p></div>
+                <span class="pill taller">Taller</span>
+              </div>
+            </div>
+
+          </div>
+
+          <nav class="tabbar">
+            <a class="active" href="#">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9h12v-9"/></svg>
+              Inicio
+            </a>
+            <a href="#">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 4h11a2 2 0 0 1 2 2v14l-7.5-3L5 20V4Z"/></svg>
+              Notas
+            </a>
+            <a href="#">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12.5 9 17l11-11"/></svg>
+              Asistencia
+            </a>
+            <a href="#">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg>
+              Pagos
+            </a>
+            <a href="#">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 4 7v6c0 4.5 3.4 7.7 8 8 4.6-.3 8-3.5 8-8V7Z"/></svg>
+              Avisos
+            </a>
+          </nav>
+
+        </div>
+      </div>
+      <figcaption>Portal público · pantalla de entrada (RF-28) · vista fija en modo claro, tal como la vería la familia.</figcaption>
+    </figure>
+  </div>
+
+</div>
