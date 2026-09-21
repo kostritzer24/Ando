@@ -1,0 +1,33 @@
+# Python / Django
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+db.sqlite3
+staticfiles/
+media/
+
+# Node / Vue
+node_modules/
+dist/
+.vite/
+
+# Entornos y secretos
+.env
+.env.*
+!.env.example
+
+# Editores y sistema operativo
+.DS_Store
+.vscode/
+.idea/
+
+# Cobertura y pruebas
+.coverage
+htmlcov/
+.pytest_cache/
+coverage/
+playwright-report/
+test-results/
