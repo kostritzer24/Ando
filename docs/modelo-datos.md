@@ -239,13 +239,37 @@ RN-08: un estudiante con `Enrollment.scholarship_id` no nulo y la beca activa ap
 | expires_at | datetime, nullable | HU-36: vencidos dejan de mostrarse |
 | published_by_id | FK → accounts.User | |
 
-### `communication.ConductReport` — Reporte de conducta
+### `catalog.ConductRuleArticle` — Artículo del código de convivencia *(introducida por [ADR-0006](adr/0006-formato-reporte-conducta.md), a partir de `docs/reporte.docx`)*
+| Columna | Tipo | Notas |
+|---|---|---|
+| chapter | varchar | p. ej. "CAPÍTULO I: RESPETO Y DIGNIDAD" |
+| code | varchar | p. ej. "Art. 4" |
+| description | varchar | p. ej. "Falta de respeto hacia educadores" |
+
+Es el octavo dato maestro parametrizable, no estaba en los 7 de la sección 9 original — Dirección lo administra igual que los demás catálogos, porque el código de convivencia puede revisarse entre ciclos.
+
+### `communication.ConductReport` — Reporte de conducta *(columnas ampliadas por [ADR-0006](adr/0006-formato-reporte-conducta.md))*
 | Columna | Tipo | Notas |
 |---|---|---|
 | enrollment_id | FK → Enrollment | |
 | report_date | date | |
-| description | text | |
-| issued_by_id | FK → accounts.User | |
+| severity | enum: `leve, grave, muy_grave` | "Tipo de falta cometida" del formato |
+| incident_description | text | "Hechos ocurridos" |
+| immediate_actions | text | "Medidas inmediatas tomadas" |
+| other_violation_detail | text, nullable | "Otra falta no especificada" |
+| sanction_type | enum: `llamado_verbal, amonestacion_escrita, comunicacion_familia, suspension_extracurricular, servicio_comunitario, suspension_clases, evaluacion_expulsion, otra` | |
+| sanction_detail | text, nullable | días de suspensión, rango de fechas, detalle del servicio comunitario o de "otra" |
+| commitments | text | "Compromisos establecidos" |
+| guide_teacher_id | FK → accounts.User | firma como Maestro Guía (impresa, RN-15) |
+| direction_member_id | FK → accounts.User, nullable | firma como Miembro de Dirección |
+
+### `communication.ConductReportArticle` — Artículos incumplidos en un reporte *(tabla de unión, ADR-0006)*
+| Columna | Tipo | Notas |
+|---|---|---|
+| conduct_report_id | FK → ConductReport | |
+| article_id | FK → catalog.ConductRuleArticle | |
+
+Restricción: `unique(conduct_report_id, article_id)`. Un reporte de conducta marca cero o más artículos del catálogo (checklist del formato original), además del texto libre de `other_violation_detail`.
 
 ### `communication.Message` — Mensaje de buzón
 | Columna | Tipo | Notas |
@@ -335,6 +359,8 @@ erDiagram
 
     Section ||--o{ Announcement : dirigido_a
     Enrollment ||--o{ ConductReport : recibe
+    ConductReport ||--o{ ConductReportArticle : marca
+    ConductRuleArticle ||--o{ ConductReportArticle : es_marcado_en
     Section ||--o{ Message : agrupa_hilo
 
     Role ||--o{ User : clasifica
@@ -349,6 +375,6 @@ Diagrama físico completo (columnas, tipos y restricciones) queda en las tablas 
 
 ## 6. `TODO(confirmar)` pendientes de este modelo
 
-- Método exacto de redondeo de la nota final — ver ADR-0003, pendiente de validación con dirección antes de la Fase 7.
-- Bibliotecas para PDF, QR y lectura de plantillas — ver ADR-0005, pendiente de confirmación antes de instalar.
-- Formato exacto del `internal_code` de Estudiante (longitud, si incluye el año de ingreso) — no está especificado en el Capítulo IV; se propondrá una convención en la Fase 5 junto con el caso de uso de inscripción, para que la dirección lo confirme antes de generar el primer código real.
+- ~~Método exacto de redondeo de la nota final~~ — **confirmado**: redondeo aritmético estándar (ver ADR-0003, aceptado).
+- ~~Bibliotecas para PDF, QR y lectura de plantillas~~ — **confirmadas**: WeasyPrint, `qrcode` y `openpyxl` (ver ADR-0005, aceptado).
+- **Formato del `internal_code` de Estudiante — confirmado con una duda numérica sin resolver.** La dirección indicó el formato `ES01`, `ES02`... (prefijo `ES` + número secuencial). Con dos dígitos el rango es `ES01`–`ES99`, es decir 99 códigos posibles, y el centro ya tiene 144 estudiantes en la jornada matutina más los participantes de talleres. Para no bloquear el modelo se fija provisionalmente `internal_code` como `ES` + secuencial de **3 dígitos** (`ES001`...`ES999`), manteniendo el prefijo indicado. **Esto es una decisión tomada por el equipo técnico para resolver una contradicción numérica, no una confirmación literal de la dirección — queda como `TODO(confirmar)` real hasta que se valide antes de la Fase 5.** Si la intención era otra (por ejemplo, reiniciar la numeración cada ciclo, o que los dos dígitos identifiquen algo distinto al secuencial, como la sección), hay que corregirlo antes de generar el primer código real.

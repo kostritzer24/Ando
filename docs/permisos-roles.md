@@ -17,7 +17,7 @@ Dirección (DIR), Coordinación (COORD), Encargado de pagos (PAGOS), Docente (DO
 | Usuarios y roles | E | S | S | S | S | S | S | E |
 | Datos maestros (7 catálogos) | E | V | S | S | S | S | S | E |
 | Estudiantes y encargados (datos generales) | E | V | V ¹ | V ² | V ² | V ² | V ³ | V |
-| Datos sensibles (salud, socioeconómicos) | E | S | S | S | S | S | S | S |
+| Datos sensibles (salud, socioeconómicos) | E | S | S | S | S | S | S | V ⁹ |
 | Horarios y calendario | E | V | S | E ² | E ² | E ² | V ³ | V |
 | Asistencia | E ⁴ | V | S | E ² | E ² | E ² | V ³ | V |
 | Notas (actividades, calificaciones, boletín) | E | V | S | E ² | E ² | S ⁵ | V ³ ⁶ | V |
@@ -40,6 +40,7 @@ Dirección (DIR), Coordinación (COORD), Encargado de pagos (PAGOS), Docente (DO
 6. `FAM` en Notas ve únicamente la nota final (`Grade.current_score`), nunca `GradeChangeRequest` (RN-06).
 7. `DOC`/`GUÍA` tienen `E` en "solicitar modificación de nota" (RF-23) pero no en "autorizar" — son acciones distintas; la matriz separa ambas filas a propósito.
 8. `PAGOS` no ve los reportes institucionales generales, solo el reporte de estudiantes insolventes, que en la práctica es una vista dentro de Pagos y solvencia, no de Reportes — a confirmar cuando se diseñe la Fase 12.
+9. `ADMIN` tiene `V` (no `E`) en Datos sensibles — confirmado por dirección en el cierre de la Fase 1. El Administrador del sistema puede consultarlos para soporte técnico, pero nunca editarlos; la edición sigue siendo exclusiva de `DIR`. Por el peso de este dato, el endpoint `GET /students/{id}/sensitive/` (`docs/api.md`) queda dentro de lo que `core.AccessLog` registra como pantalla consultada (RNF-07), así que toda consulta de `ADMIN` a datos sensibles de un estudiante concreto queda con usuario, fecha y pantalla — sin necesidad de ampliar `core.AuditLog`, que por ADR-0004 registra cambios, no lecturas.
 
 ## Pendientes de confirmación con dirección
 

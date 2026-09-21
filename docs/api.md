@@ -19,7 +19,7 @@ Todo bajo el prefijo `/api/v1/`. Los roles se listan con los códigos de `docs/p
 
 ## `catalog` — Datos maestros
 
-CRUD estándar (`GET` lista/detalle, `POST` crea, `PATCH` edita, `DELETE` da de baja lógica — nunca borra) sobre cada uno de los siete catálogos de la sección 9:
+CRUD estándar (`GET` lista/detalle, `POST` crea, `PATCH` edita, `DELETE` da de baja lógica — nunca borra) sobre cada uno de los siete catálogos de la sección 9, más el octavo catálogo agregado por ADR-0006:
 
 | Recurso | Ruta base | RF |
 |---|---|---|
@@ -31,6 +31,7 @@ CRUD estándar (`GET` lista/detalle, `POST` crea, `PATCH` edita, `DELETE` da de 
 | Tipos de justificación | `/justification-types/` | RF-02 |
 | Tipos de documento | `/document-types/` | RF-02 |
 | Becas | `/scholarships/` | RF-02 |
+| Artículos del código de convivencia | `/conduct-rule-articles/` | ADR-0006 |
 
 Roles: DIR, ADMIN (E); COORD (V); el resto sin acceso, según matriz.
 
@@ -40,7 +41,7 @@ Roles: DIR, ADMIN (E); COORD (V); el resto sin acceso, según matriz.
 |---|---|---|---|---|
 | GET, POST | `/students/` | Listar / inscribir estudiantes | RF-03, HU-03 | DIR (E), COORD/PAGOS/DOC/GUÍA/TALL (V, según matriz) |
 | GET, PATCH | `/students/{id}/` | Ver / editar expediente general | RF-03 | según matriz |
-| GET | `/students/{id}/sensitive/` | Datos de salud y socioeconómicos, serializer aparte | RNF-04 | solo DIR |
+| GET | `/students/{id}/sensitive/` | Datos de salud y socioeconómicos, serializer aparte | RNF-04 | DIR (V/E), ADMIN (V, queda en `AccessLog`) |
 | GET, POST | `/guardians/` | Listar / crear encargados | RF-03 | DIR (E) |
 | POST | `/guardians/{id}/link-student/` | Vincular encargado con estudiante (`GuardianStudentLink`) | RF-04 | DIR (E) |
 | DELETE | `/guardians/{id}/link-student/{student_id}/` | Retirar vínculo (baja lógica) | RF-04 | DIR (E) |

@@ -1,7 +1,7 @@
-# ADR-0005: Bibliotecas propuestas para PDF, código QR y lectura de plantillas
+# ADR-0005: Bibliotecas para PDF, código QR y lectura de plantillas
 
-**Fecha:** 2026-09-20
-**Estado:** Propuesto — pendiente de confirmación del equipo antes de instalar (regla de trabajo 8 y sección 13 del prompt maestro)
+**Fecha:** 2026-09-20 (confirmado 2026-09-20)
+**Estado:** Aceptado — WeasyPrint, `qrcode` y `openpyxl` confirmados por el equipo
 
 ## Contexto
 
@@ -36,7 +36,7 @@ No hay alternativa razonable con menos peso: es la biblioteca mínima para esta 
 
 ## Decisión
 
-Queda como propuesta para que el equipo la confirme antes de la Fase 3 (cuando se arma `requirements/base.txt`). Mientras no haya confirmación explícita, no se instala ninguna de estas bibliotecas.
+Confirmadas por el equipo. Se instalan cuando la Fase 3 arme `requirements/base.txt`, no antes de que exista código que las use.
 
 ## Consecuencias
 
