@@ -12,6 +12,7 @@ Todo bajo el prefijo `/api/v1/`. Los roles se listan con los códigos de `docs/p
 | POST | `/auth/refresh/` | Rotar token de acceso desde la cookie de refresco | 14.1 | autenticado |
 | POST | `/auth/logout/` | Revocar el token de refresco actual | 14.1 | autenticado |
 | POST | `/auth/change-password/` | Cambio obligatorio de contraseña temporal | 14.1 | autenticado |
+| GET | `/auth/me/` | Perfil propio — reconstruye la sesión en el frontend tras recargar la página, sin pasar por `/users/{id}/` (exclusiva de Dirección/Administrador) | 14.1, agregada en el bloque de frontend | cualquier autenticado, sobre sí mismo |
 | GET, POST | `/users/` | Listar / crear usuarios con su rol | RF-01 | DIR, ADMIN (E) |
 | GET, PATCH | `/users/{id}/` | Ver / editar un usuario | RF-01 | DIR, ADMIN (E) |
 | POST | `/users/{id}/reset-password/` | Restablecer contraseña gestionado por administración (no por correo) | RF-01, 14.1 | DIR, ADMIN (E) |

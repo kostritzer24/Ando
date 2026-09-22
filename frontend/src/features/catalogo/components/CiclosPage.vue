@@ -1,0 +1,257 @@
+<script setup lang="ts">
+import { computed, onMounted, reactive, ref } from "vue";
+
+import { useAuthStore } from "@/features/auth/stores/authStore";
+import { AppButton, AppModal, DataTable, ErrorBanner, FormField, FormSelect } from "@/shared/components";
+import type { GradingUnit, SchoolCycle } from "@/shared/types/models";
+
+import { ciclosApi, unidadesApi } from "../api/catalogoApi";
+
+const auth = useAuthStore();
+const puedeEditar = computed(() => auth.usuario?.role_name !== "Coordinación");
+
+const ciclos = ref<SchoolCycle[]>([]);
+const cargando = ref(true);
+const error = ref("");
+
+const modalCicloAbierto = ref(false);
+const formularioCiclo = reactive({ year: "", start_date: "", end_date: "", status: "planificado" });
+const guardandoCiclo = ref(false);
+
+const cicloSeleccionado = ref<SchoolCycle | null>(null);
+const unidades = ref<GradingUnit[]>([]);
+const cargandoUnidades = ref(false);
+const errorUnidades = ref("");
+
+const modalUnidadAbierto = ref(false);
+const formularioUnidad = reactive({ number: "", start_date: "", end_date: "" });
+const guardandoUnidad = ref(false);
+
+const OPCIONES_ESTADO = [
+  { valor: "planificado", etiqueta: "Planificado" },
+  { valor: "activo", etiqueta: "Activo" },
+  { valor: "cerrado", etiqueta: "Cerrado" },
+];
+
+async function cargarCiclos(): Promise<void> {
+  cargando.value = true;
+  error.value = "";
+  try {
+    const { results } = await ciclosApi.listar();
+    ciclos.value = results;
+  } catch {
+    error.value = "No se pudo cargar la lista de ciclos. Probá de nuevo.";
+  } finally {
+    cargando.value = false;
+  }
+}
+
+function abrirNuevoCiclo(): void {
+  formularioCiclo.year = "";
+  formularioCiclo.start_date = "";
+  formularioCiclo.end_date = "";
+  formularioCiclo.status = "planificado";
+  modalCicloAbierto.value = true;
+}
+
+async function guardarCiclo(): Promise<void> {
+  guardandoCiclo.value = true;
+  error.value = "";
+  try {
+    await ciclosApi.crear({
+      year: Number(formularioCiclo.year),
+      start_date: formularioCiclo.start_date,
+      end_date: formularioCiclo.end_date,
+      status: formularioCiclo.status as SchoolCycle["status"],
+    });
+    modalCicloAbierto.value = false;
+    await cargarCiclos();
+  } catch {
+    error.value = "No se pudo guardar el ciclo. Revisá los datos e intentá de nuevo.";
+  } finally {
+    guardandoCiclo.value = false;
+  }
+}
+
+async function verUnidades(ciclo: SchoolCycle): Promise<void> {
+  cicloSeleccionado.value = ciclo;
+  cargandoUnidades.value = true;
+  errorUnidades.value = "";
+  try {
+    const { results } = await unidadesApi(ciclo.public_id).listar();
+    unidades.value = results.sort((a, b) => a.number - b.number);
+  } catch {
+    errorUnidades.value = "No se pudieron cargar las unidades. Probá de nuevo.";
+  } finally {
+    cargandoUnidades.value = false;
+  }
+}
+
+function abrirNuevaUnidad(): void {
+  formularioUnidad.number = String(unidades.value.length + 1);
+  formularioUnidad.start_date = "";
+  formularioUnidad.end_date = "";
+  modalUnidadAbierto.value = true;
+}
+
+async function guardarUnidad(): Promise<void> {
+  if (!cicloSeleccionado.value) return;
+  guardandoUnidad.value = true;
+  errorUnidades.value = "";
+  try {
+    await unidadesApi(cicloSeleccionado.value.public_id).crear({
+      number: Number(formularioUnidad.number),
+      start_date: formularioUnidad.start_date,
+      end_date: formularioUnidad.end_date,
+    });
+    modalUnidadAbierto.value = false;
+    await verUnidades(cicloSeleccionado.value);
+  } catch {
+    errorUnidades.value =
+      "No se pudo guardar la unidad. Revisá que el número y las fechas no se crucen con otra unidad.";
+  } finally {
+    guardandoUnidad.value = false;
+  }
+}
+
+onMounted(cargarCiclos);
+</script>
+
+<template>
+  <section class="ciclos-page">
+    <header class="ciclos-page__cabecera">
+      <h1>Ciclos escolares y unidades</h1>
+      <AppButton v-if="puedeEditar" @click="abrirNuevoCiclo">Agregar ciclo</AppButton>
+    </header>
+
+    <ErrorBanner v-if="error" :mensaje="error" etiqueta-accion="Reintentar" @accion="cargarCiclos" />
+    <p v-else-if="cargando">Cargando…</p>
+
+    <DataTable
+      v-else
+      :columnas="[
+        { clave: 'year', etiqueta: 'Año' },
+        { clave: 'start_date', etiqueta: 'Inicio' },
+        { clave: 'end_date', etiqueta: 'Cierre' },
+        { clave: 'status', etiqueta: 'Estado' },
+      ]"
+      :filas="ciclos"
+    >
+      <template #acciones="{ fila }">
+        <button type="button" class="ciclos-page__accion" @click="verUnidades(fila as SchoolCycle)">
+          Ver unidades
+        </button>
+      </template>
+    </DataTable>
+
+    <section v-if="cicloSeleccionado" class="ciclos-page__unidades">
+      <header class="ciclos-page__cabecera">
+        <h2>Unidades del ciclo {{ cicloSeleccionado.year }}</h2>
+        <AppButton v-if="puedeEditar" variante="secundario" @click="abrirNuevaUnidad">
+          Agregar unidad
+        </AppButton>
+      </header>
+
+      <ErrorBanner v-if="errorUnidades" :mensaje="errorUnidades" />
+      <p v-else-if="cargandoUnidades">Cargando…</p>
+      <p v-else-if="unidades.length === 0" class="ciclos-page__vacio">
+        Este ciclo todavía no tiene unidades.
+      </p>
+      <DataTable
+        v-else
+        :columnas="[
+          { clave: 'number', etiqueta: 'Unidad' },
+          { clave: 'start_date', etiqueta: 'Inicio' },
+          { clave: 'end_date', etiqueta: 'Cierre' },
+          { clave: 'grades_due_date', etiqueta: 'Entrega de notas' },
+          { clave: 'report_card_enabled_date', etiqueta: 'Boletín habilitado' },
+        ]"
+        :filas="unidades"
+      />
+      <p class="ciclos-page__nota">
+        La fecha de entrega de notas y de habilitación del boletín las calcula el sistema
+        (RN-10) — no se escriben a mano.
+      </p>
+    </section>
+
+    <AppModal v-if="modalCicloAbierto" titulo="Agregar ciclo" @cerrar="modalCicloAbierto = false">
+      <form class="ciclos-page__formulario" @submit.prevent="guardarCiclo">
+        <FormField id="year" etiqueta="Año" tipo="number" v-model="formularioCiclo.year" />
+        <FormField id="start_date" etiqueta="Fecha de inicio" tipo="date" v-model="formularioCiclo.start_date" />
+        <FormField id="end_date" etiqueta="Fecha de cierre" tipo="date" v-model="formularioCiclo.end_date" />
+        <FormSelect
+          id="status"
+          etiqueta="Estado"
+          :opciones="OPCIONES_ESTADO"
+          v-model="formularioCiclo.status"
+        />
+        <AppButton tipo="submit" :deshabilitado="guardandoCiclo">
+          {{ guardandoCiclo ? "Guardando…" : "Guardar" }}
+        </AppButton>
+      </form>
+    </AppModal>
+
+    <AppModal v-if="modalUnidadAbierto" titulo="Agregar unidad" @cerrar="modalUnidadAbierto = false">
+      <form class="ciclos-page__formulario" @submit.prevent="guardarUnidad">
+        <FormField id="number" etiqueta="Número de unidad" tipo="number" v-model="formularioUnidad.number" />
+        <FormField
+          id="unit-start"
+          etiqueta="Fecha de inicio"
+          tipo="date"
+          v-model="formularioUnidad.start_date"
+        />
+        <FormField id="unit-end" etiqueta="Fecha de cierre" tipo="date" v-model="formularioUnidad.end_date" />
+        <AppButton tipo="submit" :deshabilitado="guardandoUnidad">
+          {{ guardandoUnidad ? "Guardando…" : "Guardar" }}
+        </AppButton>
+      </form>
+    </AppModal>
+  </section>
+</template>
+
+<style scoped>
+.ciclos-page__cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--espacio-xl);
+}
+
+.ciclos-page__cabecera h1,
+.ciclos-page__cabecera h2 {
+  font-family: var(--fuente-titulo);
+  font-size: var(--texto-md);
+  margin: 0;
+}
+
+.ciclos-page__accion {
+  background: none;
+  border: none;
+  color: var(--color-accion);
+  font-size: var(--texto-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ciclos-page__unidades {
+  margin-top: var(--espacio-xl);
+  padding-top: var(--espacio-xl);
+  border-top: 1px solid var(--color-linea);
+}
+
+.ciclos-page__vacio {
+  color: var(--color-tinta-suave);
+}
+
+.ciclos-page__nota {
+  color: var(--color-tinta-suave);
+  font-size: var(--texto-sm);
+  margin-top: var(--espacio-md);
+}
+
+.ciclos-page__formulario {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-lg);
+}
+</style>

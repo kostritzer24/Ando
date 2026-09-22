@@ -1,9 +1,13 @@
+export { default as AdminShell } from "./AdminShell.vue";
 export { default as AppButton } from "./AppButton.vue";
+export { default as AppModal } from "./AppModal.vue";
 export { default as BottomTabBar } from "./BottomTabBar.vue";
+export { default as DataTable } from "./DataTable.vue";
 export { default as DayTabs } from "./DayTabs.vue";
 export { default as EmptyState } from "./EmptyState.vue";
 export { default as ErrorBanner } from "./ErrorBanner.vue";
 export { default as FormField } from "./FormField.vue";
+export { default as FormSelect } from "./FormSelect.vue";
 export { default as ListRow } from "./ListRow.vue";
 export { default as TagPill } from "./TagPill.vue";
 export { default as TopAppBar } from "./TopAppBar.vue";

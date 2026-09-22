@@ -14,5 +14,9 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     globals: true,
+    // `e2e/` son pruebas de Playwright (`npm run e2e`), no de Vitest —
+    // sin este exclude, Vitest las recoge también por el patrón
+    // `*.spec.ts` por omisión y truena porque no corren bajo su runner.
+    exclude: ["**/node_modules/**", "e2e/**"],
   },
 });

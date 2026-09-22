@@ -1,6 +1,6 @@
 # Cómo levantar el proyecto en local
 
-Guía para correr el backend y el frontend en tu máquina y mostrarle al equipo lo que hay hasta la Fase 3 (cimientos: inicio de sesión, roles y permisos — todavía no hay pantallas de negocio, esas empiezan en la Fase 4).
+Guía para correr el backend y el frontend en tu máquina y mostrarle al equipo lo que hay construido. Corré `cd backend && python manage.py seed_demo` después de las migraciones para tener datos de ejemplo (estudiantes, secciones, pagos con solventes e insolventes, etc.) — las credenciales de cada rol de prueba quedan impresas en la consola al correrlo.
 
 Esto **no** es la guía de despliegue a producción (esa es `docs/despliegue.md`, se escribe en la Fase 14). Esto es solo para desarrollo y demostración local.
 
@@ -31,10 +31,10 @@ Preparar la base de datos y los datos de prueba:
 
 ```bash
 python manage.py migrate
-python manage.py seed_fase3
+python manage.py seed_demo
 ```
 
-`seed_fase3` crea los 8 roles del proyecto y un usuario de prueba por cada uno (la lista completa de usuarios y contraseñas queda impresa en la terminal, y también más abajo en este documento).
+`seed_demo` crea los 8 roles del proyecto con un usuario de prueba por cada uno (la lista completa de usuarios y contraseñas queda impresa en la terminal, y también más abajo en este documento), más un ciclo escolar completo con secciones, estudiantes, asignaciones y pagos de ejemplo (algunos solventes, otros no) para poder mostrar el sistema con datos reales sin cargarlos a mano. Es un comando idempotente — correrlo de nuevo no duplica nada.
 
 Levantar el servidor:
 
@@ -117,7 +117,7 @@ Si el equipo rompe algo probando o querés reiniciar la demo:
 cd backend
 rm db.sqlite3
 python manage.py migrate
-python manage.py seed_fase3
+python manage.py seed_demo
 ```
 
 ---
@@ -144,4 +144,10 @@ cd frontend
 npm run lint
 npm run typecheck
 npm test
+
+# Frontend, de extremo a punta contra un navegador real (necesita el
+# backend corriendo con datos de seed_demo, y el frontend con `npm run dev`)
+npm run e2e
 ```
+
+Si cambiaste algo en el backend que afecte el contrato de la API (un campo nuevo, un endpoint nuevo), regenerá los tipos de TypeScript del frontend contra el backend local corriendo: `cd frontend && npm run types:generate`. Los tipos no se escriben a mano (sección 12.3 del prompt maestro).

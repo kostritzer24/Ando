@@ -22,6 +22,16 @@ export async function iniciarSesion(username: string, password: string): Promise
   return data;
 }
 
+export async function refrescarToken(): Promise<string> {
+  const { data } = await http.post<{ access: string }>("/auth/refresh/");
+  return data.access;
+}
+
+export async function obtenerPerfil(): Promise<Usuario> {
+  const { data } = await http.get<Usuario>("/auth/me/");
+  return data;
+}
+
 export async function cerrarSesion(): Promise<void> {
   await http.post("/auth/logout/");
 }

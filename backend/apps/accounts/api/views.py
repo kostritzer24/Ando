@@ -146,6 +146,23 @@ class ChangePasswordView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+class MeView(RegistraAccesoMixin, APIView):
+    """GET /auth/me/ — quién soy. Separado de `/users/{id}/` (área
+    "Usuarios y roles", exclusiva de Dirección/Administrador) a propósito:
+    cualquier persona autenticada puede consultar su propio perfil, no
+    hace falta un permiso de administración para eso. Es lo que el
+    frontend usa para reconstruir la sesión después de recargar la
+    página — el token de acceso vive solo en memoria (sección 14.1), así
+    que un refresco de navegador lo pierde y hay que reconstruir el
+    usuario a partir de la cookie de refresco."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(responses=UserSerializer)
+    def get(self, request):
+        return Response(UserSerializer(request.user).data)
+
+
 class UserViewSet(RegistraAccesoMixin, viewsets.ModelViewSet):
     """RF-01: crear usuarios y asignarles un rol. Solo Dirección y
     Administrador (docs/permisos-roles.md)."""

@@ -2,25 +2,11 @@
 
 Desde la Fase 4 en adelante, el trabajo avanza backend primero por fase; el frontend de negocio se construye en un bloque aparte más adelante (decisión del equipo, ver `docs/fase-4-cierre.md`). Este documento lleva la cuenta de qué pantallas quedan debiendo cada fase, para que esa pasada de frontend no tenga que releer todo el histórico de commits.
 
-**Momento decidido para ese bloque: al cerrar la Fase 9** (Pagos, solvencia y documentos), antes de entrar a la Fase 10. Razón: la Fase 9 es la última fase mayormente de backend del plan (sección 18 del prompt maestro); la Fase 10 (portal público) y la Fase 11 (comunicación) son trabajo de interfaz por naturaleza, así que construir el frontend justo antes evita hacerlo dos veces — y la Fase 10 se construye directamente con su propio frontend, sin separarle un "backend primero" artificial.
+**El bloque arrancó al cerrar la Fase 9** (Pagos, solvencia y documentos), como estaba decidido: la Fase 9 fue la última fase mayormente de backend del plan (sección 18 del prompt maestro); la Fase 10 (portal público) y la Fase 11 (comunicación) son trabajo de interfaz por naturaleza, así que construir el frontend justo antes evita hacerlo dos veces — y la Fase 10 se construye directamente con su propio frontend, sin separarle un "backend primero" artificial. Va fase por fase, con el mismo criterio de verificación en vivo que se usó en el backend (ver `docs/fase-4-frontend-cierre.md` para la primera).
 
 La Fase 3 es la excepción: su frontend (login, cambio de contraseña, guards por rol) ya está construido — ver `docs/fase-3-cimientos-plan.md`.
 
 ## Pendiente
-
-### Fase 4 — Datos maestros (RF-02)
-Pantallas de administración de los 9 catálogos, portal administrativo, rol Dirección (editar) / Coordinación (ver):
-
-- Ciclos escolares y sus unidades (con las fechas calculadas de solo lectura, RN-10)
-- Secciones (con selector de maestro guía, deshabilitado si el tipo es "taller" — ADR-0001)
-- Cursos
-- Tipos de actividad evaluativa
-- Tipos de justificación
-- Tipos de documento
-- Becas
-- Artículos del código de convivencia
-
-Contrato ya fijado en `docs/api.md`; los 9 recursos comparten el mismo patrón de lista + formulario + baja lógica, así que probablemente conviene una pantalla "genérica" de catálogo reutilizada 8 veces y una pantalla propia solo para Unidades (por la relación anidada con Ciclo) y Secciones (por el selector de maestro guía).
 
 ### Fase 5 — Expedientes y asignaciones (RF-03, RF-04, RF-05)
 Portal administrativo, rol Dirección:
@@ -93,3 +79,4 @@ Nota transversal: los cuatro documentos PDF (constancia de solvencia, de estudio
 ## Hecho
 
 - **Fase 3** — Login, cambio de contraseña obligatorio, guards de router por rol. (`frontend/src/features/auth/`)
+- **Fase 4** — Datos maestros: los 8 catálogos, portal administrativo, Dirección/Administrador editan y Coordinación solo ve (los botones de escritura se esconden para ese rol). Cierre completo en `docs/fase-4-frontend-cierre.md`. (`frontend/src/features/catalogo/`)

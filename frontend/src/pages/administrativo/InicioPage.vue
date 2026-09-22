@@ -9,8 +9,9 @@ const auth = useAuthStore();
     <h1>Portal administrativo</h1>
     <p>Hola, {{ auth.usuario?.first_name || auth.usuario?.username }}.</p>
     <p class="pagina-inicio__nota">
-      Los módulos de este portal (datos maestros, estudiantes, horarios, notas,
-      pagos, documentos, avisos y reportes) se agregan en las fases 4 a 12.
+      Los datos maestros ya están disponibles en el menú de la izquierda. El
+      resto de los módulos (estudiantes, horarios, notas, pagos, documentos,
+      avisos y reportes) se van agregando en las próximas fases.
     </p>
   </main>
 </template>
