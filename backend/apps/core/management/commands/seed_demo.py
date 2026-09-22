@@ -3,11 +3,14 @@ Comando de siembra de demostración: parte de `seed_fase3` (roles y
 usuarios de prueba) y agrega datos maestros reales — un ciclo escolar con
 sus 4 unidades, las 6 secciones de la jornada matutina más una de taller
 (sección 1 del prompt maestro), cursos, catálogos y los artículos del
-código de convivencia de `docs/reporte.docx` (ADR-0006).
+código de convivencia de `docs/reporte.docx` (ADR-0006) — más un puñado
+de estudiantes, encargados y asignaciones docentes para poder mostrar
+flujos completos.
 
 Es el mismo comando que se sigue extendiendo fase a fase hasta llegar al
 "sistema listo para demostración" de la sección 16 del prompt maestro —
-no se crea un comando nuevo por cada fase.
+no se crea un comando nuevo por cada fase. Vive en `core` (no en
+`catalog`) porque de acá en adelante toca varias apps a la vez.
 """
 
 from datetime import date
@@ -29,6 +32,14 @@ from apps.catalog.models import (
 )
 from apps.catalog.services.grading_unit import crear_unidad
 from apps.catalog.services.section import crear_seccion
+from apps.scheduling.domain.teacher_assignment import AsignacionInvalida
+from apps.scheduling.models import TeacherAssignment
+from apps.scheduling.services.teacher_assignment import crear_asignacion
+from apps.students.models import Student
+from apps.students.services.enrollment import YaInscritoEnEsteCiclo, inscribir_estudiante
+from apps.students.services.guardian import crear_encargado
+from apps.students.services.link import VinculoYaExiste, vincular_encargado_estudiante
+from apps.students.services.student import crear_estudiante
 
 _SECCIONES = [
     ("Primero básico", "A", Section.TIPO_ACADEMICA),
@@ -99,9 +110,17 @@ _ARTICULOS_CONDUCTA = [
     ("CAPÍTULO V: CUIDADO DEL ENTORNO", "Art. 14", "Conducta inapropiada en áreas comunes"),
 ]
 
+# (nombres, fecha de nacimiento, sección donde se inscribe)
+_ESTUDIANTES = [
+    ("María Ximena", "Pérez Tzul", date(2013, 5, 14), "Segundo básico", ""),
+    ("Juan Carlos", "López Xitumul", date(2012, 8, 2), "Segundo básico", ""),
+    ("Ana Lucía", "Con Morales", date(2011, 11, 20), "Tercero básico", ""),
+    ("Diego Alejandro", "Ramírez Cabrera", date(2010, 2, 9), "Primero básico", "A"),
+]
+
 
 class Command(BaseCommand):
-    help = "Siembra de demostración: roles, usuarios y datos maestros (fases 3 y 4)."
+    help = "Siembra de demostración: roles, usuarios, datos maestros, expedientes y asignaciones."
 
     @transaction.atomic
     def handle(self, *args, **options):
@@ -168,4 +187,80 @@ class Command(BaseCommand):
                 chapter=chapter, code=code, description=description
             )
 
-        self.stdout.write(self.style.SUCCESS("Siembra de demostración lista (fases 3 y 4)."))
+        self._sembrar_expedientes_y_asignaciones(ciclo)
+
+        self.stdout.write(self.style.SUCCESS("Siembra de demostración lista (fases 3 a 5)."))
+
+    def _sembrar_expedientes_y_asignaciones(self, ciclo):
+        if not Student.objects.exists():
+            for first_name, last_name, birth_date, grade, letter in _ESTUDIANTES:
+                estudiante = crear_estudiante(
+                    first_name=first_name, last_name=last_name, birth_date=birth_date
+                )
+                seccion = Section.objects.get(cycle=ciclo, grade=grade, letter=letter)
+                try:
+                    inscribir_estudiante(
+                        student=estudiante,
+                        section=seccion,
+                        cycle=ciclo,
+                        enrolled_at=ciclo.start_date,
+                    )
+                except YaInscritoEnEsteCiclo:
+                    pass
+            self.stdout.write(f"Estudiantes inscritos ({Student.objects.count()}).")
+
+        usuario_familia = User.objects.filter(username="familia.demo").first()
+        if usuario_familia and not hasattr(usuario_familia, "guardian"):
+            encargada = crear_encargado(user=usuario_familia, full_name="Encargada Demo")
+            primer_estudiante = Student.objects.order_by("internal_code").first()
+            if primer_estudiante:
+                try:
+                    vincular_encargado_estudiante(
+                        guardian=encargada,
+                        student=primer_estudiante,
+                        relationship="Madre",
+                        is_primary=True,
+                    )
+                except VinculoYaExiste:
+                    pass
+                self.stdout.write(f"Encargada vinculada a {primer_estudiante}.")
+
+        docente = User.objects.filter(username="docente.demo").first()
+        matematica = Course.objects.filter(name="Matemática").first()
+        segundo_basico = Section.objects.filter(
+            cycle=ciclo, grade="Segundo básico", type=Section.TIPO_ACADEMICA
+        ).first()
+        if (
+            docente
+            and matematica
+            and segundo_basico
+            and not TeacherAssignment.objects.filter(
+                teacher=docente, course=matematica, section=segundo_basico, cycle=ciclo
+            ).exists()
+        ):
+            try:
+                crear_asignacion(
+                    teacher=docente, course=matematica, section=segundo_basico, cycle=ciclo
+                )
+                self.stdout.write("Docente de demostración asignado a Matemática, Segundo básico.")
+            except AsignacionInvalida:
+                pass
+
+        tallerista = User.objects.filter(username="tallerista.demo").first()
+        panaderia = Course.objects.filter(name="Panadería").first()
+        seccion_taller = Section.objects.filter(cycle=ciclo, type=Section.TIPO_TALLER).first()
+        if (
+            tallerista
+            and panaderia
+            and seccion_taller
+            and not TeacherAssignment.objects.filter(
+                teacher=tallerista, course=panaderia, section=seccion_taller, cycle=ciclo
+            ).exists()
+        ):
+            try:
+                crear_asignacion(
+                    teacher=tallerista, course=panaderia, section=seccion_taller, cycle=ciclo
+                )
+                self.stdout.write("Tallerista de demostración asignado al taller de panadería.")
+            except AsignacionInvalida:
+                pass
