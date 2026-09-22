@@ -2,6 +2,8 @@
 
 Desde la Fase 4 en adelante, el trabajo avanza backend primero por fase; el frontend de negocio se construye en un bloque aparte más adelante (decisión del equipo, ver `docs/fase-4-cierre.md`). Este documento lleva la cuenta de qué pantallas quedan debiendo cada fase, para que esa pasada de frontend no tenga que releer todo el histórico de commits.
 
+**Momento decidido para ese bloque: al cerrar la Fase 9** (Pagos, solvencia y documentos), antes de entrar a la Fase 10. Razón: la Fase 9 es la última fase mayormente de backend del plan (sección 18 del prompt maestro); la Fase 10 (portal público) y la Fase 11 (comunicación) son trabajo de interfaz por naturaleza, así que construir el frontend justo antes evita hacerlo dos veces — y la Fase 10 se construye directamente con su propio frontend, sin separarle un "backend primero" artificial.
+
 La Fase 3 es la excepción: su frontend (login, cambio de contraseña, guards por rol) ya está construido — ver `docs/fase-3-cimientos-plan.md`.
 
 ## Pendiente
