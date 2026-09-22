@@ -9,6 +9,7 @@ router.register("grades", views.GradeViewSet, basename="grade")
 router.register(
     "grade-change-requests", views.GradeChangeRequestViewSet, basename="grade-change-request"
 )
+router.register("report-cards", views.ReportCardViewSet, basename="report-card")
 
 urlpatterns = [
     path(

@@ -1,0 +1,119 @@
+{% comment %}
+Plantilla base de todo documento emitido (RF-08, RF-09, RF-11). Tipografía
+sans-serif del sistema, no las fuentes de marca (Archivo/Public Sans) de
+docs/diseno/direccion-visual.md: WeasyPrint corre en un proceso de
+servidor sin acceso a internet garantizado, así que se evita depender de
+Google Fonts para no arriesgar la generación de un documento oficial. Los
+colores de marca sí se mantienen (RNF-08).
+{% endcomment %}
+<!DOCTYPE html>
+<html lang="es-GT">
+<head>
+<meta charset="utf-8">
+<style>
+  @page {
+    size: letter;
+    margin: 2.2cm 2cm;
+  }
+  body {
+    font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
+    color: #1a1a1a;
+    font-size: 11.5pt;
+    line-height: 1.5;
+  }
+  .membrete {
+    display: flex;
+    align-items: center;
+    gap: 0.6cm;
+    border-bottom: 2pt solid #1C6EA4;
+    padding-bottom: 0.4cm;
+    margin-bottom: 1cm;
+  }
+  .membrete img {
+    width: 1.8cm;
+    height: 1.8cm;
+  }
+  .membrete .nombre {
+    font-weight: 800;
+    font-size: 13pt;
+    color: #1C6EA4;
+  }
+  .membrete .direccion {
+    font-size: 9pt;
+    color: #555;
+  }
+  h1 {
+    font-size: 14pt;
+    font-weight: 800;
+    text-align: center;
+    margin: 0.6cm 0 1cm;
+    text-transform: none;
+  }
+  .cuerpo p {
+    text-align: justify;
+    margin: 0 0 0.5cm;
+  }
+  .firma {
+    margin-top: 2.5cm;
+    display: flex;
+    justify-content: space-between;
+  }
+  .firma .linea {
+    width: 45%;
+    border-top: 1pt solid #1a1a1a;
+    text-align: center;
+    padding-top: 0.2cm;
+    font-size: 9.5pt;
+    color: #444;
+  }
+  .pie {
+    margin-top: 2cm;
+    padding-top: 0.4cm;
+    border-top: 0.5pt solid #ccc;
+    display: flex;
+    align-items: center;
+    gap: 0.5cm;
+    font-size: 8pt;
+    color: #666;
+  }
+  .pie img {
+    width: 2.1cm;
+    height: 2.1cm;
+  }
+  .pie .codigo {
+    font-family: "Courier New", monospace;
+    letter-spacing: 0.05em;
+  }
+</style>
+</head>
+<body>
+  <div class="membrete">
+    <img src="data:image/png;base64,{{ logo_base64 }}" alt="Logo El Patojismo">
+    <div>
+      <div class="nombre">El Patojismo — Centro Socioeducativo Lic. Magno Rudy Romero Arévalo</div>
+      <div class="direccion">Edificio CDO, Jocotenango, Sacatepéquez, Guatemala</div>
+    </div>
+  </div>
+
+  <h1>{{ titulo }}</h1>
+
+  <div class="cuerpo">
+    {% block cuerpo %}{% endblock %}
+  </div>
+
+  <div class="firma">
+    <div class="linea">Firma</div>
+    <div class="linea">Sello</div>
+  </div>
+
+  <div class="pie">
+    <img src="data:image/png;base64,{{ qr_base64 }}" alt="Código QR de verificación">
+    <div>
+      Documento emitido el {{ emitido_el }}. Para verificar su autenticidad, escaneá el
+      código QR o ingresá el código <span class="codigo">{{ codigo_verificacion }}</span>
+      en la página pública de verificación. Este documento no lleva firma ni sello
+      digital (RN-15) — es válido con la firma y el sello hechos a mano.
+    </div>
+  </div>
+</body>
+</html>

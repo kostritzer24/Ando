@@ -1,6 +1,6 @@
 # Modelo de datos
 
-Modelo físico derivado de las 25 entidades del Capítulo IV (sección 8 del prompt maestro), con las decisiones de [ADR-0001](adr/0001-modelado-talleres-como-seccion.md), [ADR-0002](adr/0002-relacion-encargado-estudiante.md), [ADR-0003](adr/0003-redondeo-nota-final.md) y [ADR-0004](adr/0004-bitacora-de-cambios-formato.md) ya incorporadas. 26 tablas: las 25 entidades originales más `GuardianStudentLink`, la tabla intermedia introducida por el ADR-0002.
+Modelo físico derivado de las 25 entidades del Capítulo IV (sección 8 del prompt maestro), con las decisiones de [ADR-0001](adr/0001-modelado-talleres-como-seccion.md), [ADR-0002](adr/0002-relacion-encargado-estudiante.md), [ADR-0003](adr/0003-redondeo-nota-final.md), [ADR-0004](adr/0004-bitacora-de-cambios-formato.md) y [ADR-0006](adr/0006-formato-reporte-conducta.md) ya incorporadas. 29 tablas: las 25 entidades originales más `GuardianStudentLink` (ADR-0002), `ConductRuleArticle` y `ConductReportArticle` (ADR-0006), y `ReportCard` (Fase 9, RF-09).
 
 Convenciones válidas para todas las tablas, salvo que se indique lo contrario:
 
@@ -107,6 +107,19 @@ Restricción: `unique(enrollment_id, activity_id)`.
 | authorized_by_id | FK → accounts.User, nullable | solo Dirección, RN-05 |
 | decided_at | datetime, nullable | |
 
+### `grading.ReportCard` — Boletín *(agregada en la Fase 9, RF-09 — no estaba en la lista original de 25 entidades)*
+| Columna | Tipo | Notas |
+|---|---|---|
+| enrollment_id | FK → Enrollment | |
+| unit_id | FK → GradingUnit | |
+| status | enum: `borrador, aprobado, publicado` | |
+| generated_by_id | FK → accounts.User | |
+| approved_by_id | FK → accounts.User, nullable | |
+| approved_at | datetime, nullable | |
+| published_at | datetime, nullable | |
+
+Restricción: `unique(enrollment_id, unit_id)`. No guarda el contenido del boletín (curso por curso) — eso se calcula al mostrarlo o descargarlo con la misma función de `grading/domain/scoring.py` que calcula la nota final en cualquier otra parte del sistema (ADR-0003: nunca se duplica ese cálculo). Publicar exige RN-09 (solvencia al cierre de la unidad) y RN-10 (plazo cumplido), validado en `grading/services/report_card.py`.
+
 ---
 
 ## 2. Área de estudiantes y control administrativo
@@ -190,27 +203,29 @@ Restricción: `unique(enrollment_id, date)`. RN-11 (tardanza a las 8:05, pérdid
 | receipt_number | varchar, único | |
 | recorded_by_id | FK → accounts.User | solo Encargado de pagos o Dirección |
 
-Restricción: `unique(enrollment_id, period_year, period_month)`.
+Restricción: `unique(enrollment_id, period_year, period_month)`. `period_month` con `CheckConstraint` 1–12. RNF-06: cada pago registrado escribe también en `core.AuditLog` (acción `crear`).
 
-### `payments.Scholarship` — Beca
+### `catalog.Scholarship` — Beca *(corrección de la Fase 9: vive en `catalog`, no en `payments`)*
+El Capítulo IV la agrupa conceptualmente con pagos, pero es un dato maestro que Dirección administra desde la pantalla de catálogos (dato maestro 7, Fase 4) — no una tabla de la app `payments`. Se corrige acá para que el modelo documentado coincida con el código.
 | Columna | Tipo | Notas |
 |---|---|---|
 | name | varchar | |
 | description | text | |
 
-RN-08: un estudiante con `Enrollment.scholarship_id` no nulo y la beca activa aparece siempre solvente, sin importar `Payment`.
+RN-08: un estudiante con `Enrollment.scholarship_id` no nulo aparece siempre solvente, sin importar `Payment` — calculado en `payments/domain/solvency.py`.
 
 ### `documents.IssuedDocument` — Documento emitido
 | Columna | Tipo | Notas |
 |---|---|---|
 | document_type_id | FK → catalog.DocumentType | |
 | enrollment_id | FK → Enrollment | |
-| verification_code | varchar, único, aleatorio no correlativo | RF-14, sección 14.2 |
-| file_reference | varchar | ruta/clave de almacenamiento, servida solo detrás de autorización |
+| verification_code | varchar, único, aleatorio no correlativo | RF-14, sección 14.2 — 12 caracteres hexadecimales |
+| file | file (`FileField`), no `varchar` | servido solo detrás de autorización, nunca por `MEDIA_URL` público |
+| custom_text | text, vacío salvo carta membretada | única plantilla con texto libre; las constancias tienen redacción fija |
 | issued_at | datetime | |
 | issued_by_id | FK → accounts.User | |
 
-Índice: `verification_code` (único, consultado sin sesión desde la página de verificación).
+Índice: `verification_code` (único, consultado sin sesión desde la página de verificación). El PDF se genera con WeasyPrint desde una plantilla HTML por `document_type.template_key` (`constancia_solvencia`, `constancia_estudio`, `constancia_conducta`, `carta_membretada`) y un código QR (librería `qrcode`) que apunta a `{FRONTEND_URL}/verificar/{código}` — ver ADR-0005.
 
 ---
 
@@ -347,6 +362,8 @@ erDiagram
     Activity ||--o{ Grade : recibe
     Grade ||--o{ GradeChangeRequest : solicita
     Enrollment ||--o{ Grade : obtiene
+    Enrollment ||--o{ ReportCard : recibe
+    GradingUnit ||--o{ ReportCard : cierra
 
     Student ||--o{ Enrollment : se_inscribe
     Student ||--o{ GuardianStudentLink : vinculado_con

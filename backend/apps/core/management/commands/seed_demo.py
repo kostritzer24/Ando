@@ -14,10 +14,12 @@ no se crea un comando nuevo por cada fase. Vive en `core` (no en
 """
 
 from datetime import date
+from decimal import Decimal
 
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.db import transaction
+from django.utils import timezone
 
 from apps.accounts.models import User
 from apps.catalog.models import (
@@ -32,10 +34,13 @@ from apps.catalog.models import (
 )
 from apps.catalog.services.grading_unit import crear_unidad
 from apps.catalog.services.section import crear_seccion
+from apps.payments.domain.solvency import meses_del_periodo
+from apps.payments.models import Payment
+from apps.payments.services.payment import registrar_pago
 from apps.scheduling.domain.teacher_assignment import AsignacionInvalida
 from apps.scheduling.models import TeacherAssignment
 from apps.scheduling.services.teacher_assignment import crear_asignacion
-from apps.students.models import Student
+from apps.students.models import Enrollment, Student
 from apps.students.services.enrollment import YaInscritoEnEsaSeccion, inscribir_estudiante
 from apps.students.services.guardian import crear_encargado
 from apps.students.services.link import VinculoYaExiste, vincular_encargado_estudiante
@@ -129,8 +134,13 @@ class Command(BaseCommand):
         ciclo, creado = SchoolCycle.objects.get_or_create(
             year=2026,
             defaults={
-                "start_date": "2026-01-12",
-                "end_date": "2026-10-30",
+                # Objetos date(...) reales, no texto: el objeto que
+                # devuelve get_or_create() se sigue usando en memoria el
+                # resto del comando (más abajo, en _sembrar_pagos, se le
+                # hace aritmética de fechas) — un `str` ahí revienta
+                # aunque Django lo hubiera guardado bien en la base.
+                "start_date": date(2026, 1, 12),
+                "end_date": date(2026, 10, 30),
                 "status": SchoolCycle.ESTADO_ACTIVO,
             },
         )
@@ -188,8 +198,9 @@ class Command(BaseCommand):
             )
 
         self._sembrar_expedientes_y_asignaciones(ciclo)
+        self._sembrar_pagos(ciclo)
 
-        self.stdout.write(self.style.SUCCESS("Siembra de demostración lista (fases 3 a 5)."))
+        self.stdout.write(self.style.SUCCESS("Siembra de demostración lista (fases 3 a 9)."))
 
     def _sembrar_expedientes_y_asignaciones(self, ciclo):
         if not Student.objects.exists():
@@ -281,3 +292,57 @@ class Command(BaseCommand):
                 self.stdout.write("Tallerista de demostración asignado al taller de panadería.")
             except AsignacionInvalida:
                 pass
+
+    def _sembrar_pagos(self, ciclo):
+        """RF-07/RN-08, sección 16: deja el sistema con una mezcla real de
+        estudiantes solventes e insolventes para poder demostrar la
+        constancia de solvencia (RF-08) en ambos casos sin tener que
+        registrar pagos a mano antes de la demo."""
+        if Payment.objects.exists():
+            return
+        usuario_pagos = User.objects.filter(username="pagos.demo").first()
+        estudiantes = list(Student.objects.order_by("internal_code")[:4])
+        if not usuario_pagos or len(estudiantes) < 4:
+            return
+
+        def _inscripcion_academica(estudiante):
+            return Enrollment.objects.filter(
+                student=estudiante, cycle=ciclo, section__type=Section.TIPO_ACADEMICA
+            ).first()
+
+        solvente, becada, insolvente, parcial = (_inscripcion_academica(e) for e in estudiantes)
+
+        beca = Scholarship.objects.filter(name="Beca completa").first()
+        if becada and beca and becada.scholarship_id is None:
+            becada.scholarship = beca
+            becada.save(update_fields=["scholarship"])
+
+        hoy = timezone.localdate()
+        meses = sorted(meses_del_periodo(inicio=ciclo.start_date, hasta=min(hoy, ciclo.end_date)))
+
+        def _pagar(inscripcion, meses_a_pagar):
+            for anio, mes in meses_a_pagar:
+                receipt = f"DEMO-{inscripcion.student.internal_code}-{anio}{mes:02d}"
+                if Payment.objects.filter(receipt_number=receipt).exists():
+                    continue
+                registrar_pago(
+                    enrollment=inscripcion,
+                    period_month=mes,
+                    period_year=anio,
+                    amount=Decimal("150.00"),
+                    payment_date=date(anio, mes, 1),
+                    receipt_number=receipt,
+                    recorded_by=usuario_pagos,
+                )
+
+        if solvente:
+            _pagar(solvente, meses)  # al día con todos los meses transcurridos.
+        if parcial and len(meses) > 1:
+            _pagar(parcial, meses[:-1])  # le falta el mes más reciente: insolvente.
+        # `insolvente` se queda sin ningún pago a propósito.
+        # `becada` no necesita pagos: la beca la deja solvente igual (RN-08).
+
+        self.stdout.write(
+            "Pagos de demostración listos: un estudiante solvente, uno becado, "
+            "uno sin pagos y uno con un mes pendiente."
+        )

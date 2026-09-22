@@ -1,10 +1,10 @@
 from rest_framework import serializers
 
-from apps.catalog.models import ActivityType, GradingUnit
+from apps.catalog.models import ActivityType, GradingUnit, Section
 from apps.scheduling.models import TeacherAssignment
 from apps.students.models import Enrollment
 
-from ..models import Activity, Grade, GradeChangeRequest
+from ..models import Activity, Grade, GradeChangeRequest, ReportCard
 
 
 class ActivitySerializer(serializers.ModelSerializer):
@@ -91,3 +91,38 @@ class GradeChangeRequestSerializer(serializers.ModelSerializer):
             "authorized_by",
             "decided_at",
         ]
+
+
+class ReportCardSerializer(serializers.ModelSerializer):
+    enrollment = serializers.SlugRelatedField(
+        slug_field="public_id", queryset=Enrollment.objects.all()
+    )
+    unit = serializers.SlugRelatedField(slug_field="public_id", queryset=GradingUnit.objects.all())
+    generated_by = serializers.CharField(source="generated_by.username", read_only=True)
+    approved_by = serializers.CharField(source="approved_by.username", read_only=True, default=None)
+
+    class Meta:
+        model = ReportCard
+        fields = [
+            "public_id",
+            "enrollment",
+            "unit",
+            "status",
+            "generated_by",
+            "approved_by",
+            "approved_at",
+            "published_at",
+        ]
+        read_only_fields = [
+            "public_id",
+            "status",
+            "generated_by",
+            "approved_by",
+            "approved_at",
+            "published_at",
+        ]
+
+
+class ReportCardGenerateSerializer(serializers.Serializer):
+    section = serializers.SlugRelatedField(slug_field="public_id", queryset=Section.objects.all())
+    unit = serializers.SlugRelatedField(slug_field="public_id", queryset=GradingUnit.objects.all())

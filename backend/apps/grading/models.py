@@ -124,3 +124,58 @@ class GradeChangeRequest(BaseModel):
 
     def __str__(self) -> str:
         return f"Modificación de {self.grade} ({self.status})"
+
+
+class ReportCard(BaseModel):
+    """Boletín de una unidad para una inscripción (RF-09). Solo registra el
+    estado del flujo (borrador → aprobado → publicado) — el contenido
+    (curso por curso) se calcula al momento de mostrarlo o descargarlo con
+    `grading/domain/scoring.py`, la misma función que calcula la nota en
+    cualquier otra parte del sistema (ADR-0003: no se duplica el cálculo)."""
+
+    ESTADO_BORRADOR = "borrador"
+    ESTADO_APROBADO = "aprobado"
+    ESTADO_PUBLICADO = "publicado"
+    ESTADOS = [
+        (ESTADO_BORRADOR, "Borrador"),
+        (ESTADO_APROBADO, "Aprobado"),
+        (ESTADO_PUBLICADO, "Publicado"),
+    ]
+
+    enrollment = models.ForeignKey(
+        Enrollment,
+        verbose_name="inscripción",
+        on_delete=models.PROTECT,
+        related_name="report_cards",
+    )
+    unit = models.ForeignKey(
+        GradingUnit, verbose_name="unidad", on_delete=models.PROTECT, related_name="report_cards"
+    )
+    status = models.CharField("estado", max_length=20, choices=ESTADOS, default=ESTADO_BORRADOR)
+    generated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name="generado por",
+        on_delete=models.PROTECT,
+        related_name="report_cards_generated",
+    )
+    approved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name="aprobado por",
+        on_delete=models.PROTECT,
+        related_name="report_cards_approved",
+        null=True,
+        blank=True,
+    )
+    approved_at = models.DateTimeField("fecha de aprobación", null=True, blank=True)
+    published_at = models.DateTimeField("fecha de publicación", null=True, blank=True)
+
+    class Meta:
+        verbose_name = "boletín"
+        verbose_name_plural = "boletines"
+        ordering = ["-unit", "enrollment"]
+        constraints = [
+            models.UniqueConstraint(fields=["enrollment", "unit"], name="boletin_unico_por_unidad"),
+        ]
+
+    def __str__(self) -> str:
+        return f"Boletín de {self.enrollment} — {self.unit} ({self.status})"

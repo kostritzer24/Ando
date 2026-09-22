@@ -1,7 +1,7 @@
 import factory
 from factory.django import DjangoModelFactory
 
-from apps.catalog.models import Course, GradingUnit, SchoolCycle, Section
+from apps.catalog.models import Course, DocumentType, GradingUnit, Scholarship, SchoolCycle, Section
 
 
 class SchoolCycleFactory(DjangoModelFactory):
@@ -43,3 +43,21 @@ class CourseFactory(DjangoModelFactory):
 
     name = factory.Sequence(lambda n: f"Curso de prueba {n}")
     type = Course.TIPO_ACADEMICO
+
+
+class ScholarshipFactory(DjangoModelFactory):
+    class Meta:
+        model = Scholarship
+        django_get_or_create = ("name",)
+
+    name = "Beca completa"
+    description = "Cubre el 100 % de la mensualidad."
+
+
+class DocumentTypeFactory(DjangoModelFactory):
+    class Meta:
+        model = DocumentType
+        django_get_or_create = ("name",)
+
+    name = "Constancia de solvencia"
+    template_key = "constancia_solvencia"

@@ -75,6 +75,21 @@ Portal administrativo, rol Dirección:
 
 Portal público, calendario institucional de solo lectura — ya con datos reales disponibles, pero esa pantalla específica corresponde a una fase posterior del portal público, no a esta.
 
+### Fase 9 — Pagos, solvencia y documentos (RF-07 a RF-09, RF-11, RF-14)
+Portal administrativo, rol Encargado de pagos / Dirección:
+
+- Registrar un pago (`POST /payments/`): mes, año, monto, fecha de pago, número de recibo — sin edición ni baja posterior, es un comprobante, no un borrador (ver `docs/fase-9-cierre.md`)
+- Consultar el estado de solvencia de un estudiante (`GET /solvency/{enrollment}/`) con el detalle de meses pendientes, y el botón "Emitir constancia de solvencia" (`POST /solvency/{enrollment}/certificate/`) — deshabilitado o con aviso claro cuando el estudiante no está solvente, porque el backend lo rechaza (RN-08)
+- Emitir constancias de estudio, de buena conducta y cartas membretadas (`POST /documents/issue/`) — el formulario de carta membretada es el único con un campo de texto libre; los otros tres tipos no piden nada más que elegir el estudiante
+- Bandeja de documentos ya emitidos, con "volver a descargar" (`GET /documents/{id}/download/`) en vez de regenerar
+
+Portal operativo, rol Dirección:
+- Bandeja de boletines por sección/unidad: "Generar" (`POST /report-cards/generate/`, por lote) deja cada boletín en borrador; "Aprobar" y "Publicar" actúan uno por uno — la pantalla debe mostrar por qué un boletín no se puede publicar todavía (RN-10: falta el plazo; RN-09: el estudiante no está solvente) con el mensaje que ya devuelve el backend, no uno inventado en el frontend
+
+Portal público (familia), ya con datos reales disponibles para RF-33 (consultar solvencia y descargar constancia) y RF-34 (descargar boletín publicado) — no se construyen todavía porque esas pantallas específicas son Fase 10.
+
+Nota transversal: los cuatro documentos PDF (constancia de solvencia, de estudio, de conducta y carta membretada) ya se generan con el membrete institucional, código QR y espacio para firma/sello a mano (RN-15) desde el backend — no hace falta ningún trabajo de diseño de documento en el frontend, solo el botón que dispara la descarga.
+
 ## Hecho
 
 - **Fase 3** — Login, cambio de contraseña obligatorio, guards de router por rol. (`frontend/src/features/auth/`)

@@ -137,6 +137,10 @@ SIMPLE_JWT = {
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
+# ---- Frontend (para construir el enlace que codifica el QR de RF-14) -----
+
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:5173")
+
 # ---- CORS -----------------------------------------------------------------
 
 CORS_ALLOWED_ORIGINS = [

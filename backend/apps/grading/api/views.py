@@ -1,3 +1,4 @@
+from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from drf_spectacular.types import OpenApiTypes
@@ -6,6 +7,7 @@ from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.parsers import MultiPartParser
+from rest_framework.permissions import BasePermission
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -14,11 +16,13 @@ from apps.core.api.mixins import RegistraAccesoMixin, ScopedQuerysetMixin
 from apps.core.permissions import PermisoPorArea
 from apps.scheduling.models import TeacherAssignment
 
+from ..domain.report_card import TransicionDeBoletinInvalida
 from ..domain.unit_design import DefinicionDeUnidadInvalida
-from ..models import Activity, Grade, GradeChangeRequest
+from ..models import Activity, Grade, GradeChangeRequest, ReportCard
 from ..services.activity import AsignacionNoCalifica, crear_actividad
 from ..services.grade import PunteoFueraDeRango, YaCalificado, registrar_punteo
 from ..services.grade_change_request import resolver_modificacion, solicitar_modificacion
+from ..services.report_card import aprobar_boletin, generar_boletines, publicar_boletin
 from ..services.template import (
     UnidadSinActividades,
     aplicar_plantilla,
@@ -30,6 +34,8 @@ from .serializers import (
     GradeChangeRequestSerializer,
     GradeCreateSerializer,
     GradeSerializer,
+    ReportCardGenerateSerializer,
+    ReportCardSerializer,
 )
 
 _ROLES_SIN_ALCANCE_LIMITADO = {
@@ -38,7 +44,18 @@ _ROLES_SIN_ALCANCE_LIMITADO = {
     "Encargado de pagos",
     "Administrador del sistema",
 }
+_ROLES_SIN_ALCANCE_LIMITADO_BOLETIN = {"Dirección", "Coordinación", "Administrador del sistema"}
 _ROLES_DOCENTES_QUE_CALIFICAN = {"Docente", "Docente con sección a cargo"}
+ROL_DIRECCION = "Dirección"
+
+
+class _SoloDireccion(BasePermission):
+    """`docs/api.md` documenta generar, aprobar y publicar boletines como
+    `DIR (E)` únicamente — más estricto que el `E` que DOC/GUÍA tienen en
+    el área "notas" para actividades y calificaciones."""
+
+    def has_permission(self, request, view) -> bool:
+        return bool(request.user and request.user.role.name == ROL_DIRECCION)
 
 
 def _requiere_asignacion_propia(user, assignment: TeacherAssignment) -> None:
@@ -297,3 +314,67 @@ class GradeTemplateUploadView(RegistraAccesoMixin, APIView):
 
         resultado = aplicar_plantilla(filas_validas=filas_validas, recorded_by=request.user)
         return Response(resultado, status=status.HTTP_201_CREATED)
+
+
+class ReportCardViewSet(
+    RegistraAccesoMixin,
+    ScopedQuerysetMixin,
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    viewsets.GenericViewSet,
+):
+    """RF-09. Generar es una acción de lote sobre una sección/unidad;
+    aprobar y publicar actúan sobre un boletín individual."""
+
+    queryset = ReportCard.objects.all()
+    serializer_class = ReportCardSerializer
+    area = "notas"
+    lookup_field = "public_id"
+
+    def get_permissions(self):
+        if self.action in {"generate", "approve", "publish"}:
+            return [PermisoPorArea(), _SoloDireccion()]
+        return [PermisoPorArea()]
+
+    def scope_queryset(self, queryset, user):
+        if user.role.name in _ROLES_SIN_ALCANCE_LIMITADO_BOLETIN:
+            return queryset
+        if user.role.name in _ROLES_DOCENTES_QUE_CALIFICAN:
+            return queryset.filter(
+                Q(enrollment__section__assignments__teacher=user)
+                | Q(enrollment__section__homeroom_teacher=user)
+            ).distinct()
+        if user.role.name == "Padre de familia":
+            return queryset.filter(
+                enrollment__student__guardian_links__guardian__user=user,
+                enrollment__student__guardian_links__is_active=True,
+                status=ReportCard.ESTADO_PUBLICADO,
+            ).distinct()
+        return queryset.none()
+
+    @action(detail=False, methods=["post"], url_path="generate")
+    def generate(self, request):
+        serializer = ReportCardGenerateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        boletines = generar_boletines(generated_by=request.user, **serializer.validated_data)
+        return Response(
+            ReportCardSerializer(boletines, many=True).data, status=status.HTTP_201_CREATED
+        )
+
+    @action(detail=True, methods=["post"], url_path="approve")
+    def approve(self, request, public_id=None):
+        boletin = self.get_object()
+        try:
+            aprobar_boletin(boletin, approved_by=request.user)
+        except TransicionDeBoletinInvalida as exc:
+            raise ValidationError(str(exc)) from exc
+        return Response(ReportCardSerializer(boletin).data)
+
+    @action(detail=True, methods=["post"], url_path="publish")
+    def publish(self, request, public_id=None):
+        boletin = self.get_object()
+        try:
+            publicar_boletin(boletin)
+        except TransicionDeBoletinInvalida as exc:
+            raise ValidationError(str(exc)) from exc
+        return Response(ReportCardSerializer(boletin).data)

@@ -36,7 +36,9 @@ No hay alternativa razonable con menos peso: es la biblioteca mínima para esta 
 
 ## Decisión
 
-Confirmadas por el equipo. `openpyxl` ya está instalada y en uso desde la Fase 6 (`attendance/services/template.py`, RF-21). `weasyprint` y `qrcode` se instalan en la Fase 9, cuando exista código que las use.
+Confirmadas por el equipo. `openpyxl` ya está instalada y en uso desde la Fase 6 (`attendance/services/template.py`, RF-21). `weasyprint` y `qrcode` quedaron instaladas y en uso en la Fase 9 (`documents/services/issuance.py`, RF-08/RF-11/RF-14) — versiones `weasyprint==70.0` y `qrcode[pil]==8.2` en `requirements/base.txt`.
+
+**Nota de entorno local (macOS):** WeasyPrint necesita las bibliotecas de sistema de Pango/Cairo/GDK-Pixbuf en el buscador de dylibs. En Homebrew (`brew install pango`) esas rutas no quedan en el buscador por defecto de macOS, así que `backend/.venv/bin/activate` exporta `DYLD_FALLBACK_LIBRARY_PATH` apuntando a `/opt/homebrew/lib` — no aplica en producción, donde Render corre Linux con las dependencias de sistema instaladas directo (ver `docs/despliegue.md`, Fase 14).
 
 ## Consecuencias
 
