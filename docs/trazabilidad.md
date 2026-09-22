@@ -15,7 +15,7 @@ Este documento se reconstruye desde el código a medida que avanza cada fase; lo
 | RF | Requerimiento | HU / RN | Módulo | Endpoint | Prueba prevista |
 |---|---|---|---|---|---|
 | RF-01 | Crear usuarios y asignar rol | — | `accounts` | `POST/PATCH /users/` | `test_rf01_crear_usuario_asigna_rol.py` |
-| RF-02 | Administrar datos maestros | HU-02 | `catalog` | `CRUD /cycles/`, `/sections/`, `/courses/`, etc. | `test_rf02_hu02_catalogo_<recurso>.py` (uno por catálogo) |
+| RF-02 | Administrar datos maestros | HU-02 | `catalog` | `CRUD /cycles/`, `/cycles/{id}/units/`, `/sections/`, `/courses/`, etc. | `test_rf02_hu02_catalogo_ciclos.py`, `test_rf02_catalogos_simples.py` (6 catálogos parametrizados), `test_rf02_unidad_fechas_calculadas.py` (RN-10), `test_rf02_seccion_maestro_guia.py` (ADR-0001) |
 | RF-03 | Inscribir estudiantes | HU-03 | `students` | `POST /students/`, `POST /enrollments/` | `test_rf03_hu03_inscripcion_codigo_unico.py` |
 | RF-04 | Vincular encargado con estudiantes | ADR-0002 | `students` | `POST /guardians/{id}/link-student/` | `test_rf04_vincular_encargado_estudiante.py` |
 | RF-05 | Asignar docentes, talleristas y maestro guía | HU-05 | `scheduling` | `POST /assignments/` | `test_rf05_hu05_asignacion_docente_curso.py` |

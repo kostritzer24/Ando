@@ -29,3 +29,13 @@ class ScopedQuerysetMixin:
 
     def scope_queryset(self, queryset, user):
         raise NotImplementedError(f"{self.__class__.__name__} debe implementar scope_queryset().")
+
+
+class BajaLogicaMixin:
+    """Nada se borra de verdad (sección 8.5 del prompt maestro, HU-02: "un
+    registro maestro en uso se desactiva, no se elimina"). `DELETE` da de
+    baja lógica en vez de borrar la fila."""
+
+    def perform_destroy(self, instance):
+        instance.is_active = False
+        instance.save(update_fields=["is_active", "updated_at"])

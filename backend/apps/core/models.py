@@ -4,6 +4,21 @@ from django.conf import settings
 from django.db import models
 
 
+class BaseModel(models.Model):
+    """Columnas que se repiten en casi toda entidad de negocio (sección 8.5
+    del prompt maestro): identificador público en UUID, baja lógica y
+    marcas de tiempo. `AuditLog`/`AccessLog` no la usan porque son de
+    solo escritura (ADR-0004) y no llevan baja lógica ni `updated_at`."""
+
+    public_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    is_active = models.BooleanField("activo", default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        abstract = True
+
+
 class AuditLog(models.Model):
     """Bitácora de cambios (RNF-06). De solo escritura: nunca se modifica ni
     se borra un registro ya creado — ver docs/adr/0004-bitacora-de-cambios-formato.md."""
