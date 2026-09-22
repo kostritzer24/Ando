@@ -127,10 +127,19 @@ class Enrollment(BaseModel):
         verbose_name_plural = "inscripciones"
         ordering = ["-cycle", "student"]
         constraints = [
-            # HU-03: no se puede inscribir dos veces al mismo estudiante
-            # en el mismo ciclo.
+            # HU-03 ("no se puede inscribir dos veces al mismo estudiante
+            # en el mismo ciclo") es por SECCIÓN, no por ciclo a secas:
+            # la sección 1 del prompt maestro describe ~40 participantes
+            # de talleres que son, al menos en parte, los mismos 144
+            # estudiantes de la jornada matutina — un estudiante necesita
+            # poder tener su inscripción académica y una de taller a la
+            # vez en el mismo ciclo. La regla de "una sola sección
+            # académica por ciclo" se aplica en
+            # students/services/enrollment.py, no acá, porque una
+            # restricción de base de datos no puede mirar el tipo de una
+            # tabla relacionada sin duplicar esa columna en Enrollment.
             models.UniqueConstraint(
-                fields=["student", "cycle"], name="inscripcion_unica_por_ciclo"
+                fields=["student", "cycle", "section"], name="inscripcion_unica_por_seccion"
             ),
         ]
 

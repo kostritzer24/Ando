@@ -155,7 +155,7 @@ Restricción: `unique(guardian_id, student_id)`.
 | status | enum: `activo, retirado, graduado, trasladado` | |
 | enrolled_at | date | |
 
-Restricción: `unique(student_id, cycle_id)` — HU-03: no se inscribe dos veces al mismo estudiante en el mismo ciclo. Esta es la entidad central del modelo (sección 8 del prompt maestro): todo lo académico, de asistencia, de pagos y de documentos cuelga de aquí, no directamente de `Student`.
+Restricción: `unique(student_id, cycle_id, section_id)` — HU-03: no se inscribe dos veces al mismo estudiante **en la misma sección**. Corregido durante la Fase 6, al construir la asistencia de talleres: la sección 1 del prompt maestro describe participantes de taller que son, al menos en parte, los mismos estudiantes de la jornada matutina, así que un estudiante necesita poder tener a la vez su sección académica y una de taller en el mismo ciclo. La regla de "una sola sección académica por ciclo" se valida en `students/services/enrollment.py`, no con una restricción de base de datos (que no puede mirar el tipo de una tabla relacionada sin duplicar esa columna). Esta es la entidad central del modelo (sección 8 del prompt maestro): todo lo académico, de asistencia, de pagos y de documentos cuelga de aquí, no directamente de `Student`.
 
 ### `attendance.Attendance` — Asistencia
 | Columna | Tipo | Notas |

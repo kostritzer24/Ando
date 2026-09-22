@@ -36,7 +36,7 @@ from apps.scheduling.domain.teacher_assignment import AsignacionInvalida
 from apps.scheduling.models import TeacherAssignment
 from apps.scheduling.services.teacher_assignment import crear_asignacion
 from apps.students.models import Student
-from apps.students.services.enrollment import YaInscritoEnEsteCiclo, inscribir_estudiante
+from apps.students.services.enrollment import YaInscritoEnEsaSeccion, inscribir_estudiante
 from apps.students.services.guardian import crear_encargado
 from apps.students.services.link import VinculoYaExiste, vincular_encargado_estudiante
 from apps.students.services.student import crear_estudiante
@@ -205,9 +205,26 @@ class Command(BaseCommand):
                         cycle=ciclo,
                         enrolled_at=ciclo.start_date,
                     )
-                except YaInscritoEnEsteCiclo:
+                except YaInscritoEnEsaSeccion:
                     pass
             self.stdout.write(f"Estudiantes inscritos ({Student.objects.count()}).")
+
+            # Un mismo estudiante también puede estar en un taller de la
+            # tarde (sección 1 del prompt maestro): demuestra que ya no
+            # está limitado a una sola inscripción por ciclo.
+            primer_estudiante = Student.objects.order_by("internal_code").first()
+            seccion_taller = Section.objects.filter(cycle=ciclo, type=Section.TIPO_TALLER).first()
+            if primer_estudiante and seccion_taller:
+                try:
+                    inscribir_estudiante(
+                        student=primer_estudiante,
+                        section=seccion_taller,
+                        cycle=ciclo,
+                        enrolled_at=ciclo.start_date,
+                    )
+                    self.stdout.write(f"{primer_estudiante} también inscrito en el taller.")
+                except YaInscritoEnEsaSeccion:
+                    pass
 
         usuario_familia = User.objects.filter(username="familia.demo").first()
         if usuario_familia and not hasattr(usuario_familia, "guardian"):

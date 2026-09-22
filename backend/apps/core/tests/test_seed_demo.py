@@ -25,7 +25,9 @@ def test_seed_demo_crea_expedientes_y_asignaciones():
     call_command("seed_demo")
 
     assert Student.objects.count() == 4
-    assert Enrollment.objects.count() == 4
+    # 5, no 4: el primer estudiante queda inscrito en su sección
+    # académica y también en el taller (ver ADR-0001, corrección Fase 6).
+    assert Enrollment.objects.count() == 5
     assert Guardian.objects.count() == 1
     assert GuardianStudentLink.objects.filter(is_active=True).count() == 1
     assert TeacherAssignment.objects.count() == 2

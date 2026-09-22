@@ -28,3 +28,5 @@ Consecuencia directa: **Actividad y Calificación solo se pueden crear sobre una
 - El dominio debe impedir la creación de Actividad/Calificación cuando la Asignación docente apunta a un Curso de tipo `'taller'`.
 - El maestro guía (`Section.homeroom_teacher`) solo aplica a secciones de tipo `'academica'`; una sección de taller no lleva maestro guía.
 - Los reportes que filtran "por sección" deben distinguir tipo de sección para no mezclar, por ejemplo, el consolidado de notas (que no aplica a talleres) con el de asistencia (que sí aplica a ambos).
+
+**Corrección (Fase 6):** la primera versión de `Enrollment` tenía `unique(student, cycle)`, que sin querer impedía que un mismo estudiante tuviera a la vez su sección académica y una de taller — justo la situación que esta ADR dice que hay que soportar. Se corrigió a `unique(student, cycle, section)`, con la regla de "una sola sección académica por ciclo" movida a `students/services/enrollment.py` (una restricción de base de datos no puede mirar `Section.type` sin duplicar esa columna en `Enrollment`). Ver `docs/modelo-datos.md`, sección de `Enrollment`.

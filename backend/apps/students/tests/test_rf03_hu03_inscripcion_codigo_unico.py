@@ -71,13 +71,13 @@ def test_rf03_docente_no_puede_inscribir_estudiantes_acceso_no_autorizado():
 
 
 @pytest.mark.django_db
-def test_hu03_no_se_puede_inscribir_dos_veces_en_el_mismo_ciclo():
+def test_hu03_no_se_puede_tener_dos_secciones_academicas_en_el_mismo_ciclo():
     rol = RoleFactory(name="Dirección", permissions={"estudiantes_encargados": "editar"})
     direccion = UserFactory(role=rol)
     estudiante = StudentFactory()
     ciclo = SchoolCycleFactory()
-    seccion_a = SectionFactory(cycle=ciclo, grade="Segundo básico", letter="A")
-    seccion_b = SectionFactory(cycle=ciclo, grade="Segundo básico", letter="B")
+    seccion_a = SectionFactory(cycle=ciclo, grade="Segundo básico", letter="A", type="academica")
+    seccion_b = SectionFactory(cycle=ciclo, grade="Segundo básico", letter="B", type="academica")
 
     client = APIClient()
     client.force_authenticate(user=direccion)
@@ -135,3 +135,61 @@ def test_hu03_el_mismo_estudiante_puede_inscribirse_en_ciclos_distintos():
         assert respuesta.status_code == 201
 
     assert Student.objects.get(pk=estudiante.pk).enrollments.count() == 2
+
+
+@pytest.mark.django_db
+def test_un_estudiante_puede_estar_en_su_seccion_academica_y_en_un_taller_a_la_vez():
+    """Corrección sobre la Fase 5: la sección 1 del prompt maestro dice
+    que los participantes de taller son, al menos en parte, los mismos
+    estudiantes de la jornada matutina — HU-03 impide inscribirse dos
+    veces en la MISMA sección, no tener una sección académica y una de
+    taller a la vez."""
+    rol = RoleFactory(name="Dirección", permissions={"estudiantes_encargados": "editar"})
+    direccion = UserFactory(role=rol)
+    estudiante = StudentFactory()
+    ciclo = SchoolCycleFactory()
+    seccion_academica = SectionFactory(cycle=ciclo, grade="Segundo básico", type="academica")
+    seccion_taller = SectionFactory(cycle=ciclo, grade="Taller de panadería", type="taller")
+
+    client = APIClient()
+    client.force_authenticate(user=direccion)
+
+    for seccion in (seccion_academica, seccion_taller):
+        respuesta = client.post(
+            "/api/v1/enrollments/",
+            {
+                "student": str(estudiante.public_id),
+                "section": str(seccion.public_id),
+                "cycle": str(ciclo.public_id),
+                "enrolled_at": "2026-01-12",
+            },
+            format="json",
+        )
+        assert respuesta.status_code == 201
+
+    assert Enrollment.objects.filter(student=estudiante, cycle=ciclo).count() == 2
+
+
+@pytest.mark.django_db
+def test_no_se_puede_inscribir_dos_veces_en_la_misma_seccion():
+    rol = RoleFactory(name="Dirección", permissions={"estudiantes_encargados": "editar"})
+    direccion = UserFactory(role=rol)
+    estudiante = StudentFactory()
+    ciclo = SchoolCycleFactory()
+    seccion = SectionFactory(cycle=ciclo, type="taller")
+
+    client = APIClient()
+    client.force_authenticate(user=direccion)
+
+    datos = {
+        "student": str(estudiante.public_id),
+        "section": str(seccion.public_id),
+        "cycle": str(ciclo.public_id),
+        "enrolled_at": "2026-01-12",
+    }
+    primera = client.post("/api/v1/enrollments/", datos, format="json")
+    segunda = client.post("/api/v1/enrollments/", datos, format="json")
+
+    assert primera.status_code == 201
+    assert segunda.status_code == 400
+    assert Enrollment.objects.filter(student=estudiante, cycle=ciclo).count() == 1

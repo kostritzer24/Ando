@@ -83,6 +83,13 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
+# Sin MEDIA_URL público a propósito (sección 14.2 del prompt maestro:
+# nada sensible se sirve desde una carpeta pública). Los archivos
+# subidos (por ejemplo, el documento de respaldo de una justificación)
+# se descargan por una vista autenticada que lee el archivo del disco,
+# nunca por una URL servida directo desde MEDIA_ROOT.
+MEDIA_ROOT = BASE_DIR / "media"
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # ---- DRF ----------------------------------------------------------------

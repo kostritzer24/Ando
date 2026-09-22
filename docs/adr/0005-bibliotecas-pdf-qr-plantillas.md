@@ -36,7 +36,7 @@ No hay alternativa razonable con menos peso: es la biblioteca mínima para esta 
 
 ## Decisión
 
-Confirmadas por el equipo. Se instalan cuando la Fase 3 arme `requirements/base.txt`, no antes de que exista código que las use.
+Confirmadas por el equipo. `openpyxl` ya está instalada y en uso desde la Fase 6 (`attendance/services/template.py`, RF-21). `weasyprint` y `qrcode` se instalan en la Fase 9, cuando exista código que las use.
 
 ## Consecuencias
 

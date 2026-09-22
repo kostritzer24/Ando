@@ -31,6 +31,19 @@ Portal administrativo, rol Dirección:
 Portal operativo:
 - `GET /assignments/?mine=...` (ya scoped por backend a "mis asignaciones") para que un docente/tallerista vea qué tiene asignado — insumo para las pantallas de asistencia y notas de las próximas fases, no hace falta una pantalla dedicada solo para esto todavía.
 
+### Fase 6 — Asistencia (RF-16, RF-12, RF-21)
+Portal operativo, rol Docente/Docente con sección a cargo/Tallerista (siempre limitado a sus propias secciones asignadas, el backend ya lo filtra):
+
+- Tomar asistencia diaria de una sección: lista de inscritos con un selector rápido presente/tarde/ausente/justificado por estudiante — HU-16 pide que se pueda hacer durante la clase o al final de la jornada, así que el diseño tiene que permitir guardar parcial y volver
+- Si se captura hora de llegada en vez de estado directo, mandar `check_in_time` y dejar que el backend decida presente/tarde (RN-11) — no calcular la tardanza en el frontend
+- Pantalla de justificaciones: registrar una (con archivo adjunto opcional) y, para Dirección, resolver (aprobar/rechazar) — la resolución es la única acción restringida a Dirección en toda esta fase
+- El documento de respaldo de una justificación se descarga con `GET /justifications/{id}/document/`, nunca con una URL directa (no hay `MEDIA_URL` público a propósito)
+
+Portal administrativo/operativo, para secciones de taller (RF-21):
+- Botón "Descargar plantilla" (`GET /attendance/template/{section}/{fecha}/`) y "Subir plantilla" (`POST /attendance/template/upload/`) — la subida devuelve una lista de errores por fila si algo no cuadra (ningún registro se guarda hasta que el archivo esté limpio); el diseño de esta pantalla de errores debe seguir el principio de "vista previa que no es un volcado técnico" de la sección 15.2 del prompt maestro
+
+Portal público (familia), ya con datos reales disponibles para RF-31 (consultar asistencia) — todavía no construido porque esa pantalla específica es Fase 10.
+
 ## Hecho
 
 - **Fase 3** — Login, cambio de contraseña obligatorio, guards de router por rol. (`frontend/src/features/auth/`)

@@ -1,0 +1,80 @@
+from rest_framework import serializers
+
+from apps.catalog.models import JustificationType
+from apps.students.models import Enrollment
+
+from ..models import Attendance, Justification
+
+
+class AttendanceSerializer(serializers.ModelSerializer):
+    enrollment = serializers.SlugRelatedField(
+        slug_field="public_id", queryset=Enrollment.objects.all()
+    )
+    recorded_by = serializers.CharField(source="recorded_by.username", read_only=True)
+
+    class Meta:
+        model = Attendance
+        fields = [
+            "public_id",
+            "enrollment",
+            "date",
+            "status",
+            "source",
+            "recorded_by",
+            "is_active",
+        ]
+        read_only_fields = ["public_id", "source", "recorded_by"]
+
+
+class AttendanceCreateSerializer(serializers.Serializer):
+    enrollment = serializers.SlugRelatedField(
+        slug_field="public_id", queryset=Enrollment.objects.all()
+    )
+    date = serializers.DateField()
+    status = serializers.ChoiceField(choices=Attendance.ESTADOS, required=False)
+    check_in_time = serializers.TimeField(required=False)
+
+    def validate(self, attrs):
+        if not attrs.get("status") and not attrs.get("check_in_time"):
+            raise serializers.ValidationError("Mandá 'status' o 'check_in_time'.")
+        return attrs
+
+
+class JustificationSerializer(serializers.ModelSerializer):
+    attendance = serializers.SlugRelatedField(
+        slug_field="public_id", queryset=Attendance.objects.all()
+    )
+    justification_type = serializers.SlugRelatedField(
+        slug_field="public_id", queryset=JustificationType.objects.all()
+    )
+    submitted_by = serializers.CharField(source="submitted_by.username", read_only=True)
+    resolved_by = serializers.CharField(source="resolved_by.username", read_only=True, default=None)
+    # Nunca se expone la URL directa del archivo (sección 14.2 del prompt
+    # maestro: nada sensible se sirve desde una carpeta pública) — se
+    # sube acá, pero se descarga por la acción autenticada
+    # GET /justifications/{id}/document/.
+    supporting_document = serializers.FileField(write_only=True, required=False)
+    has_supporting_document = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Justification
+        fields = [
+            "public_id",
+            "attendance",
+            "justification_type",
+            "reason_detail",
+            "supporting_document",
+            "has_supporting_document",
+            "resolution",
+            "submitted_by",
+            "resolved_by",
+            "resolved_at",
+        ]
+        read_only_fields = ["public_id", "resolution", "submitted_by", "resolved_by", "resolved_at"]
+
+    def get_has_supporting_document(self, obj) -> bool:
+        return bool(obj.supporting_document)
+
+
+class JustificationResolveSerializer(serializers.Serializer):
+    aprobar = serializers.BooleanField()

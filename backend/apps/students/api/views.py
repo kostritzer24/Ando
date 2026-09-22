@@ -8,7 +8,11 @@ from apps.core.api.mixins import RegistraAccesoMixin, ScopedQuerysetMixin
 from apps.core.permissions import PermisoPorArea
 
 from ..models import Enrollment, Guardian, GuardianStudentLink, Student
-from ..services.enrollment import YaInscritoEnEsteCiclo, inscribir_estudiante
+from ..services.enrollment import (
+    YaInscritoEnEsaSeccion,
+    YaTieneSeccionAcademicaEnEsteCiclo,
+    inscribir_estudiante,
+)
 from ..services.guardian import RolDeUsuarioInvalido, crear_encargado
 from ..services.link import (
     VinculoYaExiste,
@@ -148,5 +152,5 @@ class EnrollmentViewSet(RegistraAccesoMixin, viewsets.ModelViewSet):
     def perform_create(self, serializer):
         try:
             serializer.instance = inscribir_estudiante(**serializer.validated_data)
-        except YaInscritoEnEsteCiclo as exc:
+        except (YaInscritoEnEsaSeccion, YaTieneSeccionAcademicaEnEsteCiclo) as exc:
             raise ValidationError({"student": str(exc)}) from exc
