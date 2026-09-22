@@ -23,7 +23,7 @@ Este documento se reconstruye desde el código a medida que avanza cada fase; lo
 | RF-07 | Registrar pagos y calcular solvencia | HU-07, RN-08 | `payments` | `POST /payments/`, `GET /solvency/{id}/` | `test_rf07_hu07_rn08_calculo_solvencia.py` |
 | RF-08 | Emitir constancia de solvencia en PDF | — | `payments` | `POST /solvency/{id}/certificate/` | `test_rf08_emision_constancia_solvencia.py` |
 | RF-09 | Generar, aprobar y publicar boletines | RN-09, RN-10 | `grading` | `POST /report-cards/generate|approve|publish/` | `test_rf09_rn09_rn10_habilitacion_boletin.py` |
-| RF-10 | Autorizar o rechazar modificaciones de nota | RN-05 | `grading` | `POST /grade-change-requests/{id}/approve|reject/` | `test_rf10_rn05_autorizacion_modificacion_nota.py` |
+| RF-10 | Autorizar o rechazar modificaciones de nota | RN-05 | `grading` | `POST /grade-change-requests/{id}/approve|reject/` | `test_rf23_rf10_modificacion_notas.py` |
 | RF-11 | Emitir constancias y cartas membretadas | HU-08, HU-11 | `documents` | `POST /documents/issue/` | `test_rf11_hu08_hu11_emision_documento.py` |
 | RF-12 | Justificaciones de faltas y resolución | RN-12 | `attendance` | `CRUD /justifications/`, `POST .../resolve/` | `test_rf12_rn12_justificacion_falta.py` |
 | RF-13 | Publicar avisos en cartelera | HU-36 | `communication` | `POST/GET /announcements/` | `test_rf13_hu36_avisos_vigencia.py` |
@@ -37,11 +37,11 @@ Este documento se reconstruye desde el código a medida que avanza cada fase; lo
 | RF-16 | Asistencia diaria | RN-11 | `attendance` | `POST/GET /attendance/` | `test_rf16_rn11_asistencia_diaria_tardanza.py` |
 | RF-17 | Definir actividades evaluativas | RN-01, RN-02, RN-04 (ADR-0003) | `grading` | `POST /activities/` | `test_rf17_rn01_rn02_rn04_definicion_actividades.py` |
 | RF-18 | Registrar punteo real y calcular nota de unidad | RN-05 | `grading` | `POST /grades/` | `test_rf18_rn05_punteo_real.py` |
-| RF-19 | Generar plantilla de calificaciones | HU-19 | `grading` | `GET /grades/template/{a}/{u}/` | `test_rf19_hu19_generacion_plantilla.py` |
-| RF-20 | Cargar plantilla con validación y vista previa | HU-20, RN-07 | `grading` | `POST /grades/template/preview|upload/` | `test_rf20_hu20_rn07_carga_plantilla.py` |
+| RF-19 | Generar plantilla de calificaciones | HU-19 | `grading` | `GET /grades/template/{a}/{u}/` | `test_rf19_rf20_rn07_plantilla_notas.py` |
+| RF-20 | Cargar plantilla con validación y vista previa | HU-20, RN-07 | `grading` | `POST /grades/template/preview|upload/` | `test_rf19_rf20_rn07_plantilla_notas.py` |
 | RF-21 | Plantilla de asistencia de talleres | ADR-0001 | `attendance` | `GET/POST /attendance/template/` | `test_rf21_plantilla_asistencia_talleres.py` |
 | RF-22 | Publicar asignaciones en el calendario | RN-17 | `scheduling` | `POST /calendar-events/` | `test_rf22_rn17_edicion_calendario_propio.py` |
-| RF-23 | Solicitar corrección de nota | — | `grading` | `POST /grade-change-requests/` | `test_rf23_solicitud_modificacion_nota.py` |
+| RF-23 | Solicitar corrección de nota | — | `grading` | `POST /grade-change-requests/` | `test_rf23_rf10_modificacion_notas.py` |
 | RF-24 | Reportes de conducta por sección | — | `communication` | `POST /conduct-reports/` | `test_rf24_reporte_conducta.py` |
 | RF-25 | Leer y responder el buzón | HU-25 | `communication` | `GET /messages/`, `POST .../reply/` | `test_rf25_hu25_buzon_hilo_visibilidad.py` |
 | RF-26 | Consultar horario propio del docente | — | `scheduling` | `GET /schedule/mine/` | `test_rf26_horario_propio_docente.py` |
@@ -68,9 +68,9 @@ Algunas RN no se agotan en un solo RF y necesitan su propia prueba de dominio, i
 
 | RN | Regla | Módulo de dominio | Prueba prevista |
 |---|---|---|---|
-| RN-03 | Nota mínima para aprobar: 60 puntos | `grading/domain` | `test_rn03_nota_minima_aprobacion.py` |
+| RN-03 | Nota mínima para aprobar: 60 puntos | `grading/domain` | `test_rn02_rn03_scoring.py` |
 | RN-13 | Seis períodos de 40 minutos y un receso | `scheduling/domain` | `test_rn13_estructura_jornada.py` |
-| RN-14 | Código interno único, cuentas solo por administración | `students/domain`, `accounts/domain` | `test_rn14_codigo_interno_unico.py` |
+| RN-14 | Código interno único, cuentas solo por administración | `students/domain`, `accounts/domain` | `test_rn14_generar_codigo_interno.py` |
 | RN-15 | Sin firmas ni sellos digitales en documentos | `documents/domain` | `test_rn15_documento_sin_firma_digital.py` |
 | RN-16 | Bloqueo temporal por infringir normas del buzón | `communication/domain` | `test_rn16_bloqueo_por_infraccion_buzon.py` |
 

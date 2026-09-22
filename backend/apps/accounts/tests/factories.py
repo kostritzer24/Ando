@@ -7,6 +7,11 @@ from apps.accounts.models import Role, User
 class RoleFactory(DjangoModelFactory):
     class Meta:
         model = Role
+        # Si dos llamadas en la misma prueba piden el mismo nombre (por
+        # ejemplo, dos docentes distintos con rol "Docente"), reutiliza la
+        # fila en vez de chocar con el `unique=True` de Role.name — así
+        # es en producción: el rol es uno solo, lo que varía es el usuario.
+        django_get_or_create = ("name",)
 
     name = factory.Sequence(lambda n: f"Rol de prueba {n}")
     permissions = factory.LazyFunction(dict)
