@@ -1,0 +1,24 @@
+# Fase 8 — Horarios y calendario: cierre
+
+Cubre RF-06, RF-22, RF-26, RN-13, RN-17 (sección 18 del prompt maestro). Backend completo y probado; frontend pendiente (misma decisión de secuencia — ver `docs/pendiente-frontend.md`).
+
+## Qué se construyó
+
+- **`scheduling`:** `ScheduleBlock` y `CalendarEvent`, los dos modelos que faltaban de esta app (la Fase 5 ya había dejado `TeacherAssignment`).
+- **RN-13 en código (`domain/day_structure.py`):** la jornada tiene 6 períodos fijos de 40 minutos, con el horario exacto de cada uno como tabla, no como cálculo — pedir un bloque fuera del rango 1–6 se rechaza antes de tocar la base de datos.
+- **RF-06/HU-06 en código (`services/schedule_block.py`):** un docente no puede tener dos bloques en el mismo día y período, sin importar de qué asignación vengan — el choque se detecta contra *todas* las asignaciones del mismo docente, no solo contra la asignación que se está editando. Verificado en vivo: crear un segundo curso-sección para el mismo docente y tratar de ponerlo en el mismo horario que el primero.
+- **RN-17 en código (`domain/calendar_event.py`):** solo Dirección publica avisos institucionales; el resto de roles solo puede publicar eventos ligados a una asignación propia — publicar la asignación de otro docente se rechaza, aunque quien lo intente sea Dirección eso sí está permitido (Dirección puede publicar en nombre de cualquier asignación).
+- **`_SoloDireccionEscribe`, generalizada:** la Fase 5 ya tenía `_SoloDireccionCreaAsignaciones` para `/assignments/`; se renombró y se reutilizó también en `/schedule-blocks/`, porque `docs/api.md` documenta ambos recursos como escritura exclusiva de Dirección — armar el horario del centro no es lo mismo que publicar en el calendario, aunque las dos cosas compartan el área `horarios_calendario`.
+- **Autorización más fina que el área declarada, aplicada por tercera vez** (ya se había hecho en Fase 5 y Fase 7): dentro de `CalendarEventViewSet`, editar/eliminar exige además `puede_editar()` (Dirección o quien lo publicó) — el área `horarios_calendario` por sí sola le daría a cualquier docente "editar" sobre cualquier evento visible, que es más de lo que RN-17 permite.
+- **`GET /schedule/mine/` (RF-26):** vista de solo lectura del horario propio, restringida a los roles docentes (Docente, Docente con sección a cargo, Tallerista). Dirección tiene acceso de "editar" al área `horarios_calendario`, pero esta ruta específica le da 403 a propósito — no es su horario, es el de otra persona; Dirección ve el horario completo desde `/schedule-blocks/`.
+
+**Verificación real:** 237 pruebas (42 nuevas en `scheduling`), 100 % de cobertura en `domain/`+`services/` de `scheduling`, y un flujo completo en vivo contra un servidor real con JWT: armar un bloque de horario como Dirección, provocar el cruce de horario creando una segunda asignación para el mismo docente y chocando el mismo día/período, probar un período fuera de rango (RN-13), consultar `/schedule/mine/` como docente (200) y como Dirección (403 por diseño), publicar un evento institucional como docente (rechazado) y como Dirección (aceptado), publicar un evento propio como docente y como tallerista, confirmar que un docente ve un evento institucional pero no puede editarlo (403) y que no puede ni ver la existencia de un evento ajeno de otro docente (404) — todo antes de comprometer el código.
+
+## Bugs reales encontrados y corregidos
+
+- **Dos pruebas con la aserción cambiada, no el código:** dos pruebas nuevas esperaban 403 donde el sistema correctamente devuelve 404 — un evento de calendario fuera del alcance de lectura de un docente (otro docente, no institucional) ni siquiera debe confirmar que existe, según el principio de la sección 14.2 (nunca revelar existencia de un recurso fuera de alcance). Se corrigieron las pruebas para esperar 404, y se agregó una prueba complementaria para el caso que sí debe dar 403: un evento institucional *sí* está dentro del alcance de lectura de un docente, así que ahí la negación de escritura tiene que ser explícita (403), no un 404 disfrazado de "no existe".
+- **Fuga de límite de tasa entre pruebas:** con la suite ya en 237 pruebas, una prueba sin relación alguna con el límite de tasa (`test_serializer_general_nunca_incluye_datos_sensibles`) empezó a fallar con 429. La caché en memoria del límite de tasa vive todo el proceso de `pytest`, no se resetea por prueba, así que cientos de pruebas haciendo varias peticiones cada una terminan superando el límite configurado para producción. Se corrigió subiendo `DEFAULT_THROTTLE_RATES` a valores muy altos en `config/settings/test.py` (no vacíos — las vistas con `throttle_scope` propio, como el login, truenan con `ImproperlyConfigured` si la clave no existe en la configuración). El límite de tasa real sigue probándose aparte, con su propia caché controlada.
+
+## Siguiente
+
+Fase 9 — Pagos, solvencia y documentos (RF-07 a RF-09, RF-11, RF-14, RN-08 a RN-10, RN-15).

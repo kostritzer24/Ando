@@ -57,6 +57,22 @@ Portal administrativo, rol Dirección:
 
 Ninguna pantalla debe mostrar `raw_score` en ningún rol — la API ya no lo expone (RN-06), así que no hay manera de mostrarlo aunque alguien lo pidiera; si Dirección necesita ver el historial de una nota, es a través de `original_score`/`requested_score` en la solicitud de modificación, no de un campo "punteo real" suelto.
 
+### Fase 8 — Horarios y calendario (RF-06, RF-22, RF-26)
+Portal administrativo, rol Dirección (única que escribe horario, `docs/api.md` documenta `/assignments/` y `/schedule-blocks/` como `DIR (E)`):
+
+- Grilla de horario día × período (lunes a viernes, 6 períodos, RN-13) para armar/editar el horario de todo el centro — al elegir docente y curso-sección, si `POST /schedule-blocks/` devuelve el error de cruce (RN-13/HU-06), resaltar en la grilla la celda donde ese docente ya tiene clase ese día, no solo mostrar el texto del error
+- El formulario debe ofrecer solo asignaciones (`assignment`) ya existentes — no se crea la asignación docente↔curso-sección desde esta pantalla, eso es de Fase 5
+
+Portal operativo, rol Docente/Docente con sección a cargo/Tallerista:
+- Vista de solo lectura de `GET /schedule/mine/`: horario propio en formato de grilla o lista por día — Dirección no tiene acceso a esta ruta (403 por diseño, ve el horario completo desde la grilla administrativa en su lugar)
+- Calendario: publicar un evento propio (`POST /calendar-events/`), tipo "asignación docente", opcionalmente ligado a una de sus asignaciones — el formulario no debe ofrecer la opción "institucional" a estos roles, porque el backend la rechaza (RN-17)
+- Editar/eliminar solo los eventos que uno mismo publicó — un evento institucional puede aparecer en la lista (es visible) pero sin botones de editar/eliminar para estos roles; intentar la URL directa da 403, no hay necesidad de manejarlo especial en el frontend más que no ofrecer el botón
+
+Portal administrativo, rol Dirección:
+- Publicar eventos institucionales además de los propios; editar o eliminar cualquier evento del calendario (única combinación de rol que puede tocar eventos ajenos)
+
+Portal público, calendario institucional de solo lectura — ya con datos reales disponibles, pero esa pantalla específica corresponde a una fase posterior del portal público, no a esta.
+
 ## Hecho
 
 - **Fase 3** — Login, cambio de contraseña obligatorio, guards de router por rol. (`frontend/src/features/auth/`)
