@@ -1,4 +1,5 @@
 from django.shortcuts import get_object_or_404
+from drf_spectacular.utils import extend_schema
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
@@ -23,6 +24,7 @@ from ..services.student import actualizar_datos_sensibles, crear_estudiante
 from .serializers import (
     EnrollmentSerializer,
     GuardianSerializer,
+    GuardianStudentLinkReadSerializer,
     GuardianStudentLinkSerializer,
     StudentCreateSerializer,
     StudentSensitiveSerializer,
@@ -109,10 +111,22 @@ class GuardianViewSet(RegistraAccesoMixin, viewsets.ModelViewSet):
         except RolDeUsuarioInvalido as exc:
             raise ValidationError({"user": str(exc)}) from exc
 
-    @action(detail=True, methods=["post"], url_path="link-student")
+    @extend_schema(methods=["GET"], responses=GuardianStudentLinkReadSerializer(many=True))
+    @extend_schema(methods=["POST"], request=GuardianStudentLinkSerializer)
+    @action(detail=True, methods=["get", "post"], url_path="link-student", pagination_class=None)
     def link_student(self, request, public_id=None):
-        """POST /guardians/{public_id}/link-student/ — RF-04."""
+        """GET/POST /guardians/{public_id}/link-student/ — RF-04. GET
+        lista los vínculos activos (para mostrarlos en la pantalla antes
+        de agregar uno nuevo o desvincular); POST crea uno. Sin paginar
+        a propósito (`pagination_class=None`): un encargado tiene, como
+        mucho, un puñado de estudiantes vinculados, y `Response(...)`
+        acá nunca pasa por `self.paginate_queryset` de todos modos — el
+        override es para que el esquema generado no diga lo contrario."""
         guardian = self.get_object()
+        if request.method == "GET":
+            vinculos = guardian.student_links.filter(is_active=True).select_related("student")
+            return Response(GuardianStudentLinkReadSerializer(vinculos, many=True).data)
+
         serializer = GuardianStudentLinkSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
@@ -142,12 +156,32 @@ class GuardianViewSet(RegistraAccesoMixin, viewsets.ModelViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class EnrollmentViewSet(RegistraAccesoMixin, viewsets.ModelViewSet):
+class EnrollmentViewSet(RegistraAccesoMixin, ScopedQuerysetMixin, viewsets.ModelViewSet):
+    """RF-03. Mismo alcance por objeto que `StudentViewSet` sobre la
+    misma área — una inscripción revela sección, ciclo y beca, así que
+    no puede quedar sin filtrar solo porque el área es de solo lectura
+    para varios roles (sección 14.2)."""
+
     queryset = Enrollment.objects.all()
     serializer_class = EnrollmentSerializer
     permission_classes = [PermisoPorArea]
     area = "estudiantes_encargados"
     lookup_field = "public_id"
+
+    def scope_queryset(self, queryset, user):
+        role_name = user.role.name
+        if role_name in _ROLES_SIN_ALCANCE_LIMITADO:
+            return queryset
+        if role_name == "Padre de familia":
+            return queryset.filter(
+                student__guardian_links__guardian__user=user,
+                student__guardian_links__is_active=True,
+            ).distinct()
+        if role_name in _ROLES_DOCENTES:
+            return queryset.filter(
+                section__assignments__teacher=user, section__assignments__is_active=True
+            ).distinct()
+        return queryset.none()
 
     def perform_create(self, serializer):
         try:

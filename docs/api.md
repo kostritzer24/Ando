@@ -44,7 +44,7 @@ Roles: DIR, ADMIN (E); COORD (V); el resto sin acceso, según matriz.
 | GET, PATCH | `/students/{id}/` | Ver / editar expediente general | RF-03 | según matriz |
 | GET | `/students/{id}/sensitive/` | Datos de salud y socioeconómicos, serializer aparte | RNF-04 | DIR (V/E), ADMIN (V, queda en `AccessLog`) |
 | GET, POST | `/guardians/` | Listar / crear encargados | RF-03 | DIR (E) |
-| POST | `/guardians/{id}/link-student/` | Vincular encargado con estudiante (`GuardianStudentLink`) | RF-04 | DIR (E) |
+| GET, POST | `/guardians/{id}/link-student/` | Consultar / vincular encargado con estudiante (`GuardianStudentLink`) | RF-04 | DIR (E) |
 | DELETE | `/guardians/{id}/link-student/{student_id}/` | Retirar vínculo (baja lógica) | RF-04 | DIR (E) |
 | GET | `/me/students/` | Estudiantes vinculados al encargado autenticado, para el selector | HU-27 | FAM (V, propio) |
 | GET, POST | `/enrollments/` | Inscripciones por ciclo/sección | RF-03 | DIR (E) |

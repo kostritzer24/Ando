@@ -149,6 +149,26 @@ const routes: RouteRecordRaw[] = [
           recurso: catalogoRecursos.articulosConvivencia,
         }),
       },
+      {
+        path: "estudiantes",
+        name: "estudiantes",
+        component: () => import("@/features/estudiantes/components/EstudiantesPage.vue"),
+      },
+      {
+        path: "estudiantes/:publicId",
+        name: "expediente",
+        component: () => import("@/features/estudiantes/components/ExpedientePage.vue"),
+      },
+      {
+        path: "encargados",
+        name: "encargados",
+        component: () => import("@/features/estudiantes/components/EncargadosPage.vue"),
+      },
+      {
+        path: "asignaciones",
+        name: "asignaciones",
+        component: () => import("@/features/asignaciones/components/AsignacionesPage.vue"),
+      },
     ],
   },
   {

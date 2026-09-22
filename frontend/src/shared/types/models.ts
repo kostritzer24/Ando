@@ -14,8 +14,12 @@ export type Scholarship = components["schemas"]["Scholarship"];
 export type ConductRuleArticle = components["schemas"]["ConductRuleArticle"];
 
 export type Student = components["schemas"]["Student"];
+export type StudentSensitive = components["schemas"]["StudentSensitive"];
 export type Guardian = components["schemas"]["Guardian"];
+export type GuardianStudentLinkRead = components["schemas"]["GuardianStudentLinkRead"];
 export type Enrollment = components["schemas"]["Enrollment"];
+export type Role = components["schemas"]["Role"];
+export type Usuario = components["schemas"]["User"];
 
 export type TeacherAssignment = components["schemas"]["TeacherAssignment"];
 export type ScheduleBlock = components["schemas"]["ScheduleBlock"];

@@ -808,16 +808,18 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * @description Registra en AccessLog cada petición autenticada que llega a la
-         *     vista (RNF-07). Se aplica en `initial()`, que en DRF corre después de
-         *     `perform_authentication()`, así que `request.user` ya está resuelto.
+         * @description RF-03. Mismo alcance por objeto que `StudentViewSet` sobre la
+         *     misma área — una inscripción revela sección, ciclo y beca, así que
+         *     no puede quedar sin filtrar solo porque el área es de solo lectura
+         *     para varios roles (sección 14.2).
          */
         get: operations["v1_enrollments_list"];
         put?: never;
         /**
-         * @description Registra en AccessLog cada petición autenticada que llega a la
-         *     vista (RNF-07). Se aplica en `initial()`, que en DRF corre después de
-         *     `perform_authentication()`, así que `request.user` ya está resuelto.
+         * @description RF-03. Mismo alcance por objeto que `StudentViewSet` sobre la
+         *     misma área — una inscripción revela sección, ciclo y beca, así que
+         *     no puede quedar sin filtrar solo porque el área es de solo lectura
+         *     para varios roles (sección 14.2).
          */
         post: operations["v1_enrollments_create"];
         delete?: never;
@@ -834,30 +836,34 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * @description Registra en AccessLog cada petición autenticada que llega a la
-         *     vista (RNF-07). Se aplica en `initial()`, que en DRF corre después de
-         *     `perform_authentication()`, así que `request.user` ya está resuelto.
+         * @description RF-03. Mismo alcance por objeto que `StudentViewSet` sobre la
+         *     misma área — una inscripción revela sección, ciclo y beca, así que
+         *     no puede quedar sin filtrar solo porque el área es de solo lectura
+         *     para varios roles (sección 14.2).
          */
         get: operations["v1_enrollments_retrieve"];
         /**
-         * @description Registra en AccessLog cada petición autenticada que llega a la
-         *     vista (RNF-07). Se aplica en `initial()`, que en DRF corre después de
-         *     `perform_authentication()`, así que `request.user` ya está resuelto.
+         * @description RF-03. Mismo alcance por objeto que `StudentViewSet` sobre la
+         *     misma área — una inscripción revela sección, ciclo y beca, así que
+         *     no puede quedar sin filtrar solo porque el área es de solo lectura
+         *     para varios roles (sección 14.2).
          */
         put: operations["v1_enrollments_update"];
         post?: never;
         /**
-         * @description Registra en AccessLog cada petición autenticada que llega a la
-         *     vista (RNF-07). Se aplica en `initial()`, que en DRF corre después de
-         *     `perform_authentication()`, así que `request.user` ya está resuelto.
+         * @description RF-03. Mismo alcance por objeto que `StudentViewSet` sobre la
+         *     misma área — una inscripción revela sección, ciclo y beca, así que
+         *     no puede quedar sin filtrar solo porque el área es de solo lectura
+         *     para varios roles (sección 14.2).
          */
         delete: operations["v1_enrollments_destroy"];
         options?: never;
         head?: never;
         /**
-         * @description Registra en AccessLog cada petición autenticada que llega a la
-         *     vista (RNF-07). Se aplica en `initial()`, que en DRF corre después de
-         *     `perform_authentication()`, así que `request.user` ya está resuelto.
+         * @description RF-03. Mismo alcance por objeto que `StudentViewSet` sobre la
+         *     misma área — una inscripción revela sección, ciclo y beca, así que
+         *     no puede quedar sin filtrar solo porque el área es de solo lectura
+         *     para varios roles (sección 14.2).
          */
         patch: operations["v1_enrollments_partial_update"];
         trace?: never;
@@ -1098,9 +1104,26 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * @description GET/POST /guardians/{public_id}/link-student/ — RF-04. GET
+         *     lista los vínculos activos (para mostrarlos en la pantalla antes
+         *     de agregar uno nuevo o desvincular); POST crea uno. Sin paginar
+         *     a propósito (`pagination_class=None`): un encargado tiene, como
+         *     mucho, un puñado de estudiantes vinculados, y `Response(...)`
+         *     acá nunca pasa por `self.paginate_queryset` de todos modos — el
+         *     override es para que el esquema generado no diga lo contrario.
+         */
+        get: operations["v1_guardians_link_student_list"];
         put?: never;
-        /** @description POST /guardians/{public_id}/link-student/ — RF-04. */
+        /**
+         * @description GET/POST /guardians/{public_id}/link-student/ — RF-04. GET
+         *     lista los vínculos activos (para mostrarlos en la pantalla antes
+         *     de agregar uno nuevo o desvincular); POST crea uno. Sin paginar
+         *     a propósito (`pagination_class=None`): un encargado tiene, como
+         *     mucho, un puñado de estudiantes vinculados, y `Response(...)`
+         *     acá nunca pasa por `self.paginate_queryset` de todos modos — el
+         *     override es para que el esquema generado no diga lo contrario.
+         */
         post: operations["v1_guardians_link_student_create"];
         delete?: never;
         options?: never;
@@ -2165,6 +2188,30 @@ export interface components {
             occupation?: string;
             /** Activo */
             is_active?: boolean;
+        };
+        GuardianStudentLink: {
+            /** Format: uuid */
+            student: string;
+            relationship: string;
+            /** @default false */
+            is_primary: boolean;
+        };
+        /**
+         * @description GET /guardians/{id}/link-student/ — para mostrar los vínculos ya
+         *     existentes de un encargado (la escritura usa el serializer de
+         *     arriba, más angosto a propósito: solo pide lo que hace falta para
+         *     crear el vínculo, no lo que hace falta para mostrarlo).
+         */
+        GuardianStudentLinkRead: {
+            /** Format: uuid */
+            readonly public_id: string;
+            readonly student_public_id: string;
+            readonly student_internal_code: string;
+            readonly student_name: string;
+            /** Parentesco */
+            relationship: string;
+            /** Encargado principal */
+            is_primary?: boolean;
         };
         IssuedDocument: {
             /** Format: uuid */
@@ -5682,6 +5729,27 @@ export interface operations {
             };
         };
     };
+    v1_guardians_link_student_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                public_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GuardianStudentLinkRead"][];
+                };
+            };
+        };
+    };
     v1_guardians_link_student_create: {
         parameters: {
             query?: never;
@@ -5693,9 +5761,9 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Guardian"];
-                "application/x-www-form-urlencoded": components["schemas"]["Guardian"];
-                "multipart/form-data": components["schemas"]["Guardian"];
+                "application/json": components["schemas"]["GuardianStudentLink"];
+                "application/x-www-form-urlencoded": components["schemas"]["GuardianStudentLink"];
+                "multipart/form-data": components["schemas"]["GuardianStudentLink"];
             };
         };
         responses: {

@@ -91,6 +91,39 @@ def test_rf04_no_se_puede_repetir_el_mismo_vinculo():
 
 
 @pytest.mark.django_db
+def test_rf04_consultar_los_vinculos_de_un_encargado():
+    rol = RoleFactory(name="Dirección", permissions={"estudiantes_encargados": "editar"})
+    direccion = UserFactory(role=rol)
+    encargado = GuardianFactory()
+    hijo = StudentFactory(internal_code="ES010", first_name="Ana", last_name="Pérez")
+    hija_desvinculada = StudentFactory(internal_code="ES011")
+
+    client = APIClient()
+    client.force_authenticate(user=direccion)
+    client.post(
+        f"/api/v1/guardians/{encargado.public_id}/link-student/",
+        {"student": str(hijo.public_id), "relationship": "Madre", "is_primary": True},
+        format="json",
+    )
+    client.post(
+        f"/api/v1/guardians/{encargado.public_id}/link-student/",
+        {"student": str(hija_desvinculada.public_id), "relationship": "Madre"},
+        format="json",
+    )
+    client.delete(
+        f"/api/v1/guardians/{encargado.public_id}/link-student/{hija_desvinculada.public_id}/"
+    )
+
+    respuesta = client.get(f"/api/v1/guardians/{encargado.public_id}/link-student/")
+
+    assert respuesta.status_code == 200
+    assert len(respuesta.data) == 1
+    assert respuesta.data[0]["student_name"] == "Ana Pérez"
+    assert respuesta.data[0]["relationship"] == "Madre"
+    assert respuesta.data[0]["is_primary"] is True
+
+
+@pytest.mark.django_db
 def test_rf04_desvincular_es_baja_logica():
     rol = RoleFactory(name="Dirección", permissions={"estudiantes_encargados": "editar"})
     direccion = UserFactory(role=rol)

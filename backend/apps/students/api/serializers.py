@@ -3,7 +3,7 @@ from rest_framework import serializers
 from apps.accounts.models import User
 from apps.catalog.models import Scholarship, SchoolCycle, Section
 
-from ..models import Enrollment, Guardian, Student
+from ..models import Enrollment, Guardian, GuardianStudentLink, Student
 
 
 class StudentSerializer(serializers.ModelSerializer):
@@ -62,6 +62,31 @@ class GuardianStudentLinkSerializer(serializers.Serializer):
     student = serializers.SlugRelatedField(slug_field="public_id", queryset=Student.objects.all())
     relationship = serializers.CharField(max_length=60)
     is_primary = serializers.BooleanField(required=False, default=False)
+
+
+class GuardianStudentLinkReadSerializer(serializers.ModelSerializer):
+    """GET /guardians/{id}/link-student/ — para mostrar los vínculos ya
+    existentes de un encargado (la escritura usa el serializer de
+    arriba, más angosto a propósito: solo pide lo que hace falta para
+    crear el vínculo, no lo que hace falta para mostrarlo)."""
+
+    student_public_id = serializers.CharField(source="student.public_id", read_only=True)
+    student_internal_code = serializers.CharField(source="student.internal_code", read_only=True)
+    student_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = GuardianStudentLink
+        fields = [
+            "public_id",
+            "student_public_id",
+            "student_internal_code",
+            "student_name",
+            "relationship",
+            "is_primary",
+        ]
+
+    def get_student_name(self, obj: GuardianStudentLink) -> str:
+        return obj.student.nombre_completo()
 
 
 class EnrollmentSerializer(serializers.ModelSerializer):
