@@ -10,22 +10,6 @@ La Fase 3 es la excepción: su frontend (login, cambio de contraseña, guards po
 
 Portal público (familia): RF-31 (consultar asistencia) ya tiene datos reales disponibles desde la Fase 6, pero esa pantalla específica es Fase 10.
 
-### Fase 8 — Horarios y calendario (RF-06, RF-22, RF-26)
-Portal administrativo, rol Dirección (única que escribe horario, `docs/api.md` documenta `/assignments/` y `/schedule-blocks/` como `DIR (E)`):
-
-- Grilla de horario día × período (lunes a viernes, 6 períodos, RN-13) para armar/editar el horario de todo el centro — al elegir docente y curso-sección, si `POST /schedule-blocks/` devuelve el error de cruce (RN-13/HU-06), resaltar en la grilla la celda donde ese docente ya tiene clase ese día, no solo mostrar el texto del error
-- El formulario debe ofrecer solo asignaciones (`assignment`) ya existentes — no se crea la asignación docente↔curso-sección desde esta pantalla, eso es de Fase 5
-
-Portal operativo, rol Docente/Docente con sección a cargo/Tallerista:
-- Vista de solo lectura de `GET /schedule/mine/`: horario propio en formato de grilla o lista por día — Dirección no tiene acceso a esta ruta (403 por diseño, ve el horario completo desde la grilla administrativa en su lugar)
-- Calendario: publicar un evento propio (`POST /calendar-events/`), tipo "asignación docente", opcionalmente ligado a una de sus asignaciones — el formulario no debe ofrecer la opción "institucional" a estos roles, porque el backend la rechaza (RN-17)
-- Editar/eliminar solo los eventos que uno mismo publicó — un evento institucional puede aparecer en la lista (es visible) pero sin botones de editar/eliminar para estos roles; intentar la URL directa da 403, no hay necesidad de manejarlo especial en el frontend más que no ofrecer el botón
-
-Portal administrativo, rol Dirección:
-- Publicar eventos institucionales además de los propios; editar o eliminar cualquier evento del calendario (única combinación de rol que puede tocar eventos ajenos)
-
-Portal público, calendario institucional de solo lectura — ya con datos reales disponibles, pero esa pantalla específica corresponde a una fase posterior del portal público, no a esta.
-
 ### Fase 9 — Pagos, solvencia y documentos (RF-07 a RF-09, RF-11, RF-14)
 Portal administrativo, rol Encargado de pagos / Dirección:
 
@@ -48,3 +32,4 @@ Nota transversal: los cuatro documentos PDF (constancia de solvencia, de estudio
 - **Fase 5** — Expedientes y asignaciones: inscribir estudiante, expediente con datos sensibles restringidos, encargados (con la creación del usuario de la cuenta familiar incluida en el mismo formulario) y sus vínculos, asignación de docente/tallerista con el curso y la persona filtrados por tipo de sección. Cierre completo en `docs/fase-5-frontend-cierre.md`. (`frontend/src/features/estudiantes/`, `frontend/src/features/asignaciones/`)
 - **Fase 6** — Asistencia: tomar asistencia por sección (con hora de llegada o estado directo), justificaciones (registrar y resolver), plantilla de talleres. Primer portal operativo con layout propio (`OperativoLayout`). Cierre completo en `docs/fase-6-frontend-cierre.md`. (`frontend/src/features/asistencia/`)
 - **Fase 7** — Notas: diseñar la unidad (con el total de puntos y de pruebas cortas en vivo), capturar punteo (con "solicitar corrección" en vez de editar directo, RN-05), plantilla de calificaciones con vista previa de dos pasos, bandeja de modificaciones (propia y, para Dirección, aprobar/rechazar). `raw_score` no aparece en ninguna pantalla — la API no lo expone. Cierre completo en `docs/fase-7-frontend-cierre.md`. (`frontend/src/features/notas/`)
+- **Fase 8** — Horarios y calendario: grilla de horario por docente/tallerista (Dirección), horario propio de solo lectura, calendario compartido entre los dos portales con avisos institucionales (Dirección) y eventos propios (docente/guía/tallerista). Cierre completo en `docs/fase-8-frontend-cierre.md`. (`frontend/src/features/horarios/`)

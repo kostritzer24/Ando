@@ -11,6 +11,8 @@ const navegacion = computed(() => {
     { a: "/operativo", etiqueta: "Inicio" },
     { a: "/operativo/asistencia", etiqueta: "Asistencia" },
     { a: "/operativo/justificaciones", etiqueta: "Justificaciones" },
+    { a: "/operativo/mi-horario", etiqueta: "Mi horario" },
+    { a: "/operativo/calendario", etiqueta: "Calendario" },
   ];
   if (auth.usuario?.role_name === "Tallerista") {
     items.push({ a: "/operativo/plantilla-asistencia", etiqueta: "Plantilla de talleres" });

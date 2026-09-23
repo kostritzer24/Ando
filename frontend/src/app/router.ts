@@ -189,6 +189,16 @@ const routes: RouteRecordRaw[] = [
         name: "administrativo-notas-modificaciones",
         component: () => import("@/features/notas/components/ModificacionesPage.vue"),
       },
+      {
+        path: "horarios",
+        name: "administrativo-horarios",
+        component: () => import("@/features/horarios/components/HorarioGridPage.vue"),
+      },
+      {
+        path: "calendario",
+        name: "administrativo-calendario",
+        component: () => import("@/features/horarios/components/CalendarioPage.vue"),
+      },
     ],
   },
   {
@@ -235,6 +245,16 @@ const routes: RouteRecordRaw[] = [
         path: "notas/modificaciones",
         name: "operativo-notas-modificaciones",
         component: () => import("@/features/notas/components/ModificacionesPage.vue"),
+      },
+      {
+        path: "mi-horario",
+        name: "operativo-mi-horario",
+        component: () => import("@/features/horarios/components/MiHorarioPage.vue"),
+      },
+      {
+        path: "calendario",
+        name: "operativo-calendario",
+        component: () => import("@/features/horarios/components/CalendarioPage.vue"),
       },
     ],
   },
