@@ -42,7 +42,11 @@ def test_rf25_rf37_la_familia_envia_un_mensaje_y_el_guia_lo_ve_y_responde():
     client_familia.force_authenticate(user=familia)
     envio = client_familia.post(
         "/api/v1/messages/",
-        {"section": str(seccion.public_id), "subject": "Consulta", "content": "¿Hay tarea para mañana?"},
+        {
+            "section": str(seccion.public_id),
+            "subject": "Consulta",
+            "content": "¿Hay tarea para mañana?",
+        },
     )
     assert envio.status_code == 201
     assert envio.data["status"] == "enviado"
@@ -53,7 +57,9 @@ def test_rf25_rf37_la_familia_envia_un_mensaje_y_el_guia_lo_ve_y_responde():
     assert bandeja.data["count"] == 1
     hilo_id = bandeja.data["results"][0]["public_id"]
 
-    respuesta = client_guia.post(f"/api/v1/messages/{hilo_id}/reply/", {"content": "Sí, matemática."})
+    respuesta = client_guia.post(
+        f"/api/v1/messages/{hilo_id}/reply/", {"content": "Sí, matemática."}
+    )
     assert respuesta.status_code == 201
 
     hilo = client_guia.get(f"/api/v1/messages/{hilo_id}/")
@@ -69,7 +75,8 @@ def test_rf25_la_familia_no_ve_hilos_de_otras_familias():
     client_a = APIClient()
     client_a.force_authenticate(user=familia_a)
     client_a.post(
-        "/api/v1/messages/", {"section": str(seccion.public_id), "subject": "A", "content": "Mensaje de A"}
+        "/api/v1/messages/",
+        {"section": str(seccion.public_id), "subject": "A", "content": "Mensaje de A"},
     )
 
     client_b = APIClient()
@@ -103,7 +110,8 @@ def test_rf25_la_familia_no_puede_responder_un_hilo():
     client = APIClient()
     client.force_authenticate(user=familia)
     envio = client.post(
-        "/api/v1/messages/", {"section": str(seccion.public_id), "subject": "Consulta", "content": "..."}
+        "/api/v1/messages/",
+        {"section": str(seccion.public_id), "subject": "Consulta", "content": "..."},
     )
     hilo_id = envio.data["public_id"]
 
@@ -122,7 +130,11 @@ def test_rn16_un_mensaje_con_lenguaje_inapropiado_se_rechaza_y_bloquea_la_cuenta
     client.force_authenticate(user=familia)
     respuesta = client.post(
         "/api/v1/messages/",
-        {"section": str(seccion.public_id), "subject": "Queja", "content": "El maestro es un idiota"},
+        {
+            "section": str(seccion.public_id),
+            "subject": "Queja",
+            "content": "El maestro es un idiota",
+        },
     )
 
     assert respuesta.status_code == 400
@@ -156,7 +168,8 @@ def test_rn16_una_respuesta_con_lenguaje_inapropiado_tambien_bloquea_a_quien_res
     client_familia = APIClient()
     client_familia.force_authenticate(user=familia)
     envio = client_familia.post(
-        "/api/v1/messages/", {"section": str(seccion.public_id), "subject": "Consulta", "content": "..."}
+        "/api/v1/messages/",
+        {"section": str(seccion.public_id), "subject": "Consulta", "content": "..."},
     )
 
     client_guia = APIClient()
@@ -178,7 +191,8 @@ def test_rf25_al_consultar_el_hilo_el_guia_lo_marca_como_leido():
     client_familia = APIClient()
     client_familia.force_authenticate(user=familia)
     envio = client_familia.post(
-        "/api/v1/messages/", {"section": str(seccion.public_id), "subject": "Consulta", "content": "..."}
+        "/api/v1/messages/",
+        {"section": str(seccion.public_id), "subject": "Consulta", "content": "..."},
     )
 
     client_guia = APIClient()
@@ -197,7 +211,8 @@ def test_rf25_direccion_ve_y_responde_cualquier_hilo():
     client_familia = APIClient()
     client_familia.force_authenticate(user=familia)
     envio = client_familia.post(
-        "/api/v1/messages/", {"section": str(seccion.public_id), "subject": "Consulta", "content": "..."}
+        "/api/v1/messages/",
+        {"section": str(seccion.public_id), "subject": "Consulta", "content": "..."},
     )
 
     client_dir = APIClient()

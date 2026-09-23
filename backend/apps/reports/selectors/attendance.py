@@ -7,9 +7,9 @@ from apps.students.models import Enrollment
 
 
 def resumen_asistencia(*, cycle_id: str | None = None, section_id: str | None = None) -> list[dict]:
-    inscripciones = Enrollment.objects.filter(is_active=True, status=Enrollment.ESTADO_ACTIVO).select_related(
-        "student", "section"
-    )
+    inscripciones = Enrollment.objects.filter(
+        is_active=True, status=Enrollment.ESTADO_ACTIVO
+    ).select_related("student", "section")
     if cycle_id:
         inscripciones = inscripciones.filter(cycle__public_id=cycle_id)
     if section_id:

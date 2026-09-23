@@ -6,7 +6,9 @@ from apps.payments.services.solvency import calcular_solvencia
 from apps.students.models import Enrollment
 
 
-def estudiantes_insolventes(*, cycle_id: str | None = None, section_id: str | None = None) -> list[dict]:
+def estudiantes_insolventes(
+    *, cycle_id: str | None = None, section_id: str | None = None
+) -> list[dict]:
     inscripciones = Enrollment.objects.filter(
         is_active=True, status=Enrollment.ESTADO_ACTIVO, section__type="academica"
     ).select_related("student", "section")

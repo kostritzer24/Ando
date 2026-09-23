@@ -83,7 +83,10 @@ class ConductReport(BaseModel):
     ]
 
     enrollment = models.ForeignKey(
-        Enrollment, verbose_name="inscripción", on_delete=models.PROTECT, related_name="conduct_reports"
+        Enrollment,
+        verbose_name="inscripción",
+        on_delete=models.PROTECT,
+        related_name="conduct_reports",
     )
     report_date = models.DateField("fecha")
     severity = models.CharField("tipo de falta", max_length=20, choices=GRAVEDADES)

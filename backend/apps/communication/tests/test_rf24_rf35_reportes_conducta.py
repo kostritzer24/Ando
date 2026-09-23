@@ -17,7 +17,9 @@ def _direccion():
 
 
 def _guia_de(seccion):
-    rol = RoleFactory(name="Docente con sección a cargo", permissions={"reportes_conducta": "editar"})
+    rol = RoleFactory(
+        name="Docente con sección a cargo", permissions={"reportes_conducta": "editar"}
+    )
     guia = UserFactory(role=rol)
     seccion.homeroom_teacher = guia
     seccion.save(update_fields=["homeroom_teacher"])

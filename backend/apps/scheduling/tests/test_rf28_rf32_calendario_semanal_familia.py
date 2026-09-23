@@ -23,7 +23,9 @@ def _familia_con_hijo():
 def test_rf28_rf32_familia_ve_el_horario_y_los_eventos_de_la_seccion_del_hijo():
     usuario, hijo = _familia_con_hijo()
     asignacion = TeacherAssignmentFactory()
-    inscripcion = EnrollmentFactory(student=hijo, section=asignacion.section, cycle=asignacion.cycle)
+    inscripcion = EnrollmentFactory(
+        student=hijo, section=asignacion.section, cycle=asignacion.cycle
+    )
     ScheduleBlock.objects.create(assignment=asignacion, day_of_week="lunes", period_number=1)
     CalendarEvent.objects.create(
         title="Aviso institucional",

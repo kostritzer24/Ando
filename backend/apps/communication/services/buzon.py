@@ -18,7 +18,8 @@ def enviar_mensaje(*, sender, section, subject: str, content: str) -> Message:
     if contiene_lenguaje_inapropiado(subject) or contiene_lenguaje_inapropiado(content):
         _bloquear(sender)
         raise LenguajeInapropiado(
-            "El mensaje contiene lenguaje inapropiado — no se envió y tu cuenta quedó bloqueada temporalmente."
+            "El mensaje contiene lenguaje inapropiado — no se envió y tu cuenta "
+            "quedó bloqueada temporalmente."
         )
     return Message.objects.create(sender=sender, section=section, subject=subject, content=content)
 
@@ -30,7 +31,8 @@ def responder_mensaje(*, hilo_raiz: Message, sender, content: str) -> Message:
     if contiene_lenguaje_inapropiado(content):
         _bloquear(sender)
         raise LenguajeInapropiado(
-            "El mensaje contiene lenguaje inapropiado — no se envió y tu cuenta quedó bloqueada temporalmente."
+            "El mensaje contiene lenguaje inapropiado — no se envió y tu cuenta "
+            "quedó bloqueada temporalmente."
         )
     respuesta = Message.objects.create(
         sender=sender, section=hilo_raiz.section, content=content, original_message=hilo_raiz

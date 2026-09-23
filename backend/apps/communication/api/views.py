@@ -144,8 +144,13 @@ class ConductReportViewSet(
         guide_teacher = enrollment.section.homeroom_teacher
         if guide_teacher is None:
             raise ValidationError("Esa sección todavía no tiene maestro guía asignado.")
-        if request.user.role.name == "Docente con sección a cargo" and guide_teacher != request.user:
-            raise PermissionDenied("Solo el maestro guía de esa sección puede registrar este reporte.")
+        if (
+            request.user.role.name == "Docente con sección a cargo"
+            and guide_teacher != request.user
+        ):
+            raise PermissionDenied(
+                "Solo el maestro guía de esa sección puede registrar este reporte."
+            )
 
         reporte = crear_reporte(
             enrollment=enrollment,
@@ -167,12 +172,16 @@ class ConductReportViewSet(
             "estudiante_nombre": reporte.enrollment.student.nombre_completo(),
             "grado_seccion": str(reporte.enrollment.section),
             "articulos": list(
-                ConductReportArticle.objects.filter(conduct_report=reporte).select_related("article")
+                ConductReportArticle.objects.filter(conduct_report=reporte).select_related(
+                    "article"
+                )
             ),
         }
         html = render_to_string("communication/reporte_conducta.html", contexto)
         pdf_bytes = HTML(string=html).write_pdf()
-        nombre_archivo = f"reporte_conducta_{reporte.enrollment.student.internal_code}_{reporte.report_date}.pdf"
+        nombre_archivo = (
+            f"reporte_conducta_{reporte.enrollment.student.internal_code}_{reporte.report_date}.pdf"
+        )
         return HttpResponse(
             pdf_bytes,
             content_type="application/pdf",
@@ -236,14 +245,18 @@ class MessageViewSet(
 
     @action(detail=True, methods=["post"], url_path="reply")
     def reply(self, request, public_id=None):
-        hilo_raiz = get_object_or_404(self.get_queryset(), public_id=public_id, original_message__isnull=True)
+        hilo_raiz = get_object_or_404(
+            self.get_queryset(), public_id=public_id, original_message__isnull=True
+        )
         if request.user.role.name not in {ROL_DIRECCION, "Docente con sección a cargo"}:
             raise PermissionDenied("Solo la dirección o el maestro guía de la sección responden.")
         serializer = MessageReplySerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
             respuesta = responder_mensaje(
-                hilo_raiz=hilo_raiz, sender=request.user, content=serializer.validated_data["content"]
+                hilo_raiz=hilo_raiz,
+                sender=request.user,
+                content=serializer.validated_data["content"],
             )
         except LenguajeInapropiado as exc:
             raise ValidationError(str(exc)) from exc

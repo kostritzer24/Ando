@@ -3,7 +3,9 @@
 from apps.documents.models import IssuedDocument
 
 
-def documentos_emitidos(*, cycle_id: str | None = None, section_id: str | None = None) -> list[dict]:
+def documentos_emitidos(
+    *, cycle_id: str | None = None, section_id: str | None = None
+) -> list[dict]:
     documentos = IssuedDocument.objects.filter(is_active=True).select_related(
         "document_type", "enrollment__student", "enrollment__section", "issued_by"
     )

@@ -7,7 +7,9 @@ from ..models import Announcement
 
 def crear_aviso(*, published_by, audience, target_section=None, **datos) -> Announcement:
     validar_publicacion(
-        audience=audience, target_section=target_section, audiencia_seccion=Announcement.AUDIENCIA_SECCION
+        audience=audience,
+        target_section=target_section,
+        audiencia_seccion=Announcement.AUDIENCIA_SECCION,
     )
     return Announcement.objects.create(
         published_by=published_by, audience=audience, target_section=target_section, **datos

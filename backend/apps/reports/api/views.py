@@ -66,7 +66,8 @@ class GradesSummaryView(ReporteBaseView):
 
     def obtener_filas(self, request) -> list[dict]:
         return resumen_notas(
-            cycle_id=request.query_params.get("cycle"), section_id=request.query_params.get("section")
+            cycle_id=request.query_params.get("cycle"),
+            section_id=request.query_params.get("section"),
         )
 
 
@@ -84,7 +85,8 @@ class AttendanceReportView(ReporteBaseView):
 
     def obtener_filas(self, request) -> list[dict]:
         return resumen_asistencia(
-            cycle_id=request.query_params.get("cycle"), section_id=request.query_params.get("section")
+            cycle_id=request.query_params.get("cycle"),
+            section_id=request.query_params.get("section"),
         )
 
 
@@ -105,7 +107,8 @@ class InsolventStudentsView(ReporteBaseView):
 
     def obtener_filas(self, request) -> list[dict]:
         return estudiantes_insolventes(
-            cycle_id=request.query_params.get("cycle"), section_id=request.query_params.get("section")
+            cycle_id=request.query_params.get("cycle"),
+            section_id=request.query_params.get("section"),
         )
 
 
@@ -136,7 +139,8 @@ class EnrolledStudentsView(ReporteBaseView):
 
     def obtener_filas(self, request) -> list[dict]:
         return estudiantes_inscritos(
-            cycle_id=request.query_params.get("cycle"), section_id=request.query_params.get("section")
+            cycle_id=request.query_params.get("cycle"),
+            section_id=request.query_params.get("section"),
         )
 
 
@@ -189,7 +193,8 @@ class IssuedDocumentsReportView(ReporteBaseView):
 
     def obtener_filas(self, request) -> list[dict]:
         return documentos_emitidos(
-            cycle_id=request.query_params.get("cycle"), section_id=request.query_params.get("section")
+            cycle_id=request.query_params.get("cycle"),
+            section_id=request.query_params.get("section"),
         )
 
 

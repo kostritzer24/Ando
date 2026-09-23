@@ -33,7 +33,9 @@ def test_rf15_direccion_accede_a_todos_los_reportes_generales(ruta):
 def test_rf15_encargado_de_pagos_no_accede_a_los_reportes_generales(ruta):
     """Nota 8 de docs/permisos-roles.md: Pagos solo llega al reporte de
     insolventes, y por el área "pagos_solvencia", no por esta."""
-    rol = RoleFactory(name="Encargado de pagos", permissions={"reportes_institucionales": "sin_acceso"})
+    rol = RoleFactory(
+        name="Encargado de pagos", permissions={"reportes_institucionales": "sin_acceso"}
+    )
     pagos = UserFactory(role=rol)
     client = APIClient()
     client.force_authenticate(user=pagos)
@@ -61,7 +63,8 @@ def test_rf15_direccion_con_solo_reportes_institucionales_no_llega_a_insolventes
     """El reverso de la nota 8: `reportes_institucionales` no alcanza para
     este reporte puntual, tiene que venir de "pagos_solvencia"."""
     rol = RoleFactory(
-        name="Rol de prueba sin pagos", permissions={"reportes_institucionales": "editar", "pagos_solvencia": "sin_acceso"}
+        name="Rol de prueba sin pagos",
+        permissions={"reportes_institucionales": "editar", "pagos_solvencia": "sin_acceso"},
     )
     usuario = UserFactory(role=rol)
     client = APIClient()

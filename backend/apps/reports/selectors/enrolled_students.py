@@ -3,7 +3,9 @@
 from apps.students.models import Enrollment
 
 
-def estudiantes_inscritos(*, cycle_id: str | None = None, section_id: str | None = None) -> list[dict]:
+def estudiantes_inscritos(
+    *, cycle_id: str | None = None, section_id: str | None = None
+) -> list[dict]:
     inscripciones = Enrollment.objects.filter(is_active=True).select_related(
         "student", "section", "cycle", "scholarship"
     )
@@ -21,5 +23,7 @@ def estudiantes_inscritos(*, cycle_id: str | None = None, section_id: str | None
             "status": inscripcion.get_status_display(),
             "scholarship": inscripcion.scholarship.name if inscripcion.scholarship_id else "",
         }
-        for inscripcion in inscripciones.order_by("section__grade", "section__letter", "student__last_name")
+        for inscripcion in inscripciones.order_by(
+            "section__grade", "section__letter", "student__last_name"
+        )
     ]

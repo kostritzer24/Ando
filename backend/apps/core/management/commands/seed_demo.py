@@ -249,7 +249,9 @@ class Command(BaseCommand):
                         guardian=encargada,
                         student=estudiante,
                         relationship="Madre",
-                        is_primary=(estudiante == Student.objects.order_by("internal_code").first()),
+                        is_primary=(
+                            estudiante == Student.objects.order_by("internal_code").first()
+                        ),
                     )
                 except VinculoYaExiste:
                     pass

@@ -44,7 +44,9 @@ def test_nota_de_unidad_suma_las_calificaciones_vigentes():
         recorded_by=asignacion.teacher,
     )
 
-    assert nota_de_unidad(enrollment=inscripcion, unit=unidad, assignment=asignacion) == Decimal("80")
+    assert nota_de_unidad(enrollment=inscripcion, unit=unidad, assignment=asignacion) == Decimal(
+        "80"
+    )
 
 
 @pytest.mark.django_db
@@ -67,7 +69,9 @@ def test_nota_de_unidad_parcial_sin_todas_las_actividades_calificadas():
         recorded_by=asignacion.teacher,
     )
 
-    assert nota_de_unidad(enrollment=inscripcion, unit=unidad, assignment=asignacion) == Decimal("30")
+    assert nota_de_unidad(enrollment=inscripcion, unit=unidad, assignment=asignacion) == Decimal(
+        "30"
+    )
 
 
 @pytest.mark.django_db
@@ -89,7 +93,9 @@ def test_nota_de_unidad_usa_current_score_no_raw_score():
         recorded_by=asignacion.teacher,
     )
 
-    assert nota_de_unidad(enrollment=inscripcion, unit=unidad, assignment=asignacion) == Decimal("75")
+    assert nota_de_unidad(enrollment=inscripcion, unit=unidad, assignment=asignacion) == Decimal(
+        "75"
+    )
 
 
 @pytest.mark.django_db

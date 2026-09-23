@@ -34,7 +34,8 @@ def test_rf13_aviso_para_seccion_sin_elegir_cual_se_rechaza():
     client.force_authenticate(user=_direccion())
 
     respuesta = client.post(
-        "/api/v1/announcements/", {"title": "Reunión", "content": "Solo esta sección.", "audience": "seccion"}
+        "/api/v1/announcements/",
+        {"title": "Reunión", "content": "Solo esta sección.", "audience": "seccion"},
     )
 
     assert respuesta.status_code == 400
@@ -78,7 +79,10 @@ def test_hu36_los_avisos_vencidos_dejan_de_mostrarse():
 def test_hu36_direccion_ve_tambien_los_vencidos_para_administrarlos():
     dir_user = _direccion()
     Announcement.objects.create(
-        title="Vencido", content="...", audience="todos", published_by=dir_user,
+        title="Vencido",
+        content="...",
+        audience="todos",
+        published_by=dir_user,
         expires_at=timezone.now() - timedelta(days=1),
     )
     client = APIClient()
@@ -94,7 +98,10 @@ def test_rf13_aviso_de_seccion_solo_lo_ve_quien_esta_conectado_a_esa_seccion():
     seccion_a = SectionFactory()
     seccion_b = SectionFactory()
     Announcement.objects.create(
-        title="Solo sección A", content="...", audience="seccion", target_section=seccion_a,
+        title="Solo sección A",
+        content="...",
+        audience="seccion",
+        target_section=seccion_a,
         published_by=dir_user,
     )
 

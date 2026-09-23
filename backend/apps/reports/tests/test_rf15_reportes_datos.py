@@ -8,10 +8,19 @@ from apps.accounts.tests.factories import RoleFactory, UserFactory
 from apps.attendance.models import Attendance
 from apps.attendance.tests.factories import AttendanceFactory
 from apps.catalog.models import Section
-from apps.catalog.tests.factories import DocumentTypeFactory, GradingUnitFactory, ScholarshipFactory, SectionFactory
+from apps.catalog.tests.factories import (
+    DocumentTypeFactory,
+    GradingUnitFactory,
+    ScholarshipFactory,
+    SectionFactory,
+)
 from apps.documents.models import IssuedDocument
 from apps.grading.models import Grade, GradeChangeRequest
-from apps.grading.tests.factories import ActivityFactory, ActivityTypeFactory, TeacherAssignmentFactory
+from apps.grading.tests.factories import (
+    ActivityFactory,
+    ActivityTypeFactory,
+    TeacherAssignmentFactory,
+)
 from apps.scheduling.models import ScheduleBlock
 from apps.students.tests.factories import EnrollmentFactory
 
@@ -36,7 +45,11 @@ def test_rf15_consolidado_de_notas_usa_la_misma_nota_de_unidad_que_la_captura():
         assignment=asignacion, unit=unidad_1, activity_type=ActivityTypeFactory(), max_score=100
     )
     Grade.objects.create(
-        enrollment=inscripcion, activity=actividad, raw_score=70, current_score=70, recorded_by=asignacion.teacher
+        enrollment=inscripcion,
+        activity=actividad,
+        raw_score=70,
+        current_score=70,
+        recorded_by=asignacion.teacher,
     )
 
     client = APIClient()
@@ -60,7 +73,9 @@ def test_rf15_reporte_de_asistencia_cuenta_por_estado():
 
     client = APIClient()
     client.force_authenticate(user=_direccion())
-    respuesta = client.get("/api/v1/reports/attendance/", {"section": str(inscripcion.section.public_id)})
+    respuesta = client.get(
+        "/api/v1/reports/attendance/", {"section": str(inscripcion.section.public_id)}
+    )
 
     fila = respuesta.data["results"][0]
     assert fila["presente"] == 1
