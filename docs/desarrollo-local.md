@@ -90,16 +90,7 @@ Los ocho, todos con la misma contraseña de siembra (**solo para desarrollo, nun
 
 **Contraseña para los ocho:** `CambiaEstaClave2026`
 
-Con cualquiera de estos, `http://localhost:5173/ingresar` te deja entrar y te manda al portal que le corresponde a ese rol. Ahora mismo esa pantalla de destino solo dice "Hola, `<usuario>`" y una nota de qué falta — es exactamente lo que se construyó en esta fase, ni más ni menos.
-
-**Qué sí podés mostrarle al equipo en esta fase:**
-
-- Inicio de sesión real, contra una base de datos real.
-- Que cada rol termina en el portal que le corresponde.
-- Que una contraseña incorrecta muestra un error claro, sin decir si el usuario existe o no.
-- Documentación interactiva de la API en `http://localhost:8000/api/schema/docs/`.
-
-**Qué todavía no existe** (llega en fases siguientes): estudiantes, notas, asistencia, pagos, horarios, calendario, documentos, avisos, buzón. La Fase 3 es intencionalmente solo el cimiento de seguridad — así lo pide la sección 18 del prompt maestro.
+Con cualquiera de estos, `http://localhost:5173/ingresar` te deja entrar y te manda al portal administrativo, operativo o público que le corresponde a ese rol, con expedientes, notas, asistencia, pagos, horarios, calendario, documentos, avisos, buzón y reportes ya funcionando de punta a punta contra el backend.
 
 ---
 
@@ -128,6 +119,7 @@ python manage.py seed_demo
 - **El frontend no logra conectarse al backend (errores de red en la consola del navegador):** confirmá que el backend sigue corriendo en la terminal 1, y que `frontend/.env` tiene `VITE_API_BASE_URL=http://localhost:8000/api/v1`.
 - **"Address already in use" al levantar el backend:** ya hay algo corriendo en el puerto 8000. Cerralo o usá otro puerto: `python manage.py runserver 8001` (y actualizá `VITE_API_BASE_URL` en consecuencia).
 - **Querés confirmar que el backend por sí solo está sano:** desde `backend/`, con el entorno activado, corré `python manage.py check` y `python -m pytest -q` — no debería haber errores.
+- **En macOS, cualquier comando que toque PDF (boletines, constancias, reportes) falla con `cannot load library 'libpango-1.0-0'`:** WeasyPrint necesita Pango de Homebrew, y una instalación de Anaconda en el `PATH` trae su propia `libcairo`/`libharfbuzz` que choca con la de Homebrew. Solución: `export DYLD_LIBRARY_PATH=/opt/homebrew/lib` (no `DYLD_FALLBACK_LIBRARY_PATH`) antes de correr `manage.py`. **Importante:** si vas a dejar el servidor corriendo en segundo plano (`&`/`nohup`), poné el `export` *dentro* de un script `.sh` y ejecutá el script — macOS descarta las variables `DYLD_*` que se fijan solo como prefijo de la línea (`DYLD_LIBRARY_PATH=... comando &`) al pasar a segundo plano.
 
 ---
 
