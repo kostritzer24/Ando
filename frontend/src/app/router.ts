@@ -190,6 +190,21 @@ const routes: RouteRecordRaw[] = [
         component: () => import("@/features/notas/components/ModificacionesPage.vue"),
       },
       {
+        path: "pagos",
+        name: "administrativo-pagos",
+        component: () => import("@/features/pagos/components/PagosPage.vue"),
+      },
+      {
+        path: "documentos",
+        name: "administrativo-documentos",
+        component: () => import("@/features/pagos/components/DocumentosPage.vue"),
+      },
+      {
+        path: "boletines",
+        name: "administrativo-boletines",
+        component: () => import("@/features/pagos/components/BoletinesPage.vue"),
+      },
+      {
         path: "horarios",
         name: "administrativo-horarios",
         component: () => import("@/features/horarios/components/HorarioGridPage.vue"),

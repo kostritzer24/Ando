@@ -14,12 +14,19 @@ const navegacion = computed(() => {
     { a: "/administrativo/encargados", etiqueta: "Encargados" },
     { a: "/administrativo/asignaciones", etiqueta: "Asignaciones" },
   ];
+  if (["Dirección", "Encargado de pagos"].includes(auth.usuario?.role_name ?? "")) {
+    items.push(
+      { a: "/administrativo/pagos", etiqueta: "Pagos y solvencia" },
+      { a: "/administrativo/documentos", etiqueta: "Documentos" },
+    );
+  }
   if (auth.usuario?.role_name === "Dirección") {
     items.push(
       { a: "/administrativo/asistencia", etiqueta: "Asistencia" },
       { a: "/administrativo/justificaciones", etiqueta: "Justificaciones" },
       { a: "/administrativo/plantilla-asistencia", etiqueta: "Plantilla de talleres" },
       { a: "/administrativo/notas/modificaciones", etiqueta: "Modificaciones de notas" },
+      { a: "/administrativo/boletines", etiqueta: "Boletines" },
       { a: "/administrativo/horarios", etiqueta: "Horarios" },
       { a: "/administrativo/calendario", etiqueta: "Calendario" },
     );
