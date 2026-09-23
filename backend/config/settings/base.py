@@ -43,6 +43,7 @@ MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "apps.core.middleware.PoliticaDeSeguridadDeContenidoMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
