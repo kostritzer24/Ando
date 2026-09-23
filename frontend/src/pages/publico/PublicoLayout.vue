@@ -23,6 +23,7 @@ const pestanas = [
   { valor: "/portal/notas", etiqueta: "Notas" },
   { valor: "/portal/asistencia", etiqueta: "Asistencia" },
   { valor: "/portal/pagos", etiqueta: "Pagos" },
+  { valor: "/portal/avisos", etiqueta: "Avisos" },
 ];
 
 function elegir(publicId: string): void {

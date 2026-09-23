@@ -36,6 +36,11 @@ export type ReportCard = components["schemas"]["ReportCard"];
 export type Payment = components["schemas"]["Payment"];
 export type IssuedDocument = components["schemas"]["IssuedDocument"];
 
+export type Announcement = components["schemas"]["Announcement"];
+export type ConductReport = components["schemas"]["ConductReport"];
+export type ConductReportCreate = components["schemas"]["ConductReportCreate"];
+export type Message = components["schemas"]["Message"];
+
 /** Forma común de toda lista paginada del backend (`PageNumberPagination`). */
 export interface Paginada<T> {
   count: number;

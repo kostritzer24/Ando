@@ -276,6 +276,32 @@ class Command(BaseCommand):
             except AsignacionInvalida:
                 pass
 
+        # El maestro guía también da un curso a su propia sección — no solo
+        # firma boletines y reportes de conducta (sección 2 del prompt
+        # maestro): sin una TeacherAssignment propia no llega ni a la lista
+        # de sus propios estudiantes (RF-24), porque ese alcance se filtra
+        # siempre por asignación docente, nunca por `homeroom_teacher`.
+        guia = User.objects.filter(username="guia.demo").first()
+        comunicacion = Course.objects.filter(name="Comunicación y lenguaje L1").first()
+        primero_basico_a = Section.objects.filter(
+            cycle=ciclo, grade="Primero básico", letter="A", type=Section.TIPO_ACADEMICA
+        ).first()
+        if (
+            guia
+            and comunicacion
+            and primero_basico_a
+            and not TeacherAssignment.objects.filter(
+                teacher=guia, course=comunicacion, section=primero_basico_a, cycle=ciclo
+            ).exists()
+        ):
+            try:
+                crear_asignacion(
+                    teacher=guia, course=comunicacion, section=primero_basico_a, cycle=ciclo
+                )
+                self.stdout.write("Maestro guía de demostración asignado a su propia sección.")
+            except AsignacionInvalida:
+                pass
+
         tallerista = User.objects.filter(username="tallerista.demo").first()
         panaderia = Course.objects.filter(name="Panadería").first()
         seccion_taller = Section.objects.filter(cycle=ciclo, type=Section.TIPO_TALLER).first()

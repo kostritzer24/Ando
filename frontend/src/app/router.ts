@@ -214,6 +214,21 @@ const routes: RouteRecordRaw[] = [
         name: "administrativo-calendario",
         component: () => import("@/features/horarios/components/CalendarioPage.vue"),
       },
+      {
+        path: "avisos",
+        name: "administrativo-avisos",
+        component: () => import("@/features/comunicacion/components/AvisosPage.vue"),
+      },
+      {
+        path: "reportes-conducta",
+        name: "administrativo-reportes-conducta",
+        component: () => import("@/features/comunicacion/components/ReportesConductaPage.vue"),
+      },
+      {
+        path: "buzon",
+        name: "administrativo-buzon",
+        component: () => import("@/features/comunicacion/components/BuzonPage.vue"),
+      },
     ],
   },
   {
@@ -271,6 +286,21 @@ const routes: RouteRecordRaw[] = [
         name: "operativo-calendario",
         component: () => import("@/features/horarios/components/CalendarioPage.vue"),
       },
+      {
+        path: "avisos",
+        name: "operativo-avisos",
+        component: () => import("@/features/comunicacion/components/AvisosPage.vue"),
+      },
+      {
+        path: "reportes-conducta",
+        name: "operativo-reportes-conducta",
+        component: () => import("@/features/comunicacion/components/ReportesConductaPage.vue"),
+      },
+      {
+        path: "buzon",
+        name: "operativo-buzon",
+        component: () => import("@/features/comunicacion/components/BuzonPage.vue"),
+      },
     ],
   },
   {
@@ -297,6 +327,11 @@ const routes: RouteRecordRaw[] = [
         path: "pagos",
         name: "portal-pagos",
         component: () => import("@/features/portal/components/PagosPage.vue"),
+      },
+      {
+        path: "avisos",
+        name: "portal-avisos",
+        component: () => import("@/features/portal/components/AvisosPage.vue"),
       },
     ],
   },

@@ -34,7 +34,7 @@ CRUD estándar (`GET` lista/detalle, `POST` crea, `PATCH` edita, `DELETE` da de 
 | Becas | `/scholarships/` | RF-02 |
 | Artículos del código de convivencia | `/conduct-rule-articles/` | ADR-0006 |
 
-Roles: DIR, ADMIN (E); COORD (V); el resto sin acceso, según matriz — **con tres excepciones**, todas del mismo tipo (un rol operativo necesita leer una opción para poder usarla, aunque no administre el catálogo): la lectura (`GET`) de `/justification-types/` pasa por el área "asistencia" (RF-12 — docente, guía, tallerista eligen tipo de justificación); la de `/activity-types/` y `/cycles/{cycle_id}/units/` pasa por el área "notas" (RF-17 — docente/guía eligen tipo de actividad y unidad al diseñarla). Administrar cualquiera de los tres catálogos (crear/editar/dar de baja) sigue siendo exclusivo de "datos_maestros", igual que los otros cinco.
+Roles: DIR, ADMIN (E); COORD (V); el resto sin acceso, según matriz — **con cuatro excepciones**, todas del mismo tipo (un rol operativo necesita leer una opción para poder usarla, aunque no administre el catálogo): la lectura (`GET`) de `/justification-types/` pasa por el área "asistencia" (RF-12 — docente, guía, tallerista eligen tipo de justificación); la de `/activity-types/` y `/cycles/{cycle_id}/units/` pasa por el área "notas" (RF-17 — docente/guía eligen tipo de actividad y unidad al diseñarla); la de `/conduct-rule-articles/` pasa por el área "reportes_conducta" (RF-24, Fase 11 — el maestro guía marca los artículos incumplidos al registrar un reporte, aunque no administre el catálogo). Administrar cualquiera de los catálogos con excepción (crear/editar/dar de baja) sigue siendo exclusivo de "datos_maestros", igual que los otros cinco.
 
 ## `students` — Estudiantes, encargados e inscripción
 
@@ -109,10 +109,11 @@ Roles: DIR, ADMIN (E); COORD (V); el resto sin acceso, según matriz — **con t
 
 | Método | Ruta | Propósito | RF / HU | Roles |
 |---|---|---|---|---|
-| GET, POST | `/announcements/` | Publicar / listar avisos de cartelera | RF-13, HU-36 | DIR (E); resto (V) |
-| GET, POST | `/conduct-reports/` | Registrar reportes de conducta | RF-24 | GUÍA, DIR (E) |
+| GET, POST, PATCH, DELETE | `/announcements/` | Publicar / listar / editar / retirar (baja lógica) avisos de cartelera | RF-13, HU-36 | DIR (E); resto según matriz (V, según destinatario) |
+| GET, POST | `/conduct-reports/` | Registrar / consultar reportes de conducta | RF-24 | GUÍA (E, su sección — siempre firma como maestro guía la sección real), DIR (E, cualquiera); FAM (V, propio, RF-35) |
+| GET | `/conduct-reports/{id}/download/` | Descargar el PDF del reporte, formato real del centro | RF-24, ADR-0006 | según alcance del recurso |
 | GET, POST | `/messages/` | Enviar mensaje al buzón / listar hilos propios | RF-25, RF-37, HU-25 | FAM (E, propio); GUÍA, DIR (E, su sección) |
-| POST | `/messages/{id}/reply/` | Responder dentro del mismo hilo | RF-25 | GUÍA, DIR |
+| POST | `/messages/{id}/reply/` | Responder dentro del mismo hilo — solo el mensaje raíz acepta respuesta | RF-25 | GUÍA (su sección), DIR |
 
 ## `reports` — Consultas institucionales
 

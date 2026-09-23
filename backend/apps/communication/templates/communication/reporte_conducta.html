@@ -1,0 +1,96 @@
+<!--
+Reporte de conducta (RF-24), formato real del centro — ver
+docs/adr/0006-formato-reporte-conducta.md. Cuatro líneas de firma en
+blanco (maestro guía, miembro de dirección, estudiante, encargado):
+RN-15, ninguna se genera digital.
+-->
+<!DOCTYPE html>
+<html lang="es-GT">
+<head>
+<meta charset="utf-8">
+<style>
+  @page { size: letter; margin: 2.2cm 2cm; }
+  body {
+    font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
+    color: #1a1a1a;
+    font-size: 10.5pt;
+    line-height: 1.5;
+  }
+  .membrete {
+    border-bottom: 2pt solid #1C6EA4;
+    padding-bottom: 0.4cm;
+    margin-bottom: 0.8cm;
+  }
+  .membrete .nombre { font-weight: 800; font-size: 12pt; color: #1C6EA4; }
+  h1 { font-size: 13pt; font-weight: 800; text-align: center; margin: 0 0 0.8cm; }
+  .datos { text-align: center; color: #444; font-size: 9.5pt; margin-bottom: 0.8cm; }
+  h2 {
+    font-size: 9.5pt;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #555;
+    margin: 0.8cm 0 0.2cm;
+    border-bottom: 0.5pt solid #ccc;
+    padding-bottom: 0.15cm;
+  }
+  p { margin: 0.2cm 0; }
+  ul { margin: 0.2cm 0; padding-left: 1.1cm; }
+  .firmas { margin-top: 1.8cm; display: flex; flex-wrap: wrap; gap: 1cm 1.5cm; }
+  .firmas .linea {
+    flex: 1 1 40%;
+    border-top: 1pt solid #1a1a1a;
+    text-align: center;
+    padding-top: 0.2cm;
+    font-size: 9pt;
+    color: #444;
+  }
+</style>
+</head>
+<body>
+  <div class="membrete">
+    <div class="nombre">El Patojismo — Centro Socioeducativo Lic. Magno Rudy Romero Arévalo</div>
+  </div>
+
+  <h1>Reporte de incidencia de conducta</h1>
+  <div class="datos">
+    {{ estudiante_nombre }} — {{ grado_seccion }} — {{ reporte.report_date }}
+  </div>
+
+  <h2>Tipo de falta</h2>
+  <p>{{ reporte.get_severity_display }}</p>
+
+  <h2>Artículos del código de convivencia incumplidos</h2>
+  {% if articulos %}
+  <ul>
+    {% for item in articulos %}
+    <li>{{ item.article.code }} — {{ item.article.description }}</li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p>Ninguno marcado del catálogo.</p>
+  {% endif %}
+  {% if reporte.other_violation_detail %}
+  <p><strong>Otra falta no especificada:</strong> {{ reporte.other_violation_detail }}</p>
+  {% endif %}
+
+  <h2>Hechos ocurridos</h2>
+  <p>{{ reporte.incident_description }}</p>
+
+  <h2>Medidas inmediatas tomadas</h2>
+  <p>{{ reporte.immediate_actions }}</p>
+
+  <h2>Sanción</h2>
+  <p>{{ reporte.get_sanction_type_display }}</p>
+  {% if reporte.sanction_detail %}<p>{{ reporte.sanction_detail }}</p>{% endif %}
+
+  <h2>Compromisos establecidos</h2>
+  <p>{{ reporte.commitments }}</p>
+
+  <div class="firmas">
+    <div class="linea">Maestro guía</div>
+    <div class="linea">Miembro de dirección</div>
+    <div class="linea">Estudiante</div>
+    <div class="linea">Encargado</div>
+  </div>
+</body>
+</html>

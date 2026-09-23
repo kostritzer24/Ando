@@ -124,6 +124,68 @@ export interface paths {
         patch: operations["v1_activity_types_partial_update"];
         trace?: never;
     };
+    "/api/v1/announcements/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description RF-13/RF-36. Solo Dirección publica; el resto de los roles con
+         *     acceso al área (todos salvo Pagos, según la matriz) solo ven los
+         *     avisos vigentes que les corresponden por destinatario.
+         */
+        get: operations["v1_announcements_list"];
+        put?: never;
+        /**
+         * @description RF-13/RF-36. Solo Dirección publica; el resto de los roles con
+         *     acceso al área (todos salvo Pagos, según la matriz) solo ven los
+         *     avisos vigentes que les corresponden por destinatario.
+         */
+        post: operations["v1_announcements_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/announcements/{public_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description RF-13/RF-36. Solo Dirección publica; el resto de los roles con
+         *     acceso al área (todos salvo Pagos, según la matriz) solo ven los
+         *     avisos vigentes que les corresponden por destinatario.
+         */
+        get: operations["v1_announcements_retrieve"];
+        /**
+         * @description RF-13/RF-36. Solo Dirección publica; el resto de los roles con
+         *     acceso al área (todos salvo Pagos, según la matriz) solo ven los
+         *     avisos vigentes que les corresponden por destinatario.
+         */
+        put: operations["v1_announcements_update"];
+        post?: never;
+        /**
+         * @description RF-13/RF-36. Solo Dirección publica; el resto de los roles con
+         *     acceso al área (todos salvo Pagos, según la matriz) solo ven los
+         *     avisos vigentes que les corresponden por destinatario.
+         */
+        delete: operations["v1_announcements_destroy"];
+        options?: never;
+        head?: never;
+        /**
+         * @description RF-13/RF-36. Solo Dirección publica; el resto de los roles con
+         *     acceso al área (todos salvo Pagos, según la matriz) solo ven los
+         *     avisos vigentes que les corresponden por destinatario.
+         */
+        patch: operations["v1_announcements_partial_update"];
+        trace?: never;
+    };
     "/api/v1/assignments/": {
         parameters: {
             query?: never;
@@ -458,6 +520,77 @@ export interface paths {
          *     — institucionales o de una asignación docente de esa sección.
          */
         get: operations["v1_calendar_weekly_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/conduct-reports/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description RF-24/RF-35. `guide_teacher` es siempre el maestro guía de la
+         *     sección de la inscripción (quien firma), no necesariamente quien
+         *     llena el formulario — Dirección también puede registrar un reporte
+         *     de una sección que no es la suya.
+         */
+        get: operations["v1_conduct_reports_list"];
+        put?: never;
+        /**
+         * @description RF-24/RF-35. `guide_teacher` es siempre el maestro guía de la
+         *     sección de la inscripción (quien firma), no necesariamente quien
+         *     llena el formulario — Dirección también puede registrar un reporte
+         *     de una sección que no es la suya.
+         */
+        post: operations["v1_conduct_reports_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/conduct-reports/{public_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description RF-24/RF-35. `guide_teacher` es siempre el maestro guía de la
+         *     sección de la inscripción (quien firma), no necesariamente quien
+         *     llena el formulario — Dirección también puede registrar un reporte
+         *     de una sección que no es la suya.
+         */
+        get: operations["v1_conduct_reports_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/conduct-reports/{public_id}/download/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description RF-24: el PDF reproduce el formato real del centro
+         *     (`docs/reporte.docx`, ADR-0006), con las líneas de firma en
+         *     blanco (RN-15).
+         */
+        get: operations["v1_conduct_reports_download_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1390,6 +1523,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/messages/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description RF-25/RF-37. Un hilo es del encargado que lo empezó — lo ven él, el
+         *     maestro guía de la sección y Dirección (HU-25/HU-37).
+         */
+        get: operations["v1_messages_list"];
+        put?: never;
+        /**
+         * @description RF-25/RF-37. Un hilo es del encargado que lo empezó — lo ven él, el
+         *     maestro guía de la sección y Dirección (HU-25/HU-37).
+         */
+        post: operations["v1_messages_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/messages/{public_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description RF-25/RF-37. Un hilo es del encargado que lo empezó — lo ven él, el
+         *     maestro guía de la sección y Dirección (HU-25/HU-37).
+         */
+        get: operations["v1_messages_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/messages/{public_id}/reply/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description RF-25/RF-37. Un hilo es del encargado que lo empezó — lo ven él, el
+         *     maestro guía de la sección y Dirección (HU-25/HU-37).
+         */
+        post: operations["v1_messages_reply_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/payments/": {
         parameters: {
             query?: never;
@@ -2036,6 +2233,31 @@ export interface components {
             /** Activo */
             is_active?: boolean;
         };
+        Announcement: {
+            /** Format: uuid */
+            readonly public_id: string;
+            /** Título */
+            title: string;
+            /** Contenido */
+            content: string;
+            /** Destinatario */
+            audience: components["schemas"]["AudienceEnum"];
+            /** Format: uuid */
+            target_section?: string | null;
+            /**
+             * Fecha de publicación
+             * Format: date-time
+             */
+            readonly published_at: string;
+            /**
+             * Fecha de vencimiento
+             * Format: date-time
+             */
+            expires_at?: string | null;
+            readonly published_by: string;
+            /** Activo */
+            is_active?: boolean;
+        };
         Attendance: {
             /** Format: uuid */
             readonly public_id: string;
@@ -2064,6 +2286,12 @@ export interface components {
             /** Format: time */
             check_in_time?: string;
         };
+        /**
+         * @description * `todos` - Todos
+         *     * `seccion` - Una sección
+         * @enum {string}
+         */
+        AudienceEnum: "todos" | "seccion";
         AuditLog: {
             /** Format: uuid */
             readonly public_id: string;
@@ -2125,6 +2353,57 @@ export interface components {
         ChangePassword: {
             contrasena_actual: string;
             contrasena_nueva: string;
+        };
+        /**
+         * @description RF-24/RF-35. `articles` es de solo lectura (los nombres de los
+         *     artículos marcados); para elegirlos al crear se manda `article_ids`,
+         *     ver `ConductReportCreateSerializer`.
+         */
+        ConductReport: {
+            /** Format: uuid */
+            readonly public_id: string;
+            /** Format: uuid */
+            enrollment: string;
+            /**
+             * Fecha
+             * Format: date
+             */
+            report_date: string;
+            /** Tipo de falta */
+            severity: components["schemas"]["SeverityEnum"];
+            /** Hechos ocurridos */
+            incident_description: string;
+            /** Medidas inmediatas tomadas */
+            immediate_actions: string;
+            /** Otra falta no especificada */
+            other_violation_detail?: string;
+            /** Tipo de sanción */
+            sanction_type: components["schemas"]["SanctionTypeEnum"];
+            /** Detalle de la sanción */
+            sanction_detail?: string;
+            /** Compromisos establecidos */
+            commitments: string;
+            readonly guide_teacher: string;
+            readonly direction_member: string;
+            readonly articles: string[];
+            /** Activo */
+            is_active?: boolean;
+        };
+        ConductReportCreate: {
+            /** Format: uuid */
+            enrollment: string;
+            /** Format: date */
+            report_date: string;
+            severity: components["schemas"]["SeverityEnum"];
+            incident_description: string;
+            immediate_actions: string;
+            /** @default  */
+            other_violation_detail: string;
+            sanction_type: components["schemas"]["SanctionTypeEnum"];
+            /** @default  */
+            sanction_detail: string;
+            commitments: string;
+            article_ids?: string[];
         };
         ConductRuleArticle: {
             /** Format: uuid */
@@ -2408,6 +2687,32 @@ export interface components {
             username: string;
             password: string;
         };
+        Message: {
+            /** Format: uuid */
+            readonly public_id: string;
+            readonly sender: string;
+            /** Format: uuid */
+            section: string;
+            /** Asunto */
+            subject?: string;
+            /** Contenido */
+            content: string;
+            /** Format: uuid */
+            readonly original_message: string;
+            /** Estado */
+            readonly status: components["schemas"]["MessageStatusEnum"];
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Activo */
+            is_active?: boolean;
+        };
+        /**
+         * @description * `enviado` - Enviado
+         *     * `leido` - Leído
+         *     * `respondido` - Respondido
+         * @enum {string}
+         */
+        MessageStatusEnum: "enviado" | "leido" | "respondido";
         PaginatedAccessLogList: {
             /** @example 123 */
             count: number;
@@ -2453,6 +2758,21 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["ActivityType"][];
         };
+        PaginatedAnnouncementList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["Announcement"][];
+        };
         PaginatedAttendanceList: {
             /** @example 123 */
             count: number;
@@ -2497,6 +2817,21 @@ export interface components {
              */
             previous?: string | null;
             results: components["schemas"]["CalendarEvent"][];
+        };
+        PaginatedConductReportList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["ConductReport"][];
         };
         PaginatedConductRuleArticleList: {
             /** @example 123 */
@@ -2662,6 +2997,21 @@ export interface components {
              */
             previous?: string | null;
             results: components["schemas"]["JustificationType"][];
+        };
+        PaginatedMessageList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["Message"][];
         };
         PaginatedPaymentList: {
             /** @example 123 */
@@ -2847,6 +3197,31 @@ export interface components {
              * @description RN-04: se usa para exigir el mínimo de 4 pruebas cortas por unidad.
              */
             counts_as_short_quiz?: boolean;
+            /** Activo */
+            is_active?: boolean;
+        };
+        PatchedAnnouncement: {
+            /** Format: uuid */
+            readonly public_id?: string;
+            /** Título */
+            title?: string;
+            /** Contenido */
+            content?: string;
+            /** Destinatario */
+            audience?: components["schemas"]["AudienceEnum"];
+            /** Format: uuid */
+            target_section?: string | null;
+            /**
+             * Fecha de publicación
+             * Format: date-time
+             */
+            readonly published_at?: string;
+            /**
+             * Fecha de vencimiento
+             * Format: date-time
+             */
+            expires_at?: string | null;
+            readonly published_by?: string;
             /** Activo */
             is_active?: boolean;
         };
@@ -3302,6 +3677,18 @@ export interface components {
             /** Activo */
             is_active?: boolean;
         };
+        /**
+         * @description * `llamado_verbal` - Llamado verbal
+         *     * `amonestacion_escrita` - Amonestación escrita
+         *     * `comunicacion_familia` - Comunicación a la familia
+         *     * `suspension_extracurricular` - Suspensión de actividades extracurriculares
+         *     * `servicio_comunitario` - Servicio comunitario
+         *     * `suspension_clases` - Suspensión de clases
+         *     * `evaluacion_expulsion` - Evaluación para expulsión
+         *     * `otra` - Otra
+         * @enum {string}
+         */
+        SanctionTypeEnum: "llamado_verbal" | "amonestacion_escrita" | "comunicacion_familia" | "suspension_extracurricular" | "servicio_comunitario" | "suspension_clases" | "evaluacion_expulsion" | "otra";
         ScheduleBlock: {
             /** Format: uuid */
             readonly public_id: string;
@@ -3379,6 +3766,13 @@ export interface components {
          * @enum {string}
          */
         SectionTypeEnum: "academica" | "taller";
+        /**
+         * @description * `leve` - Leve
+         *     * `grave` - Grave
+         *     * `muy_grave` - Muy grave
+         * @enum {string}
+         */
+        SeverityEnum: "leve" | "grave" | "muy_grave";
         /**
          * @description * `manual` - Manual
          *     * `plantilla` - Plantilla
@@ -3806,6 +4200,148 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ActivityType"];
+                };
+            };
+        };
+    };
+    v1_announcements_list: {
+        parameters: {
+            query?: {
+                /** @description A page number within the paginated result set. */
+                page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedAnnouncementList"];
+                };
+            };
+        };
+    };
+    v1_announcements_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Announcement"];
+                "application/x-www-form-urlencoded": components["schemas"]["Announcement"];
+                "multipart/form-data": components["schemas"]["Announcement"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Announcement"];
+                };
+            };
+        };
+    };
+    v1_announcements_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                public_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Announcement"];
+                };
+            };
+        };
+    };
+    v1_announcements_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                public_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Announcement"];
+                "application/x-www-form-urlencoded": components["schemas"]["Announcement"];
+                "multipart/form-data": components["schemas"]["Announcement"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Announcement"];
+                };
+            };
+        };
+    };
+    v1_announcements_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                public_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    v1_announcements_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                public_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedAnnouncement"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedAnnouncement"];
+                "multipart/form-data": components["schemas"]["PatchedAnnouncement"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Announcement"];
                 };
             };
         };
@@ -4456,6 +4992,95 @@ export interface operations {
                         }[];
                         events?: Record<string, never>[];
                     };
+                };
+            };
+        };
+    };
+    v1_conduct_reports_list: {
+        parameters: {
+            query?: {
+                /** @description A page number within the paginated result set. */
+                page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedConductReportList"];
+                };
+            };
+        };
+    };
+    v1_conduct_reports_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConductReportCreate"];
+                "application/x-www-form-urlencoded": components["schemas"]["ConductReportCreate"];
+                "multipart/form-data": components["schemas"]["ConductReportCreate"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConductReportCreate"];
+                };
+            };
+        };
+    };
+    v1_conduct_reports_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                public_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConductReport"];
+                };
+            };
+        };
+    };
+    v1_conduct_reports_download_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                public_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConductReport"];
                 };
             };
         };
@@ -6324,6 +6949,101 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Justification"];
+                };
+            };
+        };
+    };
+    v1_messages_list: {
+        parameters: {
+            query?: {
+                /** @description A page number within the paginated result set. */
+                page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedMessageList"];
+                };
+            };
+        };
+    };
+    v1_messages_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Message"];
+                "application/x-www-form-urlencoded": components["schemas"]["Message"];
+                "multipart/form-data": components["schemas"]["Message"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+        };
+    };
+    v1_messages_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                public_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+        };
+    };
+    v1_messages_reply_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                public_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Message"];
+                "application/x-www-form-urlencoded": components["schemas"]["Message"];
+                "multipart/form-data": components["schemas"]["Message"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
                 };
             };
         };

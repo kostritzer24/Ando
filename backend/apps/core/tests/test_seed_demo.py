@@ -32,7 +32,9 @@ def test_seed_demo_crea_expedientes_y_asignaciones():
     # Dos hijos, no uno: sección 16 del prompt maestro pide el flujo de
     # extremo a punta "consultar el portal como encargado con dos hijos".
     assert GuardianStudentLink.objects.filter(is_active=True).count() == 2
-    assert TeacherAssignment.objects.count() == 2
+    # docente.demo (Matemática), guia.demo (Comunicación, su propia
+    # sección) y tallerista.demo (Panadería).
+    assert TeacherAssignment.objects.count() == 3
 
 
 @pytest.mark.django_db
@@ -45,4 +47,6 @@ def test_seed_demo_es_idempotente():
     assert Section.objects.filter(cycle__year=2026).count() == 7
     assert ConductRuleArticle.objects.count() == 16
     assert Student.objects.count() == 4
-    assert TeacherAssignment.objects.count() == 2
+    # docente.demo (Matemática), guia.demo (Comunicación, su propia
+    # sección) y tallerista.demo (Panadería).
+    assert TeacherAssignment.objects.count() == 3

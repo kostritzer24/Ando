@@ -164,5 +164,15 @@ class ScholarshipViewSet(CatalogViewSet):
 
 
 class ConductRuleArticleViewSet(CatalogViewSet):
+    """Misma excepción que `ActivityTypeViewSet`/`JustificationTypeViewSet`
+    (Fase 11): quien registra un reporte de conducta (RF-24 — Dirección o
+    el maestro guía de la sección) necesita elegir los artículos
+    incumplidos, aunque "datos_maestros" le dé `sin_acceso` al maestro
+    guía. Administrar el catálogo sigue siendo exclusivo de Dirección."""
+
     queryset = ConductRuleArticle.objects.all()
     serializer_class = ConductRuleArticleSerializer
+
+    def get_permissions(self):
+        self.area = "reportes_conducta" if self.action in {"list", "retrieve"} else "datos_maestros"
+        return [PermisoPorArea()]

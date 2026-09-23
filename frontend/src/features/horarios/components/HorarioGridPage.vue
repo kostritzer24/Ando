@@ -71,7 +71,13 @@ async function cargar(): Promise<void> {
     asignaciones.value = asignacionesResp.results;
     bloques.value = bloquesResp.results;
     personas.value = [...docentesResp, ...talleristasResp];
-    docenteElegido.value = opcionesDocente.value[0]?.valor ?? "";
+    // No resetear si la persona elegida sigue teniendo asignaciones: esto
+    // se vuelve a llamar después de guardar un bloque (para reflejar la
+    // celda recién ocupada), y perder la selección ahí saltaría al
+    // horario de otra persona sin avisar.
+    if (!opcionesDocente.value.some((o) => o.valor === docenteElegido.value)) {
+      docenteElegido.value = opcionesDocente.value[0]?.valor ?? "";
+    }
   } catch {
     error.value = "No se pudo cargar el horario. Probá de nuevo.";
   } finally {

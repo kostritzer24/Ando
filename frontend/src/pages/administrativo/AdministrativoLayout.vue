@@ -29,6 +29,9 @@ const navegacion = computed(() => {
       { a: "/administrativo/boletines", etiqueta: "Boletines" },
       { a: "/administrativo/horarios", etiqueta: "Horarios" },
       { a: "/administrativo/calendario", etiqueta: "Calendario" },
+      { a: "/administrativo/avisos", etiqueta: "Avisos" },
+      { a: "/administrativo/reportes-conducta", etiqueta: "Reportes de conducta" },
+      { a: "/administrativo/buzon", etiqueta: "Buzón" },
     );
   }
   return items;
