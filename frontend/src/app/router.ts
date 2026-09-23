@@ -184,6 +184,11 @@ const routes: RouteRecordRaw[] = [
         name: "administrativo-justificaciones",
         component: () => import("@/features/asistencia/components/JustificacionesPage.vue"),
       },
+      {
+        path: "notas/modificaciones",
+        name: "administrativo-notas-modificaciones",
+        component: () => import("@/features/notas/components/ModificacionesPage.vue"),
+      },
     ],
   },
   {
@@ -210,6 +215,26 @@ const routes: RouteRecordRaw[] = [
         path: "plantilla-asistencia",
         name: "operativo-plantilla-asistencia",
         component: () => import("@/features/asistencia/components/PlantillaAsistenciaPage.vue"),
+      },
+      {
+        path: "notas/unidad",
+        name: "operativo-notas-unidad",
+        component: () => import("@/features/notas/components/UnidadPage.vue"),
+      },
+      {
+        path: "notas/capturar",
+        name: "operativo-notas-capturar",
+        component: () => import("@/features/notas/components/CapturarNotasPage.vue"),
+      },
+      {
+        path: "notas/plantilla",
+        name: "operativo-notas-plantilla",
+        component: () => import("@/features/notas/components/PlantillaNotasPage.vue"),
+      },
+      {
+        path: "notas/modificaciones",
+        name: "operativo-notas-modificaciones",
+        component: () => import("@/features/notas/components/ModificacionesPage.vue"),
       },
     ],
   },

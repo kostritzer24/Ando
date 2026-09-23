@@ -9,7 +9,7 @@ from .factories import SchoolCycleFactory
 
 @pytest.mark.django_db
 def test_rf02_rn10_crear_unidad_calcula_fechas_derivadas():
-    rol = RoleFactory(name="Dirección", permissions={"datos_maestros": "editar"})
+    rol = RoleFactory(name="Dirección", permissions={"datos_maestros": "editar", "notas": "editar"})
     direccion = UserFactory(role=rol)
     ciclo = SchoolCycleFactory()
 
@@ -31,7 +31,7 @@ def test_rf02_rn10_crear_unidad_calcula_fechas_derivadas():
 def test_rf02_rn10_no_se_puede_forzar_la_fecha_de_entrega_desde_el_cliente():
     """RN-10: la fecha de entrega de notas se calcula siempre, nunca se
     acepta un valor del cliente que no coincida con la regla."""
-    rol = RoleFactory(name="Dirección", permissions={"datos_maestros": "editar"})
+    rol = RoleFactory(name="Dirección", permissions={"datos_maestros": "editar", "notas": "editar"})
     direccion = UserFactory(role=rol)
     ciclo = SchoolCycleFactory()
 
@@ -57,7 +57,7 @@ def test_rf02_rn10_no_se_puede_forzar_la_fecha_de_entrega_desde_el_cliente():
 
 @pytest.mark.django_db
 def test_rf02_rn10_editar_la_fecha_de_cierre_recalcula_las_fechas_derivadas():
-    rol = RoleFactory(name="Dirección", permissions={"datos_maestros": "editar"})
+    rol = RoleFactory(name="Dirección", permissions={"datos_maestros": "editar", "notas": "editar"})
     direccion = UserFactory(role=rol)
     ciclo = SchoolCycleFactory()
     unidad = GradingUnit.objects.create(
@@ -87,7 +87,7 @@ def test_rf02_rn10_editar_la_fecha_de_cierre_recalcula_las_fechas_derivadas():
 
 @pytest.mark.django_db
 def test_rf02_unidad_solo_se_lista_dentro_de_su_propio_ciclo():
-    rol = RoleFactory(name="Dirección", permissions={"datos_maestros": "editar"})
+    rol = RoleFactory(name="Dirección", permissions={"datos_maestros": "editar", "notas": "editar"})
     direccion = UserFactory(role=rol)
     ciclo_uno = SchoolCycleFactory()
     ciclo_dos = SchoolCycleFactory()

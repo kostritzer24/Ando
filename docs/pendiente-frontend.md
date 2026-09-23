@@ -10,19 +10,6 @@ La Fase 3 es la excepción: su frontend (login, cambio de contraseña, guards po
 
 Portal público (familia): RF-31 (consultar asistencia) ya tiene datos reales disponibles desde la Fase 6, pero esa pantalla específica es Fase 10.
 
-### Fase 7 — Notas (RF-17 a RF-20, RF-23, RF-10)
-Portal operativo, rol Docente/Docente con sección a cargo (siempre limitado a sus propias asignaciones, el backend ya lo filtra):
-
-- Diseñar la unidad: agregar actividades una por una viendo en todo momento cuántos puntos van (de 100) y cuántas son pruebas cortas — el backend rechaza pasarse de 100, pero la pantalla debería impedirlo visualmente antes de mandar la petición, no solo mostrar el error
-- Capturar punteo real por actividad, uno por uno — si la actividad ya tiene nota, no ofrecer "editar" directo: llevar al formulario de "solicitar corrección" (RF-23), porque el backend ya rechaza el sobrescritura (RN-05)
-- Botones "Descargar plantilla" (`GET /grades/template/{assignment}/{unit}/`) y "Subir plantilla", con un paso de vista previa (`POST /grades/template/preview/`) antes de confirmar (`POST /grades/template/upload/`) — la vista previa distingue notas nuevas de modificaciones, así que la pantalla debería mostrar esa distinción, no solo un número total
-- Bandeja de solicitudes de modificación propias, con su estado (pendiente/aprobada/rechazada)
-
-Portal administrativo, rol Dirección:
-- Bandeja de solicitudes de modificación pendientes de todo el centro, con aprobar/rechazar (`POST /grade-change-requests/{id}/approve|reject/`) — es la única acción de escritura de toda esta fase que no es del docente
-
-Ninguna pantalla debe mostrar `raw_score` en ningún rol — la API ya no lo expone (RN-06), así que no hay manera de mostrarlo aunque alguien lo pidiera; si Dirección necesita ver el historial de una nota, es a través de `original_score`/`requested_score` en la solicitud de modificación, no de un campo "punteo real" suelto.
-
 ### Fase 8 — Horarios y calendario (RF-06, RF-22, RF-26)
 Portal administrativo, rol Dirección (única que escribe horario, `docs/api.md` documenta `/assignments/` y `/schedule-blocks/` como `DIR (E)`):
 
@@ -60,3 +47,4 @@ Nota transversal: los cuatro documentos PDF (constancia de solvencia, de estudio
 - **Fase 4** — Datos maestros: los 8 catálogos, portal administrativo, Dirección/Administrador editan y Coordinación solo ve (los botones de escritura se esconden para ese rol). Cierre completo en `docs/fase-4-frontend-cierre.md`. (`frontend/src/features/catalogo/`)
 - **Fase 5** — Expedientes y asignaciones: inscribir estudiante, expediente con datos sensibles restringidos, encargados (con la creación del usuario de la cuenta familiar incluida en el mismo formulario) y sus vínculos, asignación de docente/tallerista con el curso y la persona filtrados por tipo de sección. Cierre completo en `docs/fase-5-frontend-cierre.md`. (`frontend/src/features/estudiantes/`, `frontend/src/features/asignaciones/`)
 - **Fase 6** — Asistencia: tomar asistencia por sección (con hora de llegada o estado directo), justificaciones (registrar y resolver), plantilla de talleres. Primer portal operativo con layout propio (`OperativoLayout`). Cierre completo en `docs/fase-6-frontend-cierre.md`. (`frontend/src/features/asistencia/`)
+- **Fase 7** — Notas: diseñar la unidad (con el total de puntos y de pruebas cortas en vivo), capturar punteo (con "solicitar corrección" en vez de editar directo, RN-05), plantilla de calificaciones con vista previa de dos pasos, bandeja de modificaciones (propia y, para Dirección, aprobar/rechazar). `raw_score` no aparece en ninguna pantalla — la API no lo expone. Cierre completo en `docs/fase-7-frontend-cierre.md`. (`frontend/src/features/notas/`)

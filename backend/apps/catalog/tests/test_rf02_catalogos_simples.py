@@ -29,12 +29,14 @@ CASOS = [
 @pytest.mark.django_db
 @pytest.mark.parametrize("ruta,payload", CASOS)
 def test_rf02_direccion_administra_cada_catalogo(ruta, payload):
-    # "asistencia" hace falta acá porque /justification-types/ es la
-    # excepción entre los 8 catálogos (ver JustificationTypeViewSet):
-    # leerlo pasa por esa área, no por "datos_maestros" — administrar el
-    # catálogo (lo que esta prueba ejercita) sigue siendo igual para los 6.
+    # "asistencia" y "notas" hacen falta acá porque /justification-types/
+    # y /activity-types/ son la excepción entre los 8 catálogos (ver
+    # JustificationTypeViewSet y ActivityTypeViewSet): leerlos pasa por
+    # esas áreas, no por "datos_maestros" — administrar el catálogo (lo
+    # que esta prueba ejercita) sigue siendo igual para los 6 restantes.
     rol = RoleFactory(
-        name="Dirección", permissions={"datos_maestros": "editar", "asistencia": "editar"}
+        name="Dirección",
+        permissions={"datos_maestros": "editar", "asistencia": "editar", "notas": "editar"},
     )
     direccion = UserFactory(role=rol)
 

@@ -48,9 +48,20 @@ class SchoolCycleViewSet(CatalogViewSet):
 
 class GradingUnitViewSet(CatalogViewSet):
     """Anidada bajo `/cycles/{cycle_public_id}/units/` (`docs/api.md`).
-    Las fechas derivadas las calcula siempre el servicio — ver RN-10."""
+    Las fechas derivadas las calcula siempre el servicio — ver RN-10.
+
+    Misma excepción que `JustificationTypeViewSet`: un docente necesita
+    poder elegir la unidad al diseñarla (RF-17) o al generar la
+    plantilla de calificaciones (RF-19), aunque "datos_maestros" le dé
+    sin_acceso — conoce el `cycle_public_id` por su propia asignación
+    (`/assignments/`), así que solo hace falta abrirle la lectura de
+    esta ruta anidada, no el catálogo de ciclos completo."""
 
     serializer_class = GradingUnitSerializer
+
+    def get_permissions(self):
+        self.area = "notas" if self.action in {"list", "retrieve"} else "datos_maestros"
+        return [PermisoPorArea()]
 
     def get_queryset(self):
         return GradingUnit.objects.filter(cycle__public_id=self.kwargs["cycle_public_id"])
@@ -112,8 +123,16 @@ class CourseViewSet(CatalogViewSet):
 
 
 class ActivityTypeViewSet(CatalogViewSet):
+    """Misma excepción que `JustificationTypeViewSet` y `GradingUnitViewSet`:
+    un docente necesita elegir el tipo de actividad al diseñar la unidad
+    (RF-17), aunque "datos_maestros" le dé sin_acceso."""
+
     queryset = ActivityType.objects.all()
     serializer_class = ActivityTypeSerializer
+
+    def get_permissions(self):
+        self.area = "notas" if self.action in {"list", "retrieve"} else "datos_maestros"
+        return [PermisoPorArea()]
 
 
 class JustificationTypeViewSet(CatalogViewSet):

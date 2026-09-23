@@ -19,6 +19,7 @@ const navegacion = computed(() => {
       { a: "/administrativo/asistencia", etiqueta: "Asistencia" },
       { a: "/administrativo/justificaciones", etiqueta: "Justificaciones" },
       { a: "/administrativo/plantilla-asistencia", etiqueta: "Plantilla de talleres" },
+      { a: "/administrativo/notas/modificaciones", etiqueta: "Modificaciones de notas" },
     );
   }
   return items;

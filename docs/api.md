@@ -34,7 +34,7 @@ CRUD estándar (`GET` lista/detalle, `POST` crea, `PATCH` edita, `DELETE` da de 
 | Becas | `/scholarships/` | RF-02 |
 | Artículos del código de convivencia | `/conduct-rule-articles/` | ADR-0006 |
 
-Roles: DIR, ADMIN (E); COORD (V); el resto sin acceso, según matriz — **excepto `/justification-types/`**, cuya lectura (`GET`) pasa por el área "asistencia" en vez de "datos_maestros": cualquier rol que registra una justificación (RF-12 — docente, guía, tallerista) necesita poder elegir su tipo. Administrar el catálogo (crear/editar/dar de baja) sigue siendo exclusivo de "datos_maestros", igual que los otros siete.
+Roles: DIR, ADMIN (E); COORD (V); el resto sin acceso, según matriz — **con tres excepciones**, todas del mismo tipo (un rol operativo necesita leer una opción para poder usarla, aunque no administre el catálogo): la lectura (`GET`) de `/justification-types/` pasa por el área "asistencia" (RF-12 — docente, guía, tallerista eligen tipo de justificación); la de `/activity-types/` y `/cycles/{cycle_id}/units/` pasa por el área "notas" (RF-17 — docente/guía eligen tipo de actividad y unidad al diseñarla). Administrar cualquiera de los tres catálogos (crear/editar/dar de baja) sigue siendo exclusivo de "datos_maestros", igual que los otros cinco.
 
 ## `students` — Estudiantes, encargados e inscripción
 
