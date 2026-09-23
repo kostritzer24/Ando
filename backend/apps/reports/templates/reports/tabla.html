@@ -1,0 +1,54 @@
+{% load reports_extras %}
+<!--
+Plantilla genérica de los 8 reportes institucionales (RF-15) — una sola
+plantilla con columnas dinámicas, en vez de una por reporte, porque los
+ocho son "filtrar y listar en una tabla" (sección 11 del prompt maestro).
+-->
+<!DOCTYPE html>
+<html lang="es-GT">
+<head>
+<meta charset="utf-8">
+<style>
+  @page { size: letter landscape; margin: 1.8cm; }
+  body {
+    font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
+    color: #1a1a1a;
+    font-size: 9.5pt;
+  }
+  .membrete { border-bottom: 2pt solid #1C6EA4; padding-bottom: 0.3cm; margin-bottom: 0.6cm; }
+  .membrete .nombre { font-weight: 800; font-size: 12pt; color: #1C6EA4; }
+  h1 { font-size: 13pt; font-weight: 800; margin: 0 0 0.2cm; }
+  .meta { color: #555; font-size: 9pt; margin: 0 0 0.6cm; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 0.18cm 0.3cm; border-bottom: 0.5pt solid #ccc; }
+  th { color: #555; font-size: 8.5pt; text-transform: uppercase; letter-spacing: 0.02em; }
+</style>
+</head>
+<body>
+  <div class="membrete">
+    <div class="nombre">El Patojismo — Centro Socioeducativo Lic. Magno Rudy Romero Arévalo</div>
+  </div>
+
+  <h1>{{ titulo }}</h1>
+  <p class="meta">Generado el {{ generado_el }} — {{ filas|length }} registro{{ filas|length|pluralize }}.</p>
+
+  <table>
+    <thead>
+      <tr>
+        {% for clave, etiqueta in columnas %}
+        <th>{{ etiqueta }}</th>
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for fila in filas %}
+      <tr>
+        {% for clave, etiqueta in columnas %}
+        <td>{{ fila|lookup:clave }}</td>
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</body>
+</html>

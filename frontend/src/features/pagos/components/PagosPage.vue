@@ -12,6 +12,7 @@ import {
   paymentsApi,
 } from "../api/pagosApi";
 import type { EstadoSolvencia } from "../api/pagosApi";
+import { descargarReportePdf } from "@/features/reportes/api/reportesApi";
 
 const MESES = [
   "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -32,6 +33,7 @@ const guardando = ref(false);
 const errorPago = ref("");
 const emitiendo = ref(false);
 const errorEmision = ref("");
+const descargandoReporte = ref(false);
 
 const anioActual = new Date().getFullYear();
 const formulario = reactive({
@@ -133,6 +135,19 @@ async function emitirConstancia(): Promise<void> {
   }
 }
 
+async function descargarReporteInsolventes(): Promise<void> {
+  descargandoReporte.value = true;
+  error.value = "";
+  try {
+    const { blob, nombreArchivo } = await descargarReportePdf("insolvent-students", {});
+    descargarArchivo(blob, nombreArchivo);
+  } catch {
+    error.value = "No se pudo generar el reporte. Probá de nuevo.";
+  } finally {
+    descargandoReporte.value = false;
+  }
+}
+
 watch(inscripcionElegida, cargarDetalle);
 
 onMounted(async () => {
@@ -149,6 +164,10 @@ onMounted(async () => {
     <p v-else-if="cargando">Cargando…</p>
 
     <template v-else>
+      <AppButton variante="secundario" :deshabilitado="descargandoReporte" @click="descargarReporteInsolventes">
+        {{ descargandoReporte ? "Generando…" : "Reporte de estudiantes insolventes" }}
+      </AppButton>
+
       <FormSelect
         id="inscripcion"
         etiqueta="Estudiante"

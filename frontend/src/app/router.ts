@@ -229,6 +229,16 @@ const routes: RouteRecordRaw[] = [
         name: "administrativo-buzon",
         component: () => import("@/features/comunicacion/components/BuzonPage.vue"),
       },
+      {
+        path: "reportes",
+        name: "administrativo-reportes",
+        component: () => import("@/features/reportes/components/ReportesPage.vue"),
+      },
+      {
+        path: "metricas",
+        name: "administrativo-metricas",
+        component: () => import("@/features/reportes/components/MetricasPage.vue"),
+      },
     ],
   },
   {

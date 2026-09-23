@@ -32,6 +32,8 @@ const navegacion = computed(() => {
       { a: "/administrativo/avisos", etiqueta: "Avisos" },
       { a: "/administrativo/reportes-conducta", etiqueta: "Reportes de conducta" },
       { a: "/administrativo/buzon", etiqueta: "Buzón" },
+      { a: "/administrativo/reportes", etiqueta: "Reportes" },
+      { a: "/administrativo/metricas", etiqueta: "Métricas" },
     );
   }
   return items;

@@ -607,14 +607,20 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * @description Base común a los 8 catálogos: mismo permiso, mismo identificador de
-         *     URL, misma baja lógica en vez de borrado (RF-02, HU-02).
+         * @description Misma excepción que `ActivityTypeViewSet`/`JustificationTypeViewSet`
+         *     (Fase 11): quien registra un reporte de conducta (RF-24 — Dirección o
+         *     el maestro guía de la sección) necesita elegir los artículos
+         *     incumplidos, aunque "datos_maestros" le dé `sin_acceso` al maestro
+         *     guía. Administrar el catálogo sigue siendo exclusivo de Dirección.
          */
         get: operations["v1_conduct_rule_articles_list"];
         put?: never;
         /**
-         * @description Base común a los 8 catálogos: mismo permiso, mismo identificador de
-         *     URL, misma baja lógica en vez de borrado (RF-02, HU-02).
+         * @description Misma excepción que `ActivityTypeViewSet`/`JustificationTypeViewSet`
+         *     (Fase 11): quien registra un reporte de conducta (RF-24 — Dirección o
+         *     el maestro guía de la sección) necesita elegir los artículos
+         *     incumplidos, aunque "datos_maestros" le dé `sin_acceso` al maestro
+         *     guía. Administrar el catálogo sigue siendo exclusivo de Dirección.
          */
         post: operations["v1_conduct_rule_articles_create"];
         delete?: never;
@@ -631,26 +637,38 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * @description Base común a los 8 catálogos: mismo permiso, mismo identificador de
-         *     URL, misma baja lógica en vez de borrado (RF-02, HU-02).
+         * @description Misma excepción que `ActivityTypeViewSet`/`JustificationTypeViewSet`
+         *     (Fase 11): quien registra un reporte de conducta (RF-24 — Dirección o
+         *     el maestro guía de la sección) necesita elegir los artículos
+         *     incumplidos, aunque "datos_maestros" le dé `sin_acceso` al maestro
+         *     guía. Administrar el catálogo sigue siendo exclusivo de Dirección.
          */
         get: operations["v1_conduct_rule_articles_retrieve"];
         /**
-         * @description Base común a los 8 catálogos: mismo permiso, mismo identificador de
-         *     URL, misma baja lógica en vez de borrado (RF-02, HU-02).
+         * @description Misma excepción que `ActivityTypeViewSet`/`JustificationTypeViewSet`
+         *     (Fase 11): quien registra un reporte de conducta (RF-24 — Dirección o
+         *     el maestro guía de la sección) necesita elegir los artículos
+         *     incumplidos, aunque "datos_maestros" le dé `sin_acceso` al maestro
+         *     guía. Administrar el catálogo sigue siendo exclusivo de Dirección.
          */
         put: operations["v1_conduct_rule_articles_update"];
         post?: never;
         /**
-         * @description Base común a los 8 catálogos: mismo permiso, mismo identificador de
-         *     URL, misma baja lógica en vez de borrado (RF-02, HU-02).
+         * @description Misma excepción que `ActivityTypeViewSet`/`JustificationTypeViewSet`
+         *     (Fase 11): quien registra un reporte de conducta (RF-24 — Dirección o
+         *     el maestro guía de la sección) necesita elegir los artículos
+         *     incumplidos, aunque "datos_maestros" le dé `sin_acceso` al maestro
+         *     guía. Administrar el catálogo sigue siendo exclusivo de Dirección.
          */
         delete: operations["v1_conduct_rule_articles_destroy"];
         options?: never;
         head?: never;
         /**
-         * @description Base común a los 8 catálogos: mismo permiso, mismo identificador de
-         *     URL, misma baja lógica en vez de borrado (RF-02, HU-02).
+         * @description Misma excepción que `ActivityTypeViewSet`/`JustificationTypeViewSet`
+         *     (Fase 11): quien registra un reporte de conducta (RF-24 — Dirección o
+         *     el maestro guía de la sección) necesita elegir los artículos
+         *     incumplidos, aunque "datos_maestros" le dé `sin_acceso` al maestro
+         *     guía. Administrar el catálogo sigue siendo exclusivo de Dirección.
          */
         patch: operations["v1_conduct_rule_articles_partial_update"];
         trace?: never;
@@ -1748,6 +1766,216 @@ export interface paths {
          *     aprobar y publicar actúan sobre un boletín individual.
          */
         post: operations["v1_report_cards_generate_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/attendance/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Los ocho reportes institucionales (RF-15) comparten la misma forma:
+         *     `?cycle=&section=&format=pdf` — cada subclase solo define el título,
+         *     las columnas y de dónde saca las filas. La única excepción de área es
+         *     `InsolventStudentsView` (ver docs/permisos-roles.md, nota 8: ese
+         *     reporte vive dentro de "Pagos y solvencia" para el rol Encargado de
+         *     pagos, no dentro de "Reportes institucionales").
+         */
+        get: operations["v1_reports_attendance_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/enrolled-students/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Los ocho reportes institucionales (RF-15) comparten la misma forma:
+         *     `?cycle=&section=&format=pdf` — cada subclase solo define el título,
+         *     las columnas y de dónde saca las filas. La única excepción de área es
+         *     `InsolventStudentsView` (ver docs/permisos-roles.md, nota 8: ese
+         *     reporte vive dentro de "Pagos y solvencia" para el rol Encargado de
+         *     pagos, no dentro de "Reportes institucionales").
+         */
+        get: operations["v1_reports_enrolled_students_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/family-access/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Los ocho reportes institucionales (RF-15) comparten la misma forma:
+         *     `?cycle=&section=&format=pdf` — cada subclase solo define el título,
+         *     las columnas y de dónde saca las filas. La única excepción de área es
+         *     `InsolventStudentsView` (ver docs/permisos-roles.md, nota 8: ese
+         *     reporte vive dentro de "Pagos y solvencia" para el rol Encargado de
+         *     pagos, no dentro de "Reportes institucionales").
+         */
+        get: operations["v1_reports_family_access_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/grade-change-history/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Los ocho reportes institucionales (RF-15) comparten la misma forma:
+         *     `?cycle=&section=&format=pdf` — cada subclase solo define el título,
+         *     las columnas y de dónde saca las filas. La única excepción de área es
+         *     `InsolventStudentsView` (ver docs/permisos-roles.md, nota 8: ese
+         *     reporte vive dentro de "Pagos y solvencia" para el rol Encargado de
+         *     pagos, no dentro de "Reportes institucionales").
+         */
+        get: operations["v1_reports_grade_change_history_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/grades-summary/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Los ocho reportes institucionales (RF-15) comparten la misma forma:
+         *     `?cycle=&section=&format=pdf` — cada subclase solo define el título,
+         *     las columnas y de dónde saca las filas. La única excepción de área es
+         *     `InsolventStudentsView` (ver docs/permisos-roles.md, nota 8: ese
+         *     reporte vive dentro de "Pagos y solvencia" para el rol Encargado de
+         *     pagos, no dentro de "Reportes institucionales").
+         */
+        get: operations["v1_reports_grades_summary_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/insolvent-students/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Nota 8 de docs/permisos-roles.md: para Encargado de pagos, este
+         *     reporte es una vista dentro de "Pagos y solvencia" (área
+         *     `pagos_solvencia`), no de "Reportes institucionales" — el rol nunca
+         *     tiene acceso a los otros siete.
+         */
+        get: operations["v1_reports_insolvent_students_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/issued-documents/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Los ocho reportes institucionales (RF-15) comparten la misma forma:
+         *     `?cycle=&section=&format=pdf` — cada subclase solo define el título,
+         *     las columnas y de dónde saca las filas. La única excepción de área es
+         *     `InsolventStudentsView` (ver docs/permisos-roles.md, nota 8: ese
+         *     reporte vive dentro de "Pagos y solvencia" para el rol Encargado de
+         *     pagos, no dentro de "Reportes institucionales").
+         */
+        get: operations["v1_reports_issued_documents_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/metrics/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Sección 11: métricas del estudio, sin datos personales — nunca en
+         *     PDF (no es un listado, es un par de porcentajes agregados).
+         */
+        get: operations["v1_reports_metrics_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/schedules/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Los ocho reportes institucionales (RF-15) comparten la misma forma:
+         *     `?cycle=&section=&format=pdf` — cada subclase solo define el título,
+         *     las columnas y de dónde saca las filas. La única excepción de área es
+         *     `InsolventStudentsView` (ver docs/permisos-roles.md, nota 8: ese
+         *     reporte vive dentro de "Pagos y solvencia" para el rol Encargado de
+         *     pagos, no dentro de "Reportes institucionales").
+         */
+        get: operations["v1_reports_schedules_retrieve"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -7256,6 +7484,168 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ReportCard"];
                 };
+            };
+        };
+    };
+    v1_reports_attendance_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    v1_reports_enrolled_students_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    v1_reports_family_access_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    v1_reports_grade_change_history_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    v1_reports_grades_summary_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    v1_reports_insolvent_students_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    v1_reports_issued_documents_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    v1_reports_metrics_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    v1_reports_schedules_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

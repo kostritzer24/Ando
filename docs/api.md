@@ -117,7 +117,7 @@ Roles: DIR, ADMIN (E); COORD (V); el resto sin acceso, según matriz — **con c
 
 ## `reports` — Consultas institucionales
 
-Todas aceptan `?cycle=&unit=&section=&format=pdf`.
+Todas aceptan `?cycle=&section=` (algunas también `?unit=`, donde aplica — ver la implementación de cada una) y `?export=pdf` para la descarga en PDF en vez del listado en JSON. No se llama `format`: ese nombre está reservado por la negociación de contenido de DRF y un `?format=pdf` nunca llega a la vista.
 
 | Ruta | Reporte | RF |
 |---|---|---|
