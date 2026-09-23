@@ -1,4 +1,5 @@
 import pytest
+from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.test import APIClient
 
 from apps.accounts.tests.factories import RoleFactory, UserFactory
@@ -84,6 +85,107 @@ def test_rechazar_la_justificacion_no_cambia_la_asistencia():
     assert respuesta.data["resolution"] == Justification.RESOLUCION_RECHAZADA
     asistencia.refresh_from_db()
     assert asistencia.status == Attendance.ESTADO_AUSENTE
+
+
+@pytest.mark.django_db
+def test_rf12_seccion14_4_acepta_un_pdf_valido_como_documento_de_respaldo():
+    rol = RoleFactory(name="Dirección", permissions={"asistencia": "editar"})
+    direccion = UserFactory(role=rol)
+    asistencia = AttendanceFactory(status=Attendance.ESTADO_AUSENTE)
+    tipo = JustificationType.objects.create(name="Constancia médica", requires_document=True)
+
+    client = APIClient()
+    client.force_authenticate(user=direccion)
+
+    respuesta = client.post(
+        "/api/v1/justifications/",
+        {
+            "attendance": str(asistencia.public_id),
+            "justification_type": str(tipo.public_id),
+            "supporting_document": SimpleUploadedFile(
+                "constancia.pdf", b"%PDF-1.4 contenido de prueba", content_type="application/pdf"
+            ),
+        },
+    )
+
+    assert respuesta.status_code == 201
+    assert respuesta.data["has_supporting_document"] is True
+
+
+@pytest.mark.django_db
+def test_rf12_seccion14_4_rechaza_una_extension_no_permitida():
+    rol = RoleFactory(name="Dirección", permissions={"asistencia": "editar"})
+    direccion = UserFactory(role=rol)
+    asistencia = AttendanceFactory(status=Attendance.ESTADO_AUSENTE)
+    tipo = JustificationType.objects.create(name="Constancia médica", requires_document=True)
+
+    client = APIClient()
+    client.force_authenticate(user=direccion)
+
+    respuesta = client.post(
+        "/api/v1/justifications/",
+        {
+            "attendance": str(asistencia.public_id),
+            "justification_type": str(tipo.public_id),
+            "supporting_document": SimpleUploadedFile(
+                "script.exe", b"MZ contenido ejecutable", content_type="application/x-msdownload"
+            ),
+        },
+    )
+
+    assert respuesta.status_code == 400
+    assert "supporting_document" in respuesta.data
+
+
+@pytest.mark.django_db
+def test_rf12_seccion14_4_rechaza_contenido_que_no_coincide_con_la_extension():
+    rol = RoleFactory(name="Dirección", permissions={"asistencia": "editar"})
+    direccion = UserFactory(role=rol)
+    asistencia = AttendanceFactory(status=Attendance.ESTADO_AUSENTE)
+    tipo = JustificationType.objects.create(name="Constancia médica", requires_document=True)
+
+    client = APIClient()
+    client.force_authenticate(user=direccion)
+
+    respuesta = client.post(
+        "/api/v1/justifications/",
+        {
+            "attendance": str(asistencia.public_id),
+            "justification_type": str(tipo.public_id),
+            "supporting_document": SimpleUploadedFile(
+                "falso.pdf", b"esto no es un PDF de verdad", content_type="application/pdf"
+            ),
+        },
+    )
+
+    assert respuesta.status_code == 400
+    assert "supporting_document" in respuesta.data
+
+
+@pytest.mark.django_db
+def test_rf12_seccion14_4_rechaza_un_archivo_demasiado_pesado():
+    rol = RoleFactory(name="Dirección", permissions={"asistencia": "editar"})
+    direccion = UserFactory(role=rol)
+    asistencia = AttendanceFactory(status=Attendance.ESTADO_AUSENTE)
+    tipo = JustificationType.objects.create(name="Constancia médica", requires_document=True)
+
+    client = APIClient()
+    client.force_authenticate(user=direccion)
+
+    contenido_pesado = b"%PDF-1.4 " + b"0" * (5 * 1024 * 1024 + 1)
+    respuesta = client.post(
+        "/api/v1/justifications/",
+        {
+            "attendance": str(asistencia.public_id),
+            "justification_type": str(tipo.public_id),
+            "supporting_document": SimpleUploadedFile(
+                "pesado.pdf", contenido_pesado, content_type="application/pdf"
+            ),
+        },
+    )
+
+    assert respuesta.status_code == 400
+    assert "supporting_document" in respuesta.data
 
 
 @pytest.mark.django_db

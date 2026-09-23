@@ -3,6 +3,7 @@ from django.db import models
 
 from apps.catalog.models import JustificationType
 from apps.core.models import BaseModel
+from apps.core.validators import validar_documento_de_respaldo
 from apps.students.models import Enrollment
 
 
@@ -74,7 +75,11 @@ class Justification(BaseModel):
     )
     reason_detail = models.TextField("motivo", blank=True)
     supporting_document = models.FileField(
-        "documento de respaldo", upload_to="justificaciones/%Y/%m/", null=True, blank=True
+        "documento de respaldo",
+        upload_to="justificaciones/%Y/%m/",
+        null=True,
+        blank=True,
+        validators=[validar_documento_de_respaldo],
     )
     resolution = models.CharField(
         "resolución", max_length=20, choices=RESOLUCIONES, default=RESOLUCION_PENDIENTE

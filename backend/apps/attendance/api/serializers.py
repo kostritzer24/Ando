@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from apps.catalog.models import JustificationType
+from apps.core.validators import validar_documento_de_respaldo
 from apps.students.models import Enrollment
 
 from ..models import Attendance, Justification
@@ -58,7 +59,9 @@ class JustificationSerializer(serializers.ModelSerializer):
     # maestro: nada sensible se sirve desde una carpeta pública) — se
     # sube acá, pero se descarga por la acción autenticada
     # GET /justifications/{id}/document/.
-    supporting_document = serializers.FileField(write_only=True, required=False)
+    supporting_document = serializers.FileField(
+        write_only=True, required=False, validators=[validar_documento_de_respaldo]
+    )
     has_supporting_document = serializers.SerializerMethodField()
 
     class Meta:
