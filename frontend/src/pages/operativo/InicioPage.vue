@@ -9,7 +9,8 @@ const auth = useAuthStore();
     <h1>Portal operativo</h1>
     <p>Hola, {{ auth.usuario?.first_name || auth.usuario?.username }}.</p>
     <p class="pagina-inicio__nota">
-      Asistencia, notas, horarios y calendario se agregan en las fases 6 a 8.
+      Asistencia ya está disponible en el menú de la izquierda. Notas, horarios y
+      calendario se van agregando en las próximas fases.
     </p>
   </main>
 </template>

@@ -3032,8 +3032,12 @@ export interface components {
             teacher?: string;
             /** Format: uuid */
             course?: string;
+            readonly course_name?: string;
             /** Format: uuid */
             section?: string;
+            readonly section_grade?: string;
+            readonly section_letter?: string;
+            readonly section_type?: string;
             /** Format: uuid */
             cycle?: string;
             /** Activo */
@@ -3288,8 +3292,12 @@ export interface components {
             teacher: string;
             /** Format: uuid */
             course: string;
+            readonly course_name: string;
             /** Format: uuid */
             section: string;
+            readonly section_grade: string;
+            readonly section_letter: string;
+            readonly section_type: string;
             /** Format: uuid */
             cycle: string;
             /** Activo */

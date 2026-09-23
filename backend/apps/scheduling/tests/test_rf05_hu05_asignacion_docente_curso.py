@@ -143,3 +143,27 @@ def test_docente_solo_ve_sus_propias_asignaciones():
 
     assert respuesta.data["count"] == 1
     assert respuesta.data["results"][0]["teacher"] == docente_uno.public_id
+
+
+@pytest.mark.django_db
+def test_un_docente_ve_el_grado_y_curso_de_su_propia_asignacion_sin_pasar_por_el_catalogo():
+    """`/sections/` y `/courses/` viven detrás del área "datos_maestros",
+    a la que un docente no llega (docs/permisos-roles.md) — pero sí
+    necesita saber el grado/letra de su sección y el nombre de su curso
+    para las pantallas operativas (asistencia, notas)."""
+    rol_docente = RoleFactory(name="Docente", permissions={"horarios_calendario": "ver"})
+    docente = UserFactory(role=rol_docente)
+    ciclo = SchoolCycleFactory()
+    seccion = SectionFactory(cycle=ciclo, type="academica", grade="Segundo básico", letter="")
+    curso = Course.objects.create(name="Matemática", type=Course.TIPO_ACADEMICO)
+    TeacherAssignment.objects.create(teacher=docente, course=curso, section=seccion, cycle=ciclo)
+
+    client = APIClient()
+    client.force_authenticate(user=docente)
+
+    respuesta = client.get("/api/v1/assignments/")
+
+    fila = respuesta.data["results"][0]
+    assert fila["section_grade"] == "Segundo básico"
+    assert fila["section_type"] == "academica"
+    assert fila["course_name"] == "Matemática"

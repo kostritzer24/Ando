@@ -8,20 +8,7 @@ La Fase 3 es la excepción: su frontend (login, cambio de contraseña, guards po
 
 ## Pendiente
 
-Portal operativo (Fase 6+): `GET /assignments/` ya llega filtrado a "mis asignaciones" por el backend (`scope_queryset`, sin necesidad de un parámetro `?mine=`) para que un docente/tallerista vea qué tiene asignado — insumo para las pantallas de asistencia y notas, no hace falta una pantalla dedicada solo para esto.
-
-### Fase 6 — Asistencia (RF-16, RF-12, RF-21)
-Portal operativo, rol Docente/Docente con sección a cargo/Tallerista (siempre limitado a sus propias secciones asignadas, el backend ya lo filtra):
-
-- Tomar asistencia diaria de una sección: lista de inscritos con un selector rápido presente/tarde/ausente/justificado por estudiante — HU-16 pide que se pueda hacer durante la clase o al final de la jornada, así que el diseño tiene que permitir guardar parcial y volver
-- Si se captura hora de llegada en vez de estado directo, mandar `check_in_time` y dejar que el backend decida presente/tarde (RN-11) — no calcular la tardanza en el frontend
-- Pantalla de justificaciones: registrar una (con archivo adjunto opcional) y, para Dirección, resolver (aprobar/rechazar) — la resolución es la única acción restringida a Dirección en toda esta fase
-- El documento de respaldo de una justificación se descarga con `GET /justifications/{id}/document/`, nunca con una URL directa (no hay `MEDIA_URL` público a propósito)
-
-Portal administrativo/operativo, para secciones de taller (RF-21):
-- Botón "Descargar plantilla" (`GET /attendance/template/{section}/{fecha}/`) y "Subir plantilla" (`POST /attendance/template/upload/`) — la subida devuelve una lista de errores por fila si algo no cuadra (ningún registro se guarda hasta que el archivo esté limpio); el diseño de esta pantalla de errores debe seguir el principio de "vista previa que no es un volcado técnico" de la sección 15.2 del prompt maestro
-
-Portal público (familia), ya con datos reales disponibles para RF-31 (consultar asistencia) — todavía no construido porque esa pantalla específica es Fase 10.
+Portal público (familia): RF-31 (consultar asistencia) ya tiene datos reales disponibles desde la Fase 6, pero esa pantalla específica es Fase 10.
 
 ### Fase 7 — Notas (RF-17 a RF-20, RF-23, RF-10)
 Portal operativo, rol Docente/Docente con sección a cargo (siempre limitado a sus propias asignaciones, el backend ya lo filtra):
@@ -72,3 +59,4 @@ Nota transversal: los cuatro documentos PDF (constancia de solvencia, de estudio
 - **Fase 3** — Login, cambio de contraseña obligatorio, guards de router por rol. (`frontend/src/features/auth/`)
 - **Fase 4** — Datos maestros: los 8 catálogos, portal administrativo, Dirección/Administrador editan y Coordinación solo ve (los botones de escritura se esconden para ese rol). Cierre completo en `docs/fase-4-frontend-cierre.md`. (`frontend/src/features/catalogo/`)
 - **Fase 5** — Expedientes y asignaciones: inscribir estudiante, expediente con datos sensibles restringidos, encargados (con la creación del usuario de la cuenta familiar incluida en el mismo formulario) y sus vínculos, asignación de docente/tallerista con el curso y la persona filtrados por tipo de sección. Cierre completo en `docs/fase-5-frontend-cierre.md`. (`frontend/src/features/estudiantes/`, `frontend/src/features/asignaciones/`)
+- **Fase 6** — Asistencia: tomar asistencia por sección (con hora de llegada o estado directo), justificaciones (registrar y resolver), plantilla de talleres. Primer portal operativo con layout propio (`OperativoLayout`). Cierre completo en `docs/fase-6-frontend-cierre.md`. (`frontend/src/features/asistencia/`)

@@ -117,8 +117,21 @@ class ActivityTypeViewSet(CatalogViewSet):
 
 
 class JustificationTypeViewSet(CatalogViewSet):
+    """Único de los 8 catálogos con esta excepción: cualquier rol que
+    registra una justificación de falta (RF-12 — docente, guía,
+    tallerista, no solo Dirección) necesita poder elegir su tipo, aunque
+    "Datos maestros" les dé `sin_acceso` (docs/permisos-roles.md). Se
+    resuelve como ya se hace en `GradeChangeRequestViewSet`: el área
+    cambia según la acción — leer pasa por "asistencia" (donde esos
+    roles sí tienen alcance), administrar el catálogo (crear, editar,
+    dar de baja) sigue siendo exclusivo de "datos_maestros"."""
+
     queryset = JustificationType.objects.all()
     serializer_class = JustificationTypeSerializer
+
+    def get_permissions(self):
+        self.area = "asistencia" if self.action in {"list", "retrieve"} else "datos_maestros"
+        return [PermisoPorArea()]
 
 
 class DocumentTypeViewSet(CatalogViewSet):

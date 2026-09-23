@@ -169,13 +169,49 @@ const routes: RouteRecordRaw[] = [
         name: "asignaciones",
         component: () => import("@/features/asignaciones/components/AsignacionesPage.vue"),
       },
+      {
+        path: "plantilla-asistencia",
+        name: "administrativo-plantilla-asistencia",
+        component: () => import("@/features/asistencia/components/PlantillaAsistenciaPage.vue"),
+      },
+      {
+        path: "asistencia",
+        name: "administrativo-asistencia",
+        component: () => import("@/features/asistencia/components/TomarAsistenciaPage.vue"),
+      },
+      {
+        path: "justificaciones",
+        name: "administrativo-justificaciones",
+        component: () => import("@/features/asistencia/components/JustificacionesPage.vue"),
+      },
     ],
   },
   {
     path: "/operativo",
-    name: "operativo-inicio",
-    component: () => import("@/pages/operativo/InicioPage.vue"),
+    component: () => import("@/pages/operativo/OperativoLayout.vue"),
     meta: { roles: ROLES_OPERATIVO },
+    children: [
+      {
+        path: "",
+        name: "operativo-inicio",
+        component: () => import("@/pages/operativo/InicioPage.vue"),
+      },
+      {
+        path: "asistencia",
+        name: "operativo-asistencia",
+        component: () => import("@/features/asistencia/components/TomarAsistenciaPage.vue"),
+      },
+      {
+        path: "justificaciones",
+        name: "operativo-justificaciones",
+        component: () => import("@/features/asistencia/components/JustificacionesPage.vue"),
+      },
+      {
+        path: "plantilla-asistencia",
+        name: "operativo-plantilla-asistencia",
+        component: () => import("@/features/asistencia/components/PlantillaAsistenciaPage.vue"),
+      },
+    ],
   },
   {
     path: "/portal",

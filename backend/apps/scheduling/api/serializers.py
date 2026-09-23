@@ -11,10 +11,31 @@ class TeacherAssignmentSerializer(serializers.ModelSerializer):
     course = serializers.SlugRelatedField(slug_field="public_id", queryset=Course.objects.all())
     section = serializers.SlugRelatedField(slug_field="public_id", queryset=Section.objects.all())
     cycle = serializers.SlugRelatedField(slug_field="public_id", queryset=SchoolCycle.objects.all())
+    # `/sections/` y `/courses/` viven detrás del área "datos_maestros"
+    # (docs/permisos-roles.md: DOC/GUÍA/TALL no tienen acceso), pero un
+    # docente sí necesita saber el grado/letra de su propia sección y el
+    # nombre de su propio curso para las pantallas operativas (asistencia,
+    # y más adelante notas) — se exponen acá, de solo lectura, en vez de
+    # abrirle el catálogo completo.
+    section_grade = serializers.CharField(source="section.grade", read_only=True)
+    section_letter = serializers.CharField(source="section.letter", read_only=True)
+    section_type = serializers.CharField(source="section.type", read_only=True)
+    course_name = serializers.CharField(source="course.name", read_only=True)
 
     class Meta:
         model = TeacherAssignment
-        fields = ["public_id", "teacher", "course", "section", "cycle", "is_active"]
+        fields = [
+            "public_id",
+            "teacher",
+            "course",
+            "course_name",
+            "section",
+            "section_grade",
+            "section_letter",
+            "section_type",
+            "cycle",
+            "is_active",
+        ]
         read_only_fields = ["public_id"]
 
 

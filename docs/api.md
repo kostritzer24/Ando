@@ -34,7 +34,7 @@ CRUD estándar (`GET` lista/detalle, `POST` crea, `PATCH` edita, `DELETE` da de 
 | Becas | `/scholarships/` | RF-02 |
 | Artículos del código de convivencia | `/conduct-rule-articles/` | ADR-0006 |
 
-Roles: DIR, ADMIN (E); COORD (V); el resto sin acceso, según matriz.
+Roles: DIR, ADMIN (E); COORD (V); el resto sin acceso, según matriz — **excepto `/justification-types/`**, cuya lectura (`GET`) pasa por el área "asistencia" en vez de "datos_maestros": cualquier rol que registra una justificación (RF-12 — docente, guía, tallerista) necesita poder elegir su tipo. Administrar el catálogo (crear/editar/dar de baja) sigue siendo exclusivo de "datos_maestros", igual que los otros siete.
 
 ## `students` — Estudiantes, encargados e inscripción
 
@@ -54,6 +54,8 @@ Roles: DIR, ADMIN (E); COORD (V); el resto sin acceso, según matriz.
 | Método | Ruta | Propósito | RF / HU | Roles |
 |---|---|---|---|---|
 | GET, POST | `/assignments/` | Asignar docente/tallerista a curso-sección, maestro guía a sección | RF-05 | DIR (E) |
+
+`TeacherAssignmentSerializer` incluye `section_grade`, `section_letter`, `section_type` y `course_name` de solo lectura — un docente no llega a `/sections/` ni `/courses/` (área "datos_maestros", sección S para su rol), pero sí necesita saber el grado y el curso de su propia asignación para las pantallas operativas (asistencia, y más adelante notas). Se expone acá en vez de abrirle el catálogo completo.
 | GET, POST | `/schedule-blocks/` | Armar horario; rechaza cruces de docente y período | RF-06, HU-06 | DIR (E) |
 | GET | `/schedule/mine/` | Horario propio del docente autenticado | RF-26 | DOC, GUÍA, TALL (V, propio) |
 | GET, POST | `/calendar-events/` | Publicar asignaciones/eventos en el calendario | RF-22 | DOC, GUÍA (E, solo lo publicado); DIR (E, todo) |
