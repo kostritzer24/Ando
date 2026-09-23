@@ -39,13 +39,13 @@ Dirección (DIR), Coordinación (COORD), Encargado de pagos (PAGOS), Docente (DO
 5. `TALL` no tiene acceso a Notas de ningún tipo, ni siquiera de su propio taller, porque el taller no genera calificaciones.
 6. `FAM` en Notas ve únicamente la nota final (`Grade.current_score`), nunca `GradeChangeRequest` (RN-06).
 7. `DOC`/`GUÍA` tienen `E` en "solicitar modificación de nota" (RF-23) pero no en "autorizar" — son acciones distintas; la matriz separa ambas filas a propósito.
-8. `PAGOS` no ve los reportes institucionales generales, solo el reporte de estudiantes insolventes, que en la práctica es una vista dentro de Pagos y solvencia, no de Reportes — a confirmar cuando se diseñe la Fase 12.
+8. `PAGOS` no ve los reportes institucionales generales, solo el reporte de estudiantes insolventes, que en la práctica es una vista dentro de Pagos y solvencia, no de Reportes — **resuelto en la Fase 12** (`docs/fase-12-frontend-cierre.md`): ese reporte puntual vive en el área `pagos_solvencia`, con su propio botón en la pantalla de Pagos, en vez de en `reportes_institucionales`.
 9. `ADMIN` tiene `V` (no `E`) en Datos sensibles — confirmado por dirección en el cierre de la Fase 1. El Administrador del sistema puede consultarlos para soporte técnico, pero nunca editarlos; la edición sigue siendo exclusiva de `DIR`. Por el peso de este dato, el endpoint `GET /students/{id}/sensitive/` (`docs/api.md`) queda dentro de lo que `core.AccessLog` registra como pantalla consultada (RNF-07), así que toda consulta de `ADMIN` a datos sensibles de un estudiante concreto queda con usuario, fecha y pantalla — sin necesidad de ampliar `core.AuditLog`, que por ADR-0004 registra cambios, no lecturas.
 
 ## Pendientes de confirmación con dirección
 
 - **Coordinación:** la sección 2 dice que "acompaña a la dirección y firma informes de su comisión", pero no especifica sobre qué área tiene permiso de edición además de ver. Se dejó `V` por defecto en toda el área administrativa y `¿?` en Avisos y Reportes de conducta, que son los dos módulos donde "firmar un informe" podría implicar editar. **No se implementará ningún `E` para Coordinación hasta que se confirme.**
 - **Administrador del sistema y datos sensibles:** el RNF-04 dice literalmente que los datos de salud y socioeconómicos quedan reservados a Dirección, sin mencionar al Administrador. Se dejó `S` para Administrador siguiendo la letra del requerimiento, aunque en la práctica el administrador podría necesitar acceso técnico para soporte. Si se requiere, debe ser una excepción documentada (por ejemplo, acceso de solo lectura con bitácora reforzada), no un cambio silencioso a `E`/`V`.
-- **Pagos y solvencia — vista de reportes:** ver nota 8.
+- ~~**Pagos y solvencia — vista de reportes:** ver nota 8.~~ Resuelto en la Fase 12.
 
-Estas tres preguntas se trasladan al resumen de cierre de la Fase 1.
+Las otras dos preguntas siguen abiertas desde el resumen de cierre de la Fase 1; ninguna fase posterior las tocó porque ninguna requería construir Avisos/Reportes de conducta para Coordinación ni acceso de Administrador a datos sensibles más allá de lo ya implementado.
