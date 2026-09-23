@@ -6,6 +6,10 @@ import { defineConfig } from "vite";
 
 export default defineConfig({
   plugins: [vue()],
+  // El target por omisión de Vite no soporta top-level await (lo usa
+  // main.ts para esperar `restaurarSesion()` antes de montar la app) —
+  // sin esto, `npm run build` nunca terminó de compilar para producción.
+  build: { target: "es2022" },
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
