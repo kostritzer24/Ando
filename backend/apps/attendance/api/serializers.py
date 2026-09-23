@@ -11,6 +11,10 @@ class AttendanceSerializer(serializers.ModelSerializer):
         slug_field="public_id", queryset=Enrollment.objects.all()
     )
     recorded_by = serializers.CharField(source="recorded_by.username", read_only=True)
+    # RF-31: la familia distingue jornada matutina de taller sin llegar a
+    # `/sections/` (datos_maestros, fuera de su alcance) — mismo criterio
+    # que los campos denormalizados de `GradeSerializer`.
+    section_type = serializers.CharField(source="enrollment.section.type", read_only=True)
 
     class Meta:
         model = Attendance
@@ -21,6 +25,7 @@ class AttendanceSerializer(serializers.ModelSerializer):
             "status",
             "source",
             "recorded_by",
+            "section_type",
             "is_active",
         ]
         read_only_fields = ["public_id", "source", "recorded_by"]

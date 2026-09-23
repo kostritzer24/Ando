@@ -240,18 +240,20 @@ class Command(BaseCommand):
         usuario_familia = User.objects.filter(username="familia.demo").first()
         if usuario_familia and not hasattr(usuario_familia, "guardian"):
             encargada = crear_encargado(user=usuario_familia, full_name="Encargada Demo")
-            primer_estudiante = Student.objects.order_by("internal_code").first()
-            if primer_estudiante:
+            # Dos hijos, no uno: la sección 16 del prompt maestro pide el
+            # flujo de extremo a punta "consultar el portal como encargado
+            # con dos hijos" (HU-27, selector entre estudiantes vinculados).
+            for estudiante in Student.objects.order_by("internal_code")[:2]:
                 try:
                     vincular_encargado_estudiante(
                         guardian=encargada,
-                        student=primer_estudiante,
+                        student=estudiante,
                         relationship="Madre",
-                        is_primary=True,
+                        is_primary=(estudiante == Student.objects.order_by("internal_code").first()),
                     )
                 except VinculoYaExiste:
                     pass
-                self.stdout.write(f"Encargada vinculada a {primer_estudiante}.")
+                self.stdout.write(f"Encargada vinculada a {estudiante}.")
 
         docente = User.objects.filter(username="docente.demo").first()
         matematica = Course.objects.filter(name="Matemática").first()

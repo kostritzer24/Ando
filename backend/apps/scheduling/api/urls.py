@@ -10,5 +10,6 @@ router.register("calendar-events", views.CalendarEventViewSet, basename="calenda
 
 urlpatterns = [
     path("schedule/mine/", views.MyScheduleView.as_view(), name="schedule-mine"),
+    path("calendar/weekly/", views.WeeklyCalendarView.as_view(), name="calendar-weekly"),
     *router.urls,
 ]

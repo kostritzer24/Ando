@@ -1,0 +1,111 @@
+<!--
+Boletín de unidad (RF-09/RF-34). Tipografía sans-serif del sistema, mismo
+criterio que `apps/documents/templates/documents/_base_documento.html`
+(WeasyPrint sin acceso garantizado a internet). No lleva QR ni espacio de
+firma/sello: RN-15 aplica a los documentos emitidos (constancias, cartas),
+no al boletín, que no es un `IssuedDocument`.
+-->
+<!DOCTYPE html>
+<html lang="es-GT">
+<head>
+<meta charset="utf-8">
+<style>
+  @page {
+    size: letter;
+    margin: 2.2cm 2cm;
+  }
+  body {
+    font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
+    color: #1a1a1a;
+    font-size: 11.5pt;
+    line-height: 1.5;
+  }
+  .membrete {
+    border-bottom: 2pt solid #1C6EA4;
+    padding-bottom: 0.4cm;
+    margin-bottom: 1cm;
+  }
+  .membrete .nombre {
+    font-weight: 800;
+    font-size: 13pt;
+    color: #1C6EA4;
+  }
+  h1 {
+    font-size: 14pt;
+    font-weight: 800;
+    text-align: center;
+    margin: 0.6cm 0 0.3cm;
+  }
+  .datos {
+    text-align: center;
+    color: #444;
+    font-size: 10pt;
+    margin-bottom: 1cm;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  th, td {
+    text-align: left;
+    padding: 0.3cm 0.4cm;
+    border-bottom: 0.5pt solid #ccc;
+  }
+  th {
+    color: #555;
+    font-size: 9.5pt;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  td.nota {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  td.estado {
+    text-align: right;
+  }
+  .aprobado { color: #1C6EA4; }
+  .reprobado { color: #B3261E; font-weight: 700; }
+  .pie {
+    margin-top: 1.5cm;
+    font-size: 8.5pt;
+    color: #666;
+  }
+</style>
+</head>
+<body>
+  <div class="membrete">
+    <div class="nombre">El Patojismo — Centro Socioeducativo Lic. Magno Rudy Romero Arévalo</div>
+  </div>
+
+  <h1>Boletín de calificaciones — Unidad {{ unidad_numero }}</h1>
+  <div class="datos">
+    {{ estudiante_nombre }} ({{ estudiante_codigo }}) — {{ grado_seccion }} — ciclo {{ ciclo_anio }}
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Curso</th>
+        <th>Nota</th>
+        <th>Estado</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for curso in cursos %}
+      <tr>
+        <td>{{ curso.nombre }}</td>
+        <td class="nota">{{ curso.nota }}</td>
+        <td class="estado {% if curso.aprobado %}aprobado{% else %}reprobado{% endif %}">
+          {% if curso.aprobado %}Aprobado{% else %}Reprobado{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="pie">
+    Boletín publicado el {{ publicado_el }}. Este documento no lleva firma ni sello digital.
+  </div>
+</body>
+</html>

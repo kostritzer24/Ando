@@ -29,7 +29,9 @@ def test_seed_demo_crea_expedientes_y_asignaciones():
     # académica y también en el taller (ver ADR-0001, corrección Fase 6).
     assert Enrollment.objects.count() == 5
     assert Guardian.objects.count() == 1
-    assert GuardianStudentLink.objects.filter(is_active=True).count() == 1
+    # Dos hijos, no uno: sección 16 del prompt maestro pide el flujo de
+    # extremo a punta "consultar el portal como encargado con dos hijos".
+    assert GuardianStudentLink.objects.filter(is_active=True).count() == 2
     assert TeacherAssignment.objects.count() == 2
 
 

@@ -1,7 +1,7 @@
 """RF-18: calcular la nota de unidad a partir de las calificaciones ya
-registradas. Todavía no tiene un endpoint propio — lo va a consumir el
-boletín de la Fase 9 — pero la función ya es parte del alcance de esta
-fase y se prueba directamente."""
+registradas. La consume el boletín en PDF de la Fase 10 (frontend), por
+curso — una inscripción tiene actividades de varios cursos a la vez en
+la misma unidad, así que la función filtra también por `assignment`."""
 
 from decimal import Decimal
 
@@ -44,7 +44,7 @@ def test_nota_de_unidad_suma_las_calificaciones_vigentes():
         recorded_by=asignacion.teacher,
     )
 
-    assert nota_de_unidad(enrollment=inscripcion, unit=unidad) == Decimal("80")
+    assert nota_de_unidad(enrollment=inscripcion, unit=unidad, assignment=asignacion) == Decimal("80")
 
 
 @pytest.mark.django_db
@@ -67,7 +67,7 @@ def test_nota_de_unidad_parcial_sin_todas_las_actividades_calificadas():
         recorded_by=asignacion.teacher,
     )
 
-    assert nota_de_unidad(enrollment=inscripcion, unit=unidad) == Decimal("30")
+    assert nota_de_unidad(enrollment=inscripcion, unit=unidad, assignment=asignacion) == Decimal("30")
 
 
 @pytest.mark.django_db
@@ -89,4 +89,48 @@ def test_nota_de_unidad_usa_current_score_no_raw_score():
         recorded_by=asignacion.teacher,
     )
 
-    assert nota_de_unidad(enrollment=inscripcion, unit=unidad) == Decimal("75")
+    assert nota_de_unidad(enrollment=inscripcion, unit=unidad, assignment=asignacion) == Decimal("75")
+
+
+@pytest.mark.django_db
+def test_nota_de_unidad_no_mezcla_actividades_de_otro_curso():
+    """Antes de este alcance la función no filtraba por `assignment`:
+    sumaba actividades de todos los cursos de la unidad, no solo del
+    curso pedido — el tope de 100 puntos (RN-01) es por curso."""
+    asignacion_matematica = TeacherAssignmentFactory()
+    asignacion_comunicacion = TeacherAssignmentFactory(
+        section=asignacion_matematica.section, cycle=asignacion_matematica.cycle
+    )
+    unidad = GradingUnitFactory(cycle=asignacion_matematica.cycle)
+    inscripcion = EnrollmentFactory(
+        section=asignacion_matematica.section, cycle=asignacion_matematica.cycle
+    )
+    tipo = ActivityTypeFactory()
+
+    actividad_matematica = ActivityFactory(
+        assignment=asignacion_matematica, unit=unidad, activity_type=tipo, max_score=100
+    )
+    actividad_comunicacion = ActivityFactory(
+        assignment=asignacion_comunicacion, unit=unidad, activity_type=tipo, max_score=100
+    )
+    Grade.objects.create(
+        enrollment=inscripcion,
+        activity=actividad_matematica,
+        raw_score=70,
+        current_score=70,
+        recorded_by=asignacion_matematica.teacher,
+    )
+    Grade.objects.create(
+        enrollment=inscripcion,
+        activity=actividad_comunicacion,
+        raw_score=90,
+        current_score=90,
+        recorded_by=asignacion_comunicacion.teacher,
+    )
+
+    assert nota_de_unidad(
+        enrollment=inscripcion, unit=unidad, assignment=asignacion_matematica
+    ) == Decimal("70")
+    assert nota_de_unidad(
+        enrollment=inscripcion, unit=unidad, assignment=asignacion_comunicacion
+    ) == Decimal("90")

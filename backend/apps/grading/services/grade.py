@@ -46,11 +46,17 @@ def registrar_punteo(
     )
 
 
-def nota_de_unidad(*, enrollment: Enrollment, unit) -> Decimal:
-    """RF-18. Suma de las notas vigentes (`current_score`) de las
-    actividades ya calificadas de esa unidad — parcial si la unidad
-    todavía no tiene todas sus actividades calificadas."""
+def nota_de_unidad(*, enrollment: Enrollment, unit, assignment) -> Decimal:
+    """RF-18 / RF-09. Suma de las notas vigentes (`current_score`) de las
+    actividades ya calificadas de esa unidad, para un curso (`assignment`)
+    puntual — parcial si el curso todavía no tiene todas sus actividades
+    calificadas. El tope de 100 puntos (RN-01) es por curso, así que hace
+    falta filtrar por `assignment`, no solo por unidad: una inscripción
+    tiene actividades de varios cursos a la vez en la misma unidad."""
     calificaciones = Grade.objects.filter(
-        enrollment=enrollment, activity__unit=unit, is_active=True
+        enrollment=enrollment,
+        activity__unit=unit,
+        activity__assignment=assignment,
+        is_active=True,
     ).values_list("current_score", flat=True)
     return calcular_nota_unidad(list(calificaciones))

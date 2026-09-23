@@ -70,14 +70,16 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * @description Base común a los 8 catálogos: mismo permiso, mismo identificador de
-         *     URL, misma baja lógica en vez de borrado (RF-02, HU-02).
+         * @description Misma excepción que `JustificationTypeViewSet` y `GradingUnitViewSet`:
+         *     un docente necesita elegir el tipo de actividad al diseñar la unidad
+         *     (RF-17), aunque "datos_maestros" le dé sin_acceso.
          */
         get: operations["v1_activity_types_list"];
         put?: never;
         /**
-         * @description Base común a los 8 catálogos: mismo permiso, mismo identificador de
-         *     URL, misma baja lógica en vez de borrado (RF-02, HU-02).
+         * @description Misma excepción que `JustificationTypeViewSet` y `GradingUnitViewSet`:
+         *     un docente necesita elegir el tipo de actividad al diseñar la unidad
+         *     (RF-17), aunque "datos_maestros" le dé sin_acceso.
          */
         post: operations["v1_activity_types_create"];
         delete?: never;
@@ -94,26 +96,30 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * @description Base común a los 8 catálogos: mismo permiso, mismo identificador de
-         *     URL, misma baja lógica en vez de borrado (RF-02, HU-02).
+         * @description Misma excepción que `JustificationTypeViewSet` y `GradingUnitViewSet`:
+         *     un docente necesita elegir el tipo de actividad al diseñar la unidad
+         *     (RF-17), aunque "datos_maestros" le dé sin_acceso.
          */
         get: operations["v1_activity_types_retrieve"];
         /**
-         * @description Base común a los 8 catálogos: mismo permiso, mismo identificador de
-         *     URL, misma baja lógica en vez de borrado (RF-02, HU-02).
+         * @description Misma excepción que `JustificationTypeViewSet` y `GradingUnitViewSet`:
+         *     un docente necesita elegir el tipo de actividad al diseñar la unidad
+         *     (RF-17), aunque "datos_maestros" le dé sin_acceso.
          */
         put: operations["v1_activity_types_update"];
         post?: never;
         /**
-         * @description Base común a los 8 catálogos: mismo permiso, mismo identificador de
-         *     URL, misma baja lógica en vez de borrado (RF-02, HU-02).
+         * @description Misma excepción que `JustificationTypeViewSet` y `GradingUnitViewSet`:
+         *     un docente necesita elegir el tipo de actividad al diseñar la unidad
+         *     (RF-17), aunque "datos_maestros" le dé sin_acceso.
          */
         delete: operations["v1_activity_types_destroy"];
         options?: never;
         head?: never;
         /**
-         * @description Base común a los 8 catálogos: mismo permiso, mismo identificador de
-         *     URL, misma baja lógica en vez de borrado (RF-02, HU-02).
+         * @description Misma excepción que `JustificationTypeViewSet` y `GradingUnitViewSet`:
+         *     un docente necesita elegir el tipo de actividad al diseñar la unidad
+         *     (RF-17), aunque "datos_maestros" le dé sin_acceso.
          */
         patch: operations["v1_activity_types_partial_update"];
         trace?: never;
@@ -437,6 +443,29 @@ export interface paths {
         patch: operations["v1_calendar_events_partial_update"];
         trace?: never;
     };
+    "/api/v1/calendar/weekly/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description GET /calendar/weekly/?student=<student_public_id> — RF-28 / RF-32:
+         *     pantalla de entrada del portal público. Junta el horario de clases del
+         *     estudiante (a partir de sus inscripciones activas, académica y de
+         *     taller si tiene ambas) con los eventos de calendario de sus secciones
+         *     — institucionales o de una asignación docente de esa sección.
+         */
+        get: operations["v1_calendar_weekly_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/conduct-rule-articles/": {
         parameters: {
             query?: never;
@@ -583,12 +612,26 @@ export interface paths {
         /**
          * @description Anidada bajo `/cycles/{cycle_public_id}/units/` (`docs/api.md`).
          *     Las fechas derivadas las calcula siempre el servicio — ver RN-10.
+         *
+         *     Misma excepción que `JustificationTypeViewSet`: un docente necesita
+         *     poder elegir la unidad al diseñarla (RF-17) o al generar la
+         *     plantilla de calificaciones (RF-19), aunque "datos_maestros" le dé
+         *     sin_acceso — conoce el `cycle_public_id` por su propia asignación
+         *     (`/assignments/`), así que solo hace falta abrirle la lectura de
+         *     esta ruta anidada, no el catálogo de ciclos completo.
          */
         get: operations["v1_cycles_units_list"];
         put?: never;
         /**
          * @description Anidada bajo `/cycles/{cycle_public_id}/units/` (`docs/api.md`).
          *     Las fechas derivadas las calcula siempre el servicio — ver RN-10.
+         *
+         *     Misma excepción que `JustificationTypeViewSet`: un docente necesita
+         *     poder elegir la unidad al diseñarla (RF-17) o al generar la
+         *     plantilla de calificaciones (RF-19), aunque "datos_maestros" le dé
+         *     sin_acceso — conoce el `cycle_public_id` por su propia asignación
+         *     (`/assignments/`), así que solo hace falta abrirle la lectura de
+         *     esta ruta anidada, no el catálogo de ciclos completo.
          */
         post: operations["v1_cycles_units_create"];
         delete?: never;
@@ -607,17 +650,38 @@ export interface paths {
         /**
          * @description Anidada bajo `/cycles/{cycle_public_id}/units/` (`docs/api.md`).
          *     Las fechas derivadas las calcula siempre el servicio — ver RN-10.
+         *
+         *     Misma excepción que `JustificationTypeViewSet`: un docente necesita
+         *     poder elegir la unidad al diseñarla (RF-17) o al generar la
+         *     plantilla de calificaciones (RF-19), aunque "datos_maestros" le dé
+         *     sin_acceso — conoce el `cycle_public_id` por su propia asignación
+         *     (`/assignments/`), así que solo hace falta abrirle la lectura de
+         *     esta ruta anidada, no el catálogo de ciclos completo.
          */
         get: operations["v1_cycles_units_retrieve"];
         /**
          * @description Anidada bajo `/cycles/{cycle_public_id}/units/` (`docs/api.md`).
          *     Las fechas derivadas las calcula siempre el servicio — ver RN-10.
+         *
+         *     Misma excepción que `JustificationTypeViewSet`: un docente necesita
+         *     poder elegir la unidad al diseñarla (RF-17) o al generar la
+         *     plantilla de calificaciones (RF-19), aunque "datos_maestros" le dé
+         *     sin_acceso — conoce el `cycle_public_id` por su propia asignación
+         *     (`/assignments/`), así que solo hace falta abrirle la lectura de
+         *     esta ruta anidada, no el catálogo de ciclos completo.
          */
         put: operations["v1_cycles_units_update"];
         post?: never;
         /**
          * @description Anidada bajo `/cycles/{cycle_public_id}/units/` (`docs/api.md`).
          *     Las fechas derivadas las calcula siempre el servicio — ver RN-10.
+         *
+         *     Misma excepción que `JustificationTypeViewSet`: un docente necesita
+         *     poder elegir la unidad al diseñarla (RF-17) o al generar la
+         *     plantilla de calificaciones (RF-19), aunque "datos_maestros" le dé
+         *     sin_acceso — conoce el `cycle_public_id` por su propia asignación
+         *     (`/assignments/`), así que solo hace falta abrirle la lectura de
+         *     esta ruta anidada, no el catálogo de ciclos completo.
          */
         delete: operations["v1_cycles_units_destroy"];
         options?: never;
@@ -625,6 +689,13 @@ export interface paths {
         /**
          * @description Anidada bajo `/cycles/{cycle_public_id}/units/` (`docs/api.md`).
          *     Las fechas derivadas las calcula siempre el servicio — ver RN-10.
+         *
+         *     Misma excepción que `JustificationTypeViewSet`: un docente necesita
+         *     poder elegir la unidad al diseñarla (RF-17) o al generar la
+         *     plantilla de calificaciones (RF-19), aunque "datos_maestros" le dé
+         *     sin_acceso — conoce el `cycle_public_id` por su propia asignación
+         *     (`/assignments/`), así que solo hace falta abrirle la lectura de
+         *     esta ruta anidada, no el catálogo de ciclos completo.
          */
         patch: operations["v1_cycles_units_partial_update"];
         trace?: never;
@@ -1156,14 +1227,26 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * @description Base común a los 8 catálogos: mismo permiso, mismo identificador de
-         *     URL, misma baja lógica en vez de borrado (RF-02, HU-02).
+         * @description Único de los 8 catálogos con esta excepción: cualquier rol que
+         *     registra una justificación de falta (RF-12 — docente, guía,
+         *     tallerista, no solo Dirección) necesita poder elegir su tipo, aunque
+         *     "Datos maestros" les dé `sin_acceso` (docs/permisos-roles.md). Se
+         *     resuelve como ya se hace en `GradeChangeRequestViewSet`: el área
+         *     cambia según la acción — leer pasa por "asistencia" (donde esos
+         *     roles sí tienen alcance), administrar el catálogo (crear, editar,
+         *     dar de baja) sigue siendo exclusivo de "datos_maestros".
          */
         get: operations["v1_justification_types_list"];
         put?: never;
         /**
-         * @description Base común a los 8 catálogos: mismo permiso, mismo identificador de
-         *     URL, misma baja lógica en vez de borrado (RF-02, HU-02).
+         * @description Único de los 8 catálogos con esta excepción: cualquier rol que
+         *     registra una justificación de falta (RF-12 — docente, guía,
+         *     tallerista, no solo Dirección) necesita poder elegir su tipo, aunque
+         *     "Datos maestros" les dé `sin_acceso` (docs/permisos-roles.md). Se
+         *     resuelve como ya se hace en `GradeChangeRequestViewSet`: el área
+         *     cambia según la acción — leer pasa por "asistencia" (donde esos
+         *     roles sí tienen alcance), administrar el catálogo (crear, editar,
+         *     dar de baja) sigue siendo exclusivo de "datos_maestros".
          */
         post: operations["v1_justification_types_create"];
         delete?: never;
@@ -1180,26 +1263,50 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * @description Base común a los 8 catálogos: mismo permiso, mismo identificador de
-         *     URL, misma baja lógica en vez de borrado (RF-02, HU-02).
+         * @description Único de los 8 catálogos con esta excepción: cualquier rol que
+         *     registra una justificación de falta (RF-12 — docente, guía,
+         *     tallerista, no solo Dirección) necesita poder elegir su tipo, aunque
+         *     "Datos maestros" les dé `sin_acceso` (docs/permisos-roles.md). Se
+         *     resuelve como ya se hace en `GradeChangeRequestViewSet`: el área
+         *     cambia según la acción — leer pasa por "asistencia" (donde esos
+         *     roles sí tienen alcance), administrar el catálogo (crear, editar,
+         *     dar de baja) sigue siendo exclusivo de "datos_maestros".
          */
         get: operations["v1_justification_types_retrieve"];
         /**
-         * @description Base común a los 8 catálogos: mismo permiso, mismo identificador de
-         *     URL, misma baja lógica en vez de borrado (RF-02, HU-02).
+         * @description Único de los 8 catálogos con esta excepción: cualquier rol que
+         *     registra una justificación de falta (RF-12 — docente, guía,
+         *     tallerista, no solo Dirección) necesita poder elegir su tipo, aunque
+         *     "Datos maestros" les dé `sin_acceso` (docs/permisos-roles.md). Se
+         *     resuelve como ya se hace en `GradeChangeRequestViewSet`: el área
+         *     cambia según la acción — leer pasa por "asistencia" (donde esos
+         *     roles sí tienen alcance), administrar el catálogo (crear, editar,
+         *     dar de baja) sigue siendo exclusivo de "datos_maestros".
          */
         put: operations["v1_justification_types_update"];
         post?: never;
         /**
-         * @description Base común a los 8 catálogos: mismo permiso, mismo identificador de
-         *     URL, misma baja lógica en vez de borrado (RF-02, HU-02).
+         * @description Único de los 8 catálogos con esta excepción: cualquier rol que
+         *     registra una justificación de falta (RF-12 — docente, guía,
+         *     tallerista, no solo Dirección) necesita poder elegir su tipo, aunque
+         *     "Datos maestros" les dé `sin_acceso` (docs/permisos-roles.md). Se
+         *     resuelve como ya se hace en `GradeChangeRequestViewSet`: el área
+         *     cambia según la acción — leer pasa por "asistencia" (donde esos
+         *     roles sí tienen alcance), administrar el catálogo (crear, editar,
+         *     dar de baja) sigue siendo exclusivo de "datos_maestros".
          */
         delete: operations["v1_justification_types_destroy"];
         options?: never;
         head?: never;
         /**
-         * @description Base común a los 8 catálogos: mismo permiso, mismo identificador de
-         *     URL, misma baja lógica en vez de borrado (RF-02, HU-02).
+         * @description Único de los 8 catálogos con esta excepción: cualquier rol que
+         *     registra una justificación de falta (RF-12 — docente, guía,
+         *     tallerista, no solo Dirección) necesita poder elegir su tipo, aunque
+         *     "Datos maestros" les dé `sin_acceso` (docs/permisos-roles.md). Se
+         *     resuelve como ya se hace en `GradeChangeRequestViewSet`: el área
+         *     cambia según la acción — leer pasa por "asistencia" (donde esos
+         *     roles sí tienen alcance), administrar el catálogo (crear, editar,
+         *     dar de baja) sigue siendo exclusivo de "datos_maestros".
          */
         patch: operations["v1_justification_types_partial_update"];
         trace?: never;
@@ -1384,6 +1491,26 @@ export interface paths {
          *     aprobar y publicar actúan sobre un boletín individual.
          */
         post: operations["v1_report_cards_approve_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/report-cards/{public_id}/download/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description RF-34. El boletín no guarda un PDF aparte (ver docstring del
+         *     modelo): se genera al momento de la descarga, curso por curso.
+         */
+        get: operations["v1_report_cards_download_retrieve"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1924,6 +2051,7 @@ export interface components {
             /** Origen */
             readonly source: components["schemas"]["SourceEnum"];
             readonly recorded_by: string;
+            readonly section_type: string;
             /** Activo */
             is_active?: boolean;
         };
@@ -2063,6 +2191,9 @@ export interface components {
             student: string;
             /** Format: uuid */
             section: string;
+            readonly section_grade: string;
+            readonly section_letter: string;
+            readonly section_type: string;
             /** Format: uuid */
             cycle: string;
             /** Format: uuid */
@@ -2088,6 +2219,13 @@ export interface components {
         /**
          * @description RN-06: nunca expone `raw_score` — solo `current_score`, la nota
          *     vigente que entra en los promedios y la única que ve la familia.
+         *
+         *     Los campos denormalizados (`course_name`, `unit_number`,
+         *     `activity_name`, `max_score`) siguen el mismo criterio que
+         *     `TeacherAssignmentSerializer` (sección "scheduling" del contrato): la
+         *     familia no llega a `/activities/` ni a `/assignments/` (RF-29 la
+         *     necesita agrupada por curso y unidad), así que se exponen acá en vez
+         *     de abrirle esos dos catálogos completos.
          */
         Grade: {
             /** Format: uuid */
@@ -2104,6 +2242,11 @@ export interface components {
             /** Origen */
             readonly source: components["schemas"]["SourceEnum"];
             readonly recorded_by: string;
+            readonly course_name: string;
+            readonly unit_number: number;
+            readonly activity_name: string;
+            /** Format: decimal */
+            readonly max_score: string;
             /** Activo */
             is_active?: boolean;
         };
@@ -2722,6 +2865,7 @@ export interface components {
             /** Origen */
             readonly source?: components["schemas"]["SourceEnum"];
             readonly recorded_by?: string;
+            readonly section_type?: string;
             /** Activo */
             is_active?: boolean;
         };
@@ -2799,6 +2943,9 @@ export interface components {
             student?: string;
             /** Format: uuid */
             section?: string;
+            readonly section_grade?: string;
+            readonly section_letter?: string;
+            readonly section_type?: string;
             /** Format: uuid */
             cycle?: string;
             /** Format: uuid */
@@ -2816,6 +2963,13 @@ export interface components {
         /**
          * @description RN-06: nunca expone `raw_score` — solo `current_score`, la nota
          *     vigente que entra en los promedios y la única que ve la familia.
+         *
+         *     Los campos denormalizados (`course_name`, `unit_number`,
+         *     `activity_name`, `max_score`) siguen el mismo criterio que
+         *     `TeacherAssignmentSerializer` (sección "scheduling" del contrato): la
+         *     familia no llega a `/activities/` ni a `/assignments/` (RF-29 la
+         *     necesita agrupada por curso y unidad), así que se exponen acá en vez
+         *     de abrirle esos dos catálogos completos.
          */
         PatchedGrade: {
             /** Format: uuid */
@@ -2832,6 +2986,11 @@ export interface components {
             /** Origen */
             readonly source?: components["schemas"]["SourceEnum"];
             readonly recorded_by?: string;
+            readonly course_name?: string;
+            readonly unit_number?: number;
+            readonly activity_name?: string;
+            /** Format: decimal */
+            readonly max_score?: string;
             /** Activo */
             is_active?: boolean;
         };
@@ -4266,6 +4425,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CalendarEvent"];
+                };
+            };
+        };
+    };
+    v1_calendar_weekly_retrieve: {
+        parameters: {
+            query: {
+                student: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        schedule?: {
+                            day_of_week?: string;
+                            period_number?: number;
+                            course?: string;
+                            section?: string;
+                            section_type?: string;
+                            teacher?: string;
+                        }[];
+                        events?: Record<string, never>[];
+                    };
                 };
             };
         };
@@ -6265,6 +6455,27 @@ export interface operations {
                 "multipart/form-data": components["schemas"]["ReportCard"];
             };
         };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportCard"];
+                };
+            };
+        };
+    };
+    v1_report_cards_download_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                public_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             200: {
                 headers: {

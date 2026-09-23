@@ -1,5 +1,7 @@
 from django.db.models import Q
-from drf_spectacular.utils import extend_schema
+from django.shortcuts import get_object_or_404
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import viewsets
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.permissions import SAFE_METHODS, BasePermission
@@ -8,6 +10,7 @@ from rest_framework.views import APIView
 
 from apps.core.api.mixins import RegistraAccesoMixin, ScopedQuerysetMixin
 from apps.core.permissions import PermisoPorArea
+from apps.students.models import Enrollment, Student
 
 from ..domain.calendar_event import PublicacionInvalida, puede_editar
 from ..domain.day_structure import PeriodoInvalido
@@ -21,6 +24,8 @@ from .serializers import (
     ScheduleBlockSerializer,
     TeacherAssignmentSerializer,
 )
+
+ROL_FAMILIA = "Padre de familia"
 
 _ROLES_SIN_ALCANCE_LIMITADO = {"Dirección", "Coordinación", "Administrador del sistema"}
 _ROLES_DOCENTES = {"Docente", "Docente con sección a cargo", "Tallerista"}
@@ -170,4 +175,84 @@ class MyScheduleView(RegistraAccesoMixin, APIView):
                 }
                 for bloque in bloques
             ]
+        )
+
+
+class WeeklyCalendarView(RegistraAccesoMixin, APIView):
+    """GET /calendar/weekly/?student=<student_public_id> — RF-28 / RF-32:
+    pantalla de entrada del portal público. Junta el horario de clases del
+    estudiante (a partir de sus inscripciones activas, académica y de
+    taller si tiene ambas) con los eventos de calendario de sus secciones
+    — institucionales o de una asignación docente de esa sección."""
+
+    permission_classes = [PermisoPorArea]
+    area = "horarios_calendario"
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter("student", OpenApiTypes.UUID, OpenApiParameter.QUERY, required=True)
+        ],
+        responses={
+            200: {
+                "type": "object",
+                "properties": {
+                    "schedule": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "day_of_week": {"type": "string"},
+                                "period_number": {"type": "integer"},
+                                "course": {"type": "string"},
+                                "section": {"type": "string"},
+                                "section_type": {"type": "string"},
+                                "teacher": {"type": "string"},
+                            },
+                        },
+                    },
+                    "events": {"type": "array", "items": {"type": "object"}},
+                },
+            }
+        },
+    )
+    def get(self, request):
+        if request.user.role.name != ROL_FAMILIA:
+            raise PermissionDenied("Este calendario es solo para el portal de familias.")
+        student_public_id = request.query_params.get("student")
+        if not student_public_id:
+            raise ValidationError("Hace falta el parámetro 'student'.")
+        estudiante = get_object_or_404(
+            Student.objects.filter(
+                guardian_links__guardian__user=request.user, guardian_links__is_active=True
+            ),
+            public_id=student_public_id,
+        )
+        secciones = [
+            inscripcion.section_id
+            for inscripcion in estudiante.enrollments.filter(
+                is_active=True, status=Enrollment.ESTADO_ACTIVO
+            )
+        ]
+        bloques = ScheduleBlock.objects.filter(
+            assignment__section_id__in=secciones, is_active=True
+        ).select_related("assignment__course", "assignment__section", "assignment__teacher")
+        eventos = CalendarEvent.objects.filter(
+            Q(type=CalendarEvent.TIPO_INSTITUCIONAL) | Q(assignment__section_id__in=secciones),
+            is_active=True,
+        ).distinct()
+        return Response(
+            {
+                "schedule": [
+                    {
+                        "day_of_week": bloque.day_of_week,
+                        "period_number": bloque.period_number,
+                        "course": bloque.assignment.course.name,
+                        "section": str(bloque.assignment.section),
+                        "section_type": bloque.assignment.section.type,
+                        "teacher": bloque.assignment.teacher.username,
+                    }
+                    for bloque in bloques
+                ],
+                "events": CalendarEventSerializer(eventos, many=True).data,
+            }
         )

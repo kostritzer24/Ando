@@ -99,6 +99,12 @@ class EnrollmentSerializer(serializers.ModelSerializer):
         required=False,
         allow_null=True,
     )
+    # RF-27/RF-33: la familia no llega a `/sections/` (área
+    # "datos_maestros", fuera de su alcance) — mismo criterio que
+    # `TeacherAssignmentSerializer` para no abrirle el catálogo completo.
+    section_grade = serializers.CharField(source="section.grade", read_only=True)
+    section_letter = serializers.CharField(source="section.letter", read_only=True)
+    section_type = serializers.CharField(source="section.type", read_only=True)
 
     class Meta:
         model = Enrollment
@@ -106,6 +112,9 @@ class EnrollmentSerializer(serializers.ModelSerializer):
             "public_id",
             "student",
             "section",
+            "section_grade",
+            "section_letter",
+            "section_type",
             "cycle",
             "scholarship",
             "status",

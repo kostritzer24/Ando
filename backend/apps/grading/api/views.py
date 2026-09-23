@@ -1,6 +1,7 @@
 from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
+from django.template.loader import render_to_string
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema
 from rest_framework import mixins, status, viewsets
@@ -10,6 +11,7 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import BasePermission
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from weasyprint import HTML
 
 from apps.catalog.models import GradingUnit
 from apps.core.api.mixins import RegistraAccesoMixin, ScopedQuerysetMixin
@@ -22,7 +24,12 @@ from ..models import Activity, Grade, GradeChangeRequest, ReportCard
 from ..services.activity import AsignacionNoCalifica, crear_actividad
 from ..services.grade import PunteoFueraDeRango, YaCalificado, registrar_punteo
 from ..services.grade_change_request import resolver_modificacion, solicitar_modificacion
-from ..services.report_card import aprobar_boletin, generar_boletines, publicar_boletin
+from ..services.report_card import (
+    aprobar_boletin,
+    contenido_boletin,
+    generar_boletines,
+    publicar_boletin,
+)
 from ..services.template import (
     UnidadSinActividades,
     aplicar_plantilla,
@@ -378,3 +385,21 @@ class ReportCardViewSet(
         except TransicionDeBoletinInvalida as exc:
             raise ValidationError(str(exc)) from exc
         return Response(ReportCardSerializer(boletin).data)
+
+    @action(detail=True, methods=["get"], url_path="download")
+    def download(self, request, public_id=None):
+        """RF-34. El boletín no guarda un PDF aparte (ver docstring del
+        modelo): se genera al momento de la descarga, curso por curso."""
+        boletin = self.get_object()
+        if boletin.status != ReportCard.ESTADO_PUBLICADO:
+            raise ValidationError("Este boletín todavía no está publicado.")
+        html = render_to_string("grading/boletin.html", contenido_boletin(boletin))
+        pdf_bytes = HTML(string=html).write_pdf()
+        nombre_archivo = (
+            f"boletin_{boletin.enrollment.student.internal_code}_unidad{boletin.unit.number}.pdf"
+        )
+        return HttpResponse(
+            pdf_bytes,
+            content_type="application/pdf",
+            headers={"Content-Disposition": f'attachment; filename="{nombre_archivo}"'},
+        )

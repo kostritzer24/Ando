@@ -6,12 +6,14 @@ from rest_framework.test import APIClient
 from apps.accounts.tests.factories import RoleFactory, UserFactory
 from apps.catalog.models import Section
 from apps.catalog.tests.factories import (
+    CourseFactory,
     GradingUnitFactory,
     ScholarshipFactory,
     SchoolCycleFactory,
     SectionFactory,
 )
-from apps.grading.models import ReportCard
+from apps.grading.models import Activity, Grade, ReportCard
+from apps.grading.tests.factories import ActivityTypeFactory, TeacherAssignmentFactory
 from apps.students.services.link import vincular_encargado_estudiante
 from apps.students.tests.factories import EnrollmentFactory, GuardianFactory, StudentFactory
 
@@ -183,3 +185,68 @@ def test_rf09_se_publica_cuando_se_cumple_el_plazo_y_esta_solvente_y_la_familia_
 
     despues = client_familia.get("/api/v1/report-cards/")
     assert despues.data["count"] == 1
+
+
+def test_rf34_no_se_puede_descargar_un_boletin_que_no_esta_publicado():
+    ciclo, seccion, unidad = _seccion_con_ciclo(report_card_enabled_date=date(2099, 1, 1))
+    EnrollmentFactory(section=seccion, cycle=ciclo)
+    client = APIClient()
+    client.force_authenticate(user=_direccion())
+    generado = client.post(
+        "/api/v1/report-cards/generate/",
+        {"section": str(seccion.public_id), "unit": str(unidad.public_id)},
+    )
+    boletin_id = generado.data[0]["public_id"]
+
+    respuesta = client.get(f"/api/v1/report-cards/{boletin_id}/download/")
+
+    assert respuesta.status_code == 400
+    assert "publicado" in str(respuesta.data).lower()
+
+
+def test_rf34_la_familia_descarga_el_pdf_de_un_boletin_publicado_con_la_nota_por_curso():
+    ciclo, seccion, unidad = _seccion_con_ciclo(report_card_enabled_date=date(2020, 1, 1))
+    beca = ScholarshipFactory()
+    rol_familia = RoleFactory(name="Padre de familia", permissions={"notas": "ver"})
+    usuario_familia = UserFactory(role=rol_familia)
+    encargado = GuardianFactory(user=usuario_familia)
+    mi_hijo = StudentFactory(internal_code="ES031")
+    vincular_encargado_estudiante(guardian=encargado, student=mi_hijo, relationship="Madre")
+    inscripcion = EnrollmentFactory(student=mi_hijo, section=seccion, cycle=ciclo, scholarship=beca)
+
+    asignacion = TeacherAssignmentFactory(
+        section=seccion, cycle=ciclo, course=CourseFactory(name="Matemática")
+    )
+    actividad = Activity.objects.create(
+        assignment=asignacion,
+        unit=unidad,
+        activity_type=ActivityTypeFactory(),
+        name="Examen",
+        max_score=100,
+        due_date=unidad.end_date,
+    )
+    Grade.objects.create(
+        enrollment=inscripcion,
+        activity=actividad,
+        raw_score=85,
+        current_score=85,
+        recorded_by=asignacion.teacher,
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=_direccion())
+    generado = client.post(
+        "/api/v1/report-cards/generate/",
+        {"section": str(seccion.public_id), "unit": str(unidad.public_id)},
+    )
+    boletin_id = generado.data[0]["public_id"]
+    client.post(f"/api/v1/report-cards/{boletin_id}/approve/")
+    client.post(f"/api/v1/report-cards/{boletin_id}/publish/")
+
+    client_familia = APIClient()
+    client_familia.force_authenticate(user=usuario_familia)
+    respuesta = client_familia.get(f"/api/v1/report-cards/{boletin_id}/download/")
+
+    assert respuesta.status_code == 200
+    assert respuesta["Content-Type"] == "application/pdf"
+    assert respuesta.content[:4] == b"%PDF"

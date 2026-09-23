@@ -275,9 +275,36 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: "/portal",
-    name: "portal-inicio",
-    component: () => import("@/pages/publico/InicioPage.vue"),
+    component: () => import("@/pages/publico/PublicoLayout.vue"),
     meta: { roles: ROLES_PUBLICO },
+    children: [
+      {
+        path: "",
+        name: "portal-inicio",
+        component: () => import("@/features/portal/components/InicioPage.vue"),
+      },
+      {
+        path: "notas",
+        name: "portal-notas",
+        component: () => import("@/features/portal/components/NotasPage.vue"),
+      },
+      {
+        path: "asistencia",
+        name: "portal-asistencia",
+        component: () => import("@/features/portal/components/AsistenciaPage.vue"),
+      },
+      {
+        path: "pagos",
+        name: "portal-pagos",
+        component: () => import("@/features/portal/components/PagosPage.vue"),
+      },
+    ],
+  },
+  {
+    path: "/verificar/:codigo",
+    name: "verificar-documento",
+    component: () => import("@/features/documentos/components/VerificarPage.vue"),
+    meta: { publica: true },
   },
   { path: "/", redirect: "/ingresar" },
 ];

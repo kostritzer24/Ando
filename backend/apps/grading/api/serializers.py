@@ -33,13 +33,26 @@ class ActivitySerializer(serializers.ModelSerializer):
 
 class GradeSerializer(serializers.ModelSerializer):
     """RN-06: nunca expone `raw_score` — solo `current_score`, la nota
-    vigente que entra en los promedios y la única que ve la familia."""
+    vigente que entra en los promedios y la única que ve la familia.
+
+    Los campos denormalizados (`course_name`, `unit_number`,
+    `activity_name`, `max_score`) siguen el mismo criterio que
+    `TeacherAssignmentSerializer` (sección "scheduling" del contrato): la
+    familia no llega a `/activities/` ni a `/assignments/` (RF-29 la
+    necesita agrupada por curso y unidad), así que se exponen acá en vez
+    de abrirle esos dos catálogos completos."""
 
     enrollment = serializers.SlugRelatedField(
         slug_field="public_id", queryset=Enrollment.objects.all()
     )
     activity = serializers.SlugRelatedField(slug_field="public_id", queryset=Activity.objects.all())
     recorded_by = serializers.CharField(source="recorded_by.username", read_only=True)
+    course_name = serializers.CharField(source="activity.assignment.course.name", read_only=True)
+    unit_number = serializers.IntegerField(source="activity.unit.number", read_only=True)
+    activity_name = serializers.CharField(source="activity.name", read_only=True)
+    max_score = serializers.DecimalField(
+        source="activity.max_score", max_digits=5, decimal_places=2, read_only=True
+    )
 
     class Meta:
         model = Grade
@@ -50,6 +63,10 @@ class GradeSerializer(serializers.ModelSerializer):
             "current_score",
             "source",
             "recorded_by",
+            "course_name",
+            "unit_number",
+            "activity_name",
+            "max_score",
             "is_active",
         ]
         read_only_fields = ["public_id", "current_score", "source", "recorded_by"]
