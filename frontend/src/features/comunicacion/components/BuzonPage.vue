@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from "vue";
 
-import { AppButton, EmptyState, ErrorBanner, FormField, TagPill } from "@/shared/components";
+import { AppButton, CargandoBloque, EmptyState, ErrorBanner, FormField, PageHeader, TagPill } from "@/shared/components";
 import type { Message } from "@/shared/types/models";
 
 import { messagesApi, responderMensaje } from "../api/comunicacionApi";
@@ -74,10 +74,10 @@ onMounted(cargar);
 
 <template>
   <section class="buzon-page">
-    <h1>Buzón</h1>
+    <PageHeader titulo="Buzón" />
 
     <ErrorBanner v-if="error" :mensaje="error" etiqueta-accion="Reintentar" @accion="cargar" />
-    <p v-else-if="cargando">Cargando…</p>
+    <CargandoBloque v-else-if="cargando" />
 
     <EmptyState
       v-else-if="hilos.length === 0"
@@ -115,11 +115,6 @@ onMounted(cargar);
 </template>
 
 <style scoped>
-.buzon-page h1 {
-  font-family: var(--fuente-titulo);
-  font-size: var(--texto-md);
-  margin: 0 0 var(--espacio-lg);
-}
 
 .buzon-page__lista {
   list-style: none;

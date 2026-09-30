@@ -3,7 +3,7 @@ import { computed, onMounted, ref, watch } from "vue";
 
 import { conductReportsApi } from "@/features/comunicacion/api/comunicacionApi";
 import { usePortalStore } from "@/features/portal/stores/portalStore";
-import { EmptyState, ErrorBanner, TagPill } from "@/shared/components";
+import { CargandoBloque, EmptyState, ErrorBanner, PageHeader, TagPill } from "@/shared/components";
 import type { Attendance, ConductReport } from "@/shared/types/models";
 
 import { attendanceApi } from "../api/portalApi";
@@ -84,10 +84,10 @@ onMounted(cargar);
 
 <template>
   <section class="asistencia-page">
-    <h1>Asistencia</h1>
+    <PageHeader titulo="Asistencia" />
 
     <ErrorBanner v-if="error" :mensaje="error" etiqueta-accion="Reintentar" @accion="cargar" />
-    <p v-else-if="cargando">Cargando…</p>
+    <CargandoBloque v-else-if="cargando" />
 
     <template v-else>
       <EmptyState
@@ -124,11 +124,6 @@ onMounted(cargar);
 </template>
 
 <style scoped>
-.asistencia-page h1 {
-  font-family: var(--fuente-titulo);
-  font-size: var(--texto-md);
-  margin: 0 0 var(--espacio-lg);
-}
 
 .asistencia-page h2 {
   font-family: var(--fuente-titulo);

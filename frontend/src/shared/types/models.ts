@@ -19,6 +19,8 @@ export type Guardian = components["schemas"]["Guardian"];
 export type GuardianStudentLinkRead = components["schemas"]["GuardianStudentLinkRead"];
 export type Enrollment = components["schemas"]["Enrollment"];
 export type Role = components["schemas"]["Role"];
+export type AuditLog = components["schemas"]["AuditLog"];
+export type AccessLog = components["schemas"]["AccessLog"];
 export type Usuario = components["schemas"]["User"];
 
 export type TeacherAssignment = components["schemas"]["TeacherAssignment"];

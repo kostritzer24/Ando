@@ -3,14 +3,15 @@ import { computed, onMounted, reactive, ref } from "vue";
 import { useRouter } from "vue-router";
 
 import { becasApi, seccionesApi } from "@/features/catalogo/api/catalogoApi";
-import { useAuthStore } from "@/features/auth/stores/authStore";
-import { AppButton, AppModal, DataTable, EmptyState, ErrorBanner, FormField, FormSelect } from "@/shared/components";
+import { AppButton, AppModal, CargandoBloque, DataTable, EmptyState, ErrorBanner, FormField, FormSelect, PageHeader } from "@/shared/components";
+import { usePermisos } from "@/shared/permisos";
+import type { ColumnaTabla } from "@/shared/components/DataTable.vue";
 import type { Scholarship, Section, Student } from "@/shared/types/models";
 
 import { enrollmentsApi, studentsApi } from "../api/estudiantesApi";
 
-const auth = useAuthStore();
-const puedeInscribir = computed(() => auth.usuario?.role_name === "Dirección");
+const permisos = usePermisos();
+const puedeInscribir = computed(() => permisos.puedeEditar("estudiantes_encargados"));
 
 const router = useRouter();
 
@@ -32,6 +33,13 @@ const formulario = reactive({
   section: "",
   scholarship: "",
 });
+
+// El nombre va primero: en el teléfono es el título de cada bloque.
+const columnas: ColumnaTabla<Student>[] = [
+  { clave: "nombre", etiqueta: "Nombre", texto: (e) => `${e.first_name} ${e.last_name}` },
+  { clave: "internal_code", etiqueta: "Código" },
+  { clave: "birth_date", etiqueta: "Nacimiento" },
+];
 
 const opcionesSeccion = computed(() =>
   secciones.value.map((s) => ({
@@ -116,13 +124,14 @@ onMounted(cargar);
 
 <template>
   <section class="estudiantes-page">
-    <header class="estudiantes-page__cabecera">
-      <h1>Estudiantes</h1>
-      <AppButton v-if="puedeInscribir" @click="abrirNuevo">Inscribir estudiante</AppButton>
-    </header>
+    <PageHeader titulo="Estudiantes">
+      <template #acciones>
+        <AppButton v-if="puedeInscribir" @click="abrirNuevo" :deshabilitado="cargando">Inscribir estudiante</AppButton>
+      </template>
+    </PageHeader>
 
     <ErrorBanner v-if="error" :mensaje="error" etiqueta-accion="Reintentar" @accion="cargar" />
-    <p v-else-if="cargando">Cargando…</p>
+    <CargandoBloque v-else-if="cargando" />
     <EmptyState
       v-else-if="estudiantes.length === 0"
       titulo="Todavía no hay estudiantes inscritos"
@@ -131,18 +140,15 @@ onMounted(cargar);
 
     <DataTable
       v-else
-      :columnas="[
-        { clave: 'internal_code', etiqueta: 'Código' },
-        { clave: 'first_name', etiqueta: 'Nombres' },
-        { clave: 'last_name', etiqueta: 'Apellidos' },
-        { clave: 'birth_date', etiqueta: 'Nacimiento' },
-      ]"
+      :columnas="columnas"
       :filas="estudiantes"
+      buscable
+      placeholder-busqueda="Buscar por nombre o código"
+      descripcion="Estudiantes inscritos"
     >
+      <template #celda-nombre="{ fila }">{{ fila.first_name }} {{ fila.last_name }}</template>
       <template #acciones="{ fila }">
-        <button type="button" class="estudiantes-page__accion" @click="verExpediente(fila as Student)">
-          Ver expediente
-        </button>
+        <AppButton variante="discreto" compacto @click="verExpediente(fila)">Ver expediente</AppButton>
       </template>
     </DataTable>
 
@@ -175,27 +181,7 @@ onMounted(cargar);
 </template>
 
 <style scoped>
-.estudiantes-page__cabecera {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: var(--espacio-xl);
-}
 
-.estudiantes-page__cabecera h1 {
-  font-family: var(--fuente-titulo);
-  font-size: var(--texto-md);
-  margin: 0;
-}
-
-.estudiantes-page__accion {
-  background: none;
-  border: none;
-  color: var(--color-accion);
-  font-size: var(--texto-sm);
-  font-weight: 600;
-  cursor: pointer;
-}
 
 .estudiantes-page__formulario {
   display: flex;

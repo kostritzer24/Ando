@@ -4,7 +4,7 @@ import { computed, onMounted, ref } from "vue";
 import { assignmentsApi } from "@/features/asignaciones/api/asignacionesApi";
 import { seccionesApi } from "@/features/catalogo/api/catalogoApi";
 import { useAuthStore } from "@/features/auth/stores/authStore";
-import { AppButton, ErrorBanner, FormSelect } from "@/shared/components";
+import { AppButton, AppPanel, CampoArchivo, CargandoBloque, ErrorBanner, FormField, FormSelect, PageHeader } from "@/shared/components";
 import type { Section, TeacherAssignment } from "@/shared/types/models";
 
 import { descargarPlantillaAsistencia, subirPlantillaAsistencia } from "../api/asistenciaApi";
@@ -83,8 +83,8 @@ async function descargar(): Promise<void> {
   }
 }
 
-function alElegirArchivo(evento: Event): void {
-  archivoElegido.value = (evento.target as HTMLInputElement).files?.[0] ?? null;
+function alElegirArchivo(archivo: File | null): void {
+  archivoElegido.value = archivo;
 }
 
 async function subir(): Promise<void> {
@@ -110,41 +110,44 @@ onMounted(cargar);
 
 <template>
   <section class="plantilla-asistencia">
-    <h1>Plantilla de asistencia de talleres</h1>
+    <PageHeader titulo="Plantilla de asistencia de talleres" />
 
     <ErrorBanner v-if="error" :mensaje="error" etiqueta-accion="Reintentar" @accion="cargar" />
-    <p v-else-if="cargando">Cargando…</p>
+    <CargandoBloque v-else-if="cargando" />
     <p v-else-if="!puedeUsarPlantilla" class="plantilla-asistencia__nota">
       Esta pantalla es para el taller que tenés a cargo.
     </p>
 
     <template v-else>
-      <div class="plantilla-asistencia__filtros">
-        <FormSelect id="section" etiqueta="Taller" :opciones="opcionesSeccion" v-model="seccionElegida" />
-        <div class="plantilla-asistencia__fecha">
-          <label for="fecha">Fecha</label>
-          <input id="fecha" type="date" v-model="fecha" />
-        </div>
-      </div>
+      <div class="plantilla-asistencia__pasos">
+        <AppPanel titulo="1. Descargá la plantilla" descripcion="Trae la lista del taller para la fecha que elijas.">
+          <div class="plantilla-asistencia__campos">
+            <div class="plantilla-asistencia__filtros">
+              <FormSelect id="section" etiqueta="Taller" :opciones="opcionesSeccion" v-model="seccionElegida" />
+              <FormField id="fecha" etiqueta="Fecha" tipo="date" v-model="fecha" />
+            </div>
+            <AppButton variante="secundario" :deshabilitado="!seccionElegida" @click="descargar">
+              Descargar plantilla
+            </AppButton>
+          </div>
+        </AppPanel>
 
-      <AppButton variante="secundario" :deshabilitado="!seccionElegida" @click="descargar">
-        Descargar plantilla
-      </AppButton>
-
-      <div class="plantilla-asistencia__subida">
-        <label for="file">Subir plantilla ya llena</label>
-        <input id="file" type="file" accept=".xlsx" @change="alElegirArchivo" />
-        <AppButton :deshabilitado="!archivoElegido || subiendo" @click="subir">
-          {{ subiendo ? "Subiendo…" : "Subir" }}
-        </AppButton>
+        <AppPanel titulo="2. Subí la plantilla llena" descripcion="Se revisa completa antes de guardar nada.">
+          <div class="plantilla-asistencia__campos">
+            <CampoArchivo id="file" etiqueta="Archivo de Excel (.xlsx)" accept=".xlsx" @elegir="alElegirArchivo" />
+            <AppButton :deshabilitado="!archivoElegido || subiendo" @click="subir">
+              {{ subiendo ? "Subiendo…" : "Subir plantilla" }}
+            </AppButton>
+          </div>
+        </AppPanel>
       </div>
 
       <p v-if="resultado?.creados !== undefined" class="plantilla-asistencia__exito">
         Se registraron {{ resultado.creados }} asistencias.
       </p>
 
-      <div v-if="resultado?.errores?.length" class="plantilla-asistencia__errores">
-        <p>La plantilla tiene errores — no se guardó ningún registro todavía:</p>
+      <div v-if="resultado?.errores?.length" class="plantilla-asistencia__errores" role="alert">
+        <p>La plantilla tiene errores y no se guardó ningún registro. Corregí estas filas y volvé a subirla:</p>
         <ul>
           <li v-for="(err, indice) in resultado.errores" :key="indice">{{ err }}</li>
         </ul>
@@ -154,57 +157,59 @@ onMounted(cargar);
 </template>
 
 <style scoped>
-.plantilla-asistencia h1 {
-  font-family: var(--fuente-titulo);
-  font-size: var(--texto-md);
-  margin: 0 0 var(--espacio-xl);
-}
-
 .plantilla-asistencia__nota {
   color: var(--color-tinta-suave);
 }
 
-.plantilla-asistencia__filtros {
-  display: flex;
-  gap: var(--espacio-xl);
-  align-items: flex-end;
-  margin-bottom: var(--espacio-lg);
-  flex-wrap: wrap;
+.plantilla-asistencia__pasos {
+  display: grid;
+  gap: var(--espacio-lg);
+  align-items: start;
 }
 
-.plantilla-asistencia__fecha {
+.plantilla-asistencia__campos {
   display: flex;
   flex-direction: column;
-  gap: var(--espacio-xs);
-}
-
-.plantilla-asistencia__fecha input {
-  min-height: var(--area-tactil-minima);
-  padding: 0 0.75rem;
-  border: 1px solid var(--color-linea);
-  border-radius: var(--radio-md);
-}
-
-.plantilla-asistencia__subida {
-  margin-top: var(--espacio-xl);
-  padding-top: var(--espacio-xl);
-  border-top: 1px solid var(--color-linea);
-  display: flex;
-  flex-direction: column;
-  gap: var(--espacio-md);
   align-items: flex-start;
+  gap: var(--espacio-lg);
+}
+
+.plantilla-asistencia__campos > :not(button) {
+  align-self: stretch;
+}
+
+.plantilla-asistencia__filtros {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  gap: var(--espacio-md);
 }
 
 .plantilla-asistencia__exito {
-  color: var(--color-etiqueta-taller-texto);
-  margin-top: var(--espacio-lg);
+  color: var(--color-exito);
+  font-weight: 600;
 }
 
 .plantilla-asistencia__errores {
-  margin-top: var(--espacio-lg);
+  padding: var(--espacio-lg);
   background: var(--color-etiqueta-alerta-fondo);
   color: var(--color-etiqueta-alerta-texto);
+  border-left: 4px solid var(--color-peligro);
   border-radius: var(--radio-md);
-  padding: var(--espacio-lg);
+}
+
+.plantilla-asistencia__errores p {
+  margin: 0 0 var(--espacio-sm);
+  font-weight: 600;
+}
+
+.plantilla-asistencia__errores ul {
+  margin: 0;
+  padding-left: var(--espacio-xl);
+}
+
+@media (min-width: 64rem) {
+  .plantilla-asistencia__pasos {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 </style>

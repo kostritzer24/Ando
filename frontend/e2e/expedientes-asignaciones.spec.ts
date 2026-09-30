@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 
+import { menu } from "./utils";
+
 /**
  * Fase 5 (RF-03, RF-04, RF-05): expedientes, encargados y asignaciones.
  * Requiere `manage.py seed_demo` (secciones, cursos, ES001..ES004,
@@ -14,7 +16,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test("Dirección inscribe un estudiante y el sistema le asigna el código", async ({ page }) => {
-  await page.getByRole("link", { name: "Estudiantes", exact: true }).click();
+  await menu(page).getByRole("link", { name: "Estudiantes", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Estudiantes" })).toBeVisible();
 
   await page.getByRole("button", { name: "Inscribir estudiante" }).click();
@@ -62,7 +64,7 @@ test("Coordinación ve el expediente pero no puede editarlo ni ver datos sensibl
 });
 
 test("Dirección crea un encargado, lo vincula a un estudiante y lo desvincula", async ({ page }) => {
-  await page.getByRole("link", { name: "Encargados" }).click();
+  await menu(page).getByRole("link", { name: "Encargados" }).click();
   await expect(page.getByRole("heading", { name: "Encargados" })).toBeVisible();
 
   const username = `familia.prueba.${Date.now()}`;
@@ -93,7 +95,7 @@ test("Dirección crea un encargado, lo vincula a un estudiante y lo desvincula",
 test("Dirección asigna un docente a un curso académico y el selector filtra por tipo de sección", async ({
   page,
 }) => {
-  await page.getByRole("link", { name: "Asignaciones" }).click();
+  await menu(page).getByRole("link", { name: "Asignaciones" }).click();
   await expect(page.getByRole("heading", { name: "Asignaciones de docentes y talleristas" })).toBeVisible();
 
   await page.getByRole("button", { name: "Agregar asignación" }).click();
@@ -113,6 +115,8 @@ test("Dirección asigna un docente a un curso académico y el selector filtra po
 test("el selector de docente filtra a Tallerista cuando la sección es de taller", async ({ page }) => {
   await page.goto("/administrativo/asignaciones");
   await page.getByRole("button", { name: "Agregar asignación" }).click();
+  // allTextContents() no espera: primero, que la opción de taller exista.
+  await expect(page.getByLabel("Sección").locator("option", { hasText: "(taller)" })).toHaveCount(1);
   const opcionesSeccion = await page.getByLabel("Sección").locator("option").allTextContents();
   const etiquetaTaller = opcionesSeccion.find((o) => o.includes("taller"));
   await page.getByLabel("Sección").selectOption({ label: etiquetaTaller });

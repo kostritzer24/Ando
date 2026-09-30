@@ -6,6 +6,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.core.services import registrar_cambio
 
+from ..domain.gestion_usuarios import validar_cambio_propio
 from ..domain.lockout import calcular_bloqueo
 from ..models import Role, User
 
@@ -107,3 +108,42 @@ def restablecer_contrasena(*, restablecido_por: User, user: User, contrasena_tem
         accion="actualizar",
         valor_nuevo={"accion": "restablecer_contrasena"},
     )
+
+
+CAMPOS_EDITABLES = ("first_name", "last_name", "email", "role", "is_active")
+
+
+def actualizar_usuario(*, actualizado_por: User, user: User, **cambios) -> User:
+    """RF-01: editar nombre, correo y rol de una cuenta, o activarla y
+    desactivarla. Nunca se borra (baja lógica con `is_active`): la cuenta
+    queda en la bitácora de todo lo que hizo. Deja registro en la bitácora
+    con el valor anterior y el nuevo de lo que cambió."""
+    cambios = {campo: valor for campo, valor in cambios.items() if campo in CAMPOS_EDITABLES}
+    validar_cambio_propio(
+        es_la_misma_cuenta=user.pk == actualizado_por.pk,
+        desactiva=cambios.get("is_active") is False,
+        cambia_rol="role" in cambios and cambios["role"] != user.role,
+    )
+
+    def legible(campo, valor):
+        return valor.name if campo == "role" and valor is not None else valor
+
+    anterior, nuevo = {}, {}
+    for campo, valor in cambios.items():
+        if getattr(user, campo) != valor:
+            anterior[campo] = legible(campo, getattr(user, campo))
+            nuevo[campo] = legible(campo, valor)
+            setattr(user, campo, valor)
+    if not nuevo:
+        return user
+
+    user.save(update_fields=list(nuevo))
+    registrar_cambio(
+        usuario=actualizado_por,
+        entidad_nombre="accounts.User",
+        entidad_id=user.id,
+        accion="actualizar",
+        valor_anterior=anterior,
+        valor_nuevo=nuevo,
+    )
+    return user

@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from "vue";
 
-import { useAuthStore } from "@/features/auth/stores/authStore";
-import { AppButton, AppModal, DataTable, EmptyState, ErrorBanner, FormField, FormSelect } from "@/shared/components";
+import { AppButton, AppModal, CargandoBloque, DataTable, EmptyState, ErrorBanner, FormField, FormSelect, PageHeader } from "@/shared/components";
+import { usePermisos } from "@/shared/permisos";
+import { avisar } from "@/shared/composables/useAvisos";
+import { confirmar } from "@/shared/composables/useConfirmar";
 import type { components } from "@/shared/types/api";
 import type { SchoolCycle, Section } from "@/shared/types/models";
 
@@ -10,8 +12,8 @@ import { ciclosApi, listarDocentesConSeccion, seccionesApi } from "../api/catalo
 
 type Usuario = components["schemas"]["User"];
 
-const auth = useAuthStore();
-const puedeEditar = computed(() => auth.usuario?.role_name !== "Coordinación");
+const permisos = usePermisos();
+const puedeEditar = computed(() => permisos.puedeEditar("datos_maestros"));
 
 const secciones = ref<Section[]>([]);
 const ciclos = ref<SchoolCycle[]>([]);
@@ -120,9 +122,21 @@ async function guardar(): Promise<void> {
 }
 
 async function darDeBaja(seccion: Section): Promise<void> {
-  if (!confirm(`¿Dar de baja la sección "${seccion.grade} ${seccion.letter}"?`)) return;
-  await seccionesApi.darDeBaja(seccion.public_id);
-  await cargar();
+  const nombre = `${seccion.grade} ${seccion.letter}`.trim();
+  const confirmado = await confirmar({
+    titulo: `¿Dar de baja la sección "${nombre}"?`,
+    mensaje: "Deja de aparecer en los formularios. Se puede reactivar después.",
+    etiquetaConfirmar: "Dar de baja",
+    peligro: true,
+  });
+  if (!confirmado) return;
+  try {
+    await seccionesApi.darDeBaja(seccion.public_id);
+    avisar(`Sección "${nombre}" dada de baja.`);
+    await cargar();
+  } catch {
+    avisar(`No se pudo dar de baja la sección "${nombre}". Probá de nuevo.`, "error");
+  }
 }
 
 async function reactivar(seccion: Section): Promise<void> {
@@ -135,13 +149,14 @@ onMounted(cargar);
 
 <template>
   <section class="secciones-page">
-    <header class="secciones-page__cabecera">
-      <h1>Secciones</h1>
-      <AppButton v-if="puedeEditar" @click="abrirNueva">Agregar sección</AppButton>
-    </header>
+    <PageHeader titulo="Secciones">
+      <template #acciones>
+        <AppButton v-if="puedeEditar" @click="abrirNueva" :deshabilitado="cargando">Agregar sección</AppButton>
+      </template>
+    </PageHeader>
 
     <ErrorBanner v-if="error" :mensaje="error" etiqueta-accion="Reintentar" @accion="cargar" />
-    <p v-else-if="cargando">Cargando…</p>
+    <CargandoBloque v-else-if="cargando" />
     <EmptyState
       v-else-if="secciones.length === 0"
       titulo="Todavía no hay secciones"
@@ -217,18 +232,7 @@ onMounted(cargar);
 </template>
 
 <style scoped>
-.secciones-page__cabecera {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: var(--espacio-xl);
-}
 
-.secciones-page__cabecera h1 {
-  font-family: var(--fuente-titulo);
-  font-size: var(--texto-md);
-  margin: 0;
-}
 
 .secciones-page__toggle-inactivas {
   display: flex;

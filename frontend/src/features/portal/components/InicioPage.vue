@@ -3,7 +3,7 @@ import { computed, onMounted, ref, watch } from "vue";
 
 import { DIAS, PERIODOS } from "@/features/horarios/api/horariosApi";
 import { usePortalStore } from "@/features/portal/stores/portalStore";
-import { DayTabs, EmptyState, ErrorBanner, TagPill } from "@/shared/components";
+import { CargandoBloque, DayTabs, EmptyState, ErrorBanner, PageHeader, TagPill } from "@/shared/components";
 
 import { consultarCalendarioSemanal } from "../api/portalApi";
 import type { CalendarioSemanal } from "../api/portalApi";
@@ -85,10 +85,10 @@ onMounted(cargar);
 
 <template>
   <section class="inicio-page">
-    <h1>Calendario de la semana</h1>
+    <PageHeader titulo="Calendario de la semana" />
 
     <ErrorBanner v-if="error" :mensaje="error" etiqueta-accion="Reintentar" @accion="cargar" />
-    <p v-else-if="cargando">Cargando…</p>
+    <CargandoBloque v-else-if="cargando" />
 
     <template v-else>
       <DayTabs :dias="semana" v-model="diaElegido" />
@@ -115,11 +115,6 @@ onMounted(cargar);
 </template>
 
 <style scoped>
-.inicio-page h1 {
-  font-family: var(--fuente-titulo);
-  font-size: var(--texto-md);
-  margin: 0 0 var(--espacio-lg);
-}
 
 .inicio-page__agenda {
   list-style: none;

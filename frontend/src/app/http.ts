@@ -32,8 +32,11 @@ http.interceptors.response.use(
   (respuesta) => respuesta,
   async (error) => {
     const peticionOriginal = error.config as PeticionReintentable | undefined;
-    const noHayComoReintentar =
-      !peticionOriginal || peticionOriginal._reintentada || peticionOriginal.url === "/auth/refresh/";
+    // Un 401 del login no es un token vencido: son credenciales malas o una
+    // cuenta bloqueada, y la pantalla necesita ese mensaje, no el del
+    // intento de renovación que lo reemplazaba.
+    const esRutaDeSesion = peticionOriginal?.url === "/auth/refresh/" || peticionOriginal?.url === "/auth/login/";
+    const noHayComoReintentar = !peticionOriginal || peticionOriginal._reintentada || esRutaDeSesion;
 
     if (error.response?.status !== 401 || noHayComoReintentar) {
       return Promise.reject(error);

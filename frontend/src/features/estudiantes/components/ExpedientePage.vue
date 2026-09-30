@@ -2,8 +2,8 @@
 import { computed, onMounted, reactive, ref } from "vue";
 import { useRoute } from "vue-router";
 
-import { useAuthStore } from "@/features/auth/stores/authStore";
-import { AppButton, ErrorBanner, FormField } from "@/shared/components";
+import { AppButton, CargandoBloque, ErrorBanner, FormField, PageHeader } from "@/shared/components";
+import { usePermisos } from "@/shared/permisos";
 import type { Student, StudentSensitive } from "@/shared/types/models";
 
 import { actualizarDatosSensibles, obtenerDatosSensibles, studentsApi } from "../api/estudiantesApi";
@@ -11,19 +11,17 @@ import { actualizarDatosSensibles, obtenerDatosSensibles, studentsApi } from "..
 const route = useRoute();
 const publicId = route.params.publicId as string;
 
-const auth = useAuthStore();
 // docs/permisos-roles.md: "Estudiantes y encargados (datos generales)"
 // es E solo para Dirección — el resto de roles que llegan a esta
 // pantalla (Coordinación, Administrador, ...) la ven de solo lectura.
-const puedeEditarGeneral = computed(() => auth.usuario?.role_name === "Dirección");
+const permisos = usePermisos();
+const puedeEditarGeneral = computed(() => permisos.puedeEditar("estudiantes_encargados"));
 // "Datos sensibles" es más angosto todavía (RNF-04): Dirección edita,
 // Administrador solo consulta (y esa consulta queda en AccessLog), el
 // resto de roles ni siquiera debería pedirle esto al backend.
 const alcanceDatosSensibles = computed<"editar" | "ver" | "ninguno">(() => {
-  const rol = auth.usuario?.role_name;
-  if (rol === "Dirección") return "editar";
-  if (rol === "Administrador del sistema") return "ver";
-  return "ninguno";
+  const nivel = permisos.nivel("datos_sensibles");
+  return nivel === "sin_acceso" ? "ninguno" : nivel;
 });
 
 const estudiante = ref<Student | null>(null);
@@ -104,11 +102,15 @@ onMounted(async () => {
 <template>
   <section class="expediente-page">
     <ErrorBanner v-if="error" :mensaje="error" etiqueta-accion="Reintentar" @accion="cargar" />
-    <p v-else-if="cargando">Cargando…</p>
+    <CargandoBloque v-else-if="cargando" />
 
     <template v-else-if="estudiante">
-      <h1>{{ estudiante.first_name }} {{ estudiante.last_name }}</h1>
-      <p class="expediente-page__codigo">Código interno: {{ estudiante.internal_code }}</p>
+      <PageHeader
+        :titulo="`${estudiante.first_name} ${estudiante.last_name}`"
+        :descripcion="`Código interno: ${estudiante.internal_code}`"
+        volver-a="/administrativo/estudiantes"
+        etiqueta-volver="Estudiantes"
+      />
 
       <form class="expediente-page__formulario" @submit.prevent="guardarGeneral">
         <FormField
@@ -153,7 +155,7 @@ onMounted(async () => {
           Salud y situación socioeconómica — acceso reservado (RNF-04). Cada consulta queda
           registrada.
         </p>
-        <p v-if="cargandoSensibles">Cargando…</p>
+        <CargandoBloque v-if="cargandoSensibles" />
         <form v-else class="expediente-page__formulario" @submit.prevent="guardarSensibles">
           <div class="expediente-page__campo-textarea">
             <label for="health_notes">Datos de salud</label>
@@ -183,16 +185,6 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.expediente-page h1 {
-  font-family: var(--fuente-titulo);
-  font-size: var(--texto-md);
-  margin: 0 0 var(--espacio-2xs);
-}
-
-.expediente-page__codigo {
-  color: var(--color-tinta-suave);
-  margin: 0 0 var(--espacio-xl);
-}
 
 .expediente-page__formulario {
   display: flex;

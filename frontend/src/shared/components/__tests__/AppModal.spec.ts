@@ -31,3 +31,26 @@ describe("AppModal", () => {
     expect(wrapper.emitted("cerrar")).toHaveLength(1);
   });
 });
+
+describe("AppModal — teclado", () => {
+  it("emite cerrar con Escape y enfoca el primer campo del cuerpo", async () => {
+    const wrapper = mount(AppModal, {
+      props: { titulo: "Agregar curso" },
+      slots: { default: '<input id="nombre" />' },
+      attachTo: document.body,
+    });
+    expect(document.activeElement?.id).toBe("nombre");
+
+    await wrapper.find(".app-modal").trigger("keydown", { key: "Escape" });
+    expect(wrapper.emitted("cerrar")).toHaveLength(1);
+    wrapper.unmount();
+  });
+
+  it("se anuncia como diálogo modal con su título", () => {
+    const wrapper = mount(AppModal, { props: { titulo: "Agregar curso" } });
+    const dialogo = wrapper.find('[role="dialog"]');
+    expect(dialogo.attributes("aria-modal")).toBe("true");
+    const idTitulo = dialogo.attributes("aria-labelledby");
+    expect(wrapper.find(`[id="${idTitulo}"]`).text()).toBe("Agregar curso");
+  });
+});

@@ -14,5 +14,5 @@ def test_rn16_mensaje_normal_no_se_marca():
 
 
 def test_rn16_coincidencia_es_por_palabra_completa():
-    """"estupidez" no es "estupido" — el filtro no debe marcar de más."""
+    """ "estupidez" no es "estupido" — el filtro no debe marcar de más."""
     assert contiene_lenguaje_inapropiado("Qué estupidez de trámite tan largo") is False

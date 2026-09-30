@@ -1,10 +1,9 @@
 import { http } from "@/app/http";
-import { crearRecursoCrud } from "@/shared/api/resource";
+import { crearRecursoCrud, obtenerTodas } from "@/shared/api/resource";
 import type {
   Enrollment,
   Guardian,
   GuardianStudentLinkRead,
-  Paginada,
   Role,
   Student,
   StudentSensitive,
@@ -53,10 +52,10 @@ export async function desvincularEstudiante(
 }
 
 // Un encargado necesita una cuenta de usuario antes de poder crearse
-// (Guardian.user es obligatorio) — RF-01 todavía no tiene pantalla de
-// administración general de usuarios, así que esta pantalla arma las dos
-// cosas en un solo paso: primero el usuario con rol "Padre de familia",
-// después el perfil de encargado sobre ese usuario.
+// (Guardian.user es obligatorio): esta pantalla arma las dos cosas en un
+// solo paso, primero el usuario con rol "Padre de familia" y después el
+// perfil de encargado. Por eso la pantalla de Usuarios no ofrece ese rol
+// al crear una cuenta: saldría suelta, sin encargado ni estudiante.
 export async function crearUsuarioFamilia(payload: {
   username: string;
   contrasena_temporal: string;
@@ -73,6 +72,6 @@ export async function crearUsuarioFamilia(payload: {
 }
 
 async function obtenerRolPorNombre(nombre: string): Promise<Role | undefined> {
-  const { data } = await http.get<Paginada<Role>>("/roles/");
+  const data = await obtenerTodas<Role>("/roles/");
   return data.results.find((rol) => rol.name === nombre);
 }

@@ -1,5 +1,7 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 
+import { menu } from "./utils";
+
 /**
  * Fase 11 (RF-13, RF-24, RF-25, RF-35 a RF-37, RN-16): avisos de
  * cartelera con destinatario, reportes de conducta con descarga de PDF,
@@ -71,7 +73,7 @@ test("avisos: Dirección publica para todos y por sección, y cada rol ve solo l
 
   await entrarComo(page, "docente.demo");
   await expect(page).toHaveURL(/\/operativo$/);
-  await page.getByRole("link", { name: "Avisos" }).click();
+  await menu(page).getByRole("link", { name: "Avisos" }).click();
   await expect(page.getByRole("heading", { name: "Cartelera de avisos" })).toBeVisible();
   await expect(page.getByText("Suspensión de labores")).toBeVisible();
   await expect(page.getByText("Reunión Segundo básico")).toBeVisible();
@@ -91,7 +93,7 @@ test("reportes de conducta: el maestro guía registra uno con artículos marcado
 
   await entrarComo(page, "guia.demo");
   await expect(page).toHaveURL(/\/operativo$/);
-  await page.getByRole("link", { name: "Reportes de conducta" }).click();
+  await menu(page).getByRole("link", { name: "Reportes de conducta" }).click();
   await expect(page.getByRole("heading", { name: "Reportes de conducta" })).toBeVisible();
 
   await page.getByRole("button", { name: "Registrar reporte" }).click();
@@ -100,7 +102,7 @@ test("reportes de conducta: el maestro guía registra uno con artículos marcado
   await page.getByLabel("Medidas inmediatas tomadas").fill("Se conversó con el estudiante.");
   await page.getByText(`${primerArticulo.code} — ${primerArticulo.description}`).click();
   await page.getByLabel("Compromisos establecidos").fill("Pedir permiso antes de salir.");
-  await page.getByRole("button", { name: "Guardar", exact: true }).click();
+  await page.getByRole("button", { name: "Guardar reporte" }).click();
 
   await expect(page.getByRole("heading", { name: "Registrar reporte de conducta" })).not.toBeVisible();
   const fila = page.locator("tr", { hasText: "2026-03-10" });
@@ -141,7 +143,7 @@ test("buzón y RN-16: la familia escribe, el maestro guía responde, y el lengua
 
   await entrarComo(page, "guia.demo");
   await expect(page).toHaveURL(/\/operativo$/);
-  await page.getByRole("link", { name: "Buzón" }).click();
+  await menu(page).getByRole("link", { name: "Buzón" }).click();
   await expect(page.getByRole("heading", { name: "Buzón" })).toBeVisible();
   await page.getByRole("button", { name: /Consulta/ }).click();
   await page.getByLabel("Responder").fill("Sí, hay una actividad especial.");

@@ -16,7 +16,8 @@ test("recargar la página no cierra la sesión", async ({ page }) => {
   await page.reload();
 
   await expect(page).toHaveURL(/\/administrativo$/);
-  await expect(page.getByRole("heading", { name: "Portal administrativo" })).toBeVisible();
+  await expect(page.getByText("Portal administrativo")).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: /^Hola/ })).toBeVisible();
 });
 
 test("entrar por un enlace directo a una pantalla interna reconstruye la sesión", async ({ page }) => {

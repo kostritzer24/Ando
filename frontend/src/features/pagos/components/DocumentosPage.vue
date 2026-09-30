@@ -1,16 +1,16 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from "vue";
 
-import { useAuthStore } from "@/features/auth/stores/authStore";
 import { tiposDocumentoApi } from "@/features/catalogo/api/catalogoApi";
 import { enrollmentsApi, studentsApi } from "@/features/estudiantes/api/estudiantesApi";
-import { AppButton, DataTable, EmptyState, ErrorBanner, FormField, FormSelect } from "@/shared/components";
+import { AppButton, AppPanel, CargandoBloque, DataTable, EmptyState, ErrorBanner, FormField, FormSelect, PageHeader } from "@/shared/components";
+import { usePermisos } from "@/shared/permisos";
 import type { DocumentType, Enrollment, IssuedDocument, Student } from "@/shared/types/models";
 
 import { descargarArchivo, descargarDocumento, emitirDocumento, issuedDocumentsApi } from "../api/pagosApi";
 
-const auth = useAuthStore();
-const puedeEmitir = computed(() => auth.usuario?.role_name === "Dirección");
+const permisos = usePermisos();
+const puedeEmitir = computed(() => permisos.puedeEditar("documentos"));
 
 const cargando = ref(true);
 const error = ref("");
@@ -110,16 +110,18 @@ onMounted(cargar);
 
 <template>
   <section class="documentos-page">
-    <h1>Documentos emitidos</h1>
+    <PageHeader
+      titulo="Documentos emitidos"
+      descripcion="Constancias y cartas con código de verificación. Se pueden volver a descargar cuando haga falta."
+    />
 
     <ErrorBanner v-if="error" :mensaje="error" etiqueta-accion="Reintentar" @accion="cargar" />
-    <p v-else-if="cargando">Cargando…</p>
+    <CargandoBloque v-else-if="cargando" />
 
-    <template v-else>
-      <template v-if="puedeEmitir">
-        <h2>Emitir documento</h2>
-        <ErrorBanner v-if="errorEmision" :mensaje="errorEmision" />
+    <div v-else class="documentos-page__paneles" :class="{ 'documentos-page__paneles--uno': !puedeEmitir }">
+      <AppPanel v-if="puedeEmitir" titulo="Emitir documento">
         <form class="documentos-page__formulario" @submit.prevent="emitir">
+          <ErrorBanner v-if="errorEmision" :mensaje="errorEmision" />
           <FormSelect
             id="enrollment"
             etiqueta="Estudiante"
@@ -136,72 +138,90 @@ onMounted(cargar);
             v-if="esCartaMembretada"
             id="custom_text"
             etiqueta="Texto de la carta"
+            multilinea
             v-model="formulario.custom_text"
           />
-          <AppButton tipo="submit" :deshabilitado="emitiendo || !formulario.enrollment || !formulario.document_type">
+          <AppButton
+            tipo="submit"
+            bloque
+            :deshabilitado="emitiendo || !formulario.enrollment || !formulario.document_type"
+          >
             {{ emitiendo ? "Generando…" : "Emitir" }}
           </AppButton>
         </form>
-      </template>
+      </AppPanel>
 
-      <h2>Bandeja de documentos</h2>
-      <EmptyState
-        v-if="documentos.length === 0"
-        titulo="No hay documentos emitidos"
-        descripcion="Los documentos que se emitan van a aparecer acá."
-      />
-      <DataTable
-        v-else
-        :columnas="[
-          { clave: 'document_type', etiqueta: 'Tipo' },
-          { clave: 'estudiante', etiqueta: 'Estudiante' },
-          { clave: 'issued_at', etiqueta: 'Fecha de emisión' },
-          { clave: 'verification_code', etiqueta: 'Código' },
-        ]"
-        :filas="documentos.map((d) => ({ ...d, estudiante: nombreEstudiante(d.enrollment) }))"
-      >
-        <template #acciones="{ fila }">
-          <button
-            type="button"
-            class="documentos-page__accion"
-            :disabled="descargandoId === (fila as unknown as IssuedDocument).public_id"
-            @click="volverADescargar(fila as unknown as IssuedDocument)"
-          >
-            Volver a descargar
-          </button>
-        </template>
-      </DataTable>
-    </template>
+      <section class="documentos-page__bandeja" aria-labelledby="titulo-bandeja">
+        <h2 id="titulo-bandeja" class="documentos-page__subtitulo">Bandeja de documentos</h2>
+        <EmptyState
+          v-if="documentos.length === 0"
+          titulo="No hay documentos emitidos"
+          descripcion="Los documentos que se emitan van a aparecer acá."
+        />
+        <DataTable
+          v-else
+          :columnas="[
+            { clave: 'estudiante', etiqueta: 'Estudiante' },
+            { clave: 'document_type', etiqueta: 'Tipo' },
+            { clave: 'fecha', etiqueta: 'Emitido' },
+            { clave: 'verification_code', etiqueta: 'Código' },
+          ]"
+          :filas="
+            documentos.map((d) => ({
+              ...d,
+              estudiante: nombreEstudiante(d.enrollment),
+              fecha: new Date(d.issued_at).toLocaleDateString('es-GT'),
+            }))
+          "
+          buscable
+          placeholder-busqueda="Buscar documento"
+          descripcion="Documentos emitidos"
+        >
+          <template #acciones="{ fila }">
+            <AppButton
+              variante="discreto"
+              compacto
+              :deshabilitado="descargandoId === (fila as unknown as IssuedDocument).public_id"
+              @click="volverADescargar(fila as unknown as IssuedDocument)"
+            >
+              Volver a descargar
+            </AppButton>
+          </template>
+        </DataTable>
+      </section>
+    </div>
   </section>
 </template>
 
 <style scoped>
-.documentos-page h1 {
-  font-family: var(--fuente-titulo);
-  font-size: var(--texto-md);
-  margin: 0 0 var(--espacio-xl);
-}
-
-.documentos-page h2 {
-  font-family: var(--fuente-titulo);
-  font-size: var(--texto-base);
-  margin: var(--espacio-xl) 0 var(--espacio-md);
+.documentos-page__paneles {
+  display: grid;
+  gap: var(--espacio-2xl);
+  align-items: start;
 }
 
 .documentos-page__formulario {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: var(--espacio-lg);
-  align-items: flex-end;
 }
 
-.documentos-page__accion {
-  background: none;
-  border: none;
-  color: var(--color-accion);
-  font-size: var(--texto-sm);
-  font-weight: 600;
-  cursor: pointer;
-  padding: 0.3rem 0.5rem;
+.documentos-page__bandeja {
+  min-width: 0;
+}
+
+.documentos-page__subtitulo {
+  font-size: var(--texto-md);
+  margin-bottom: var(--espacio-md);
+}
+
+@media (min-width: 64rem) {
+  .documentos-page__paneles {
+    grid-template-columns: 22rem minmax(0, 1fr);
+  }
+
+  .documentos-page__paneles--uno {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 </style>

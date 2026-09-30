@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 
+import { menu } from "./utils";
+
 /**
  * Fase 6 (RF-16, RF-12, RF-21): asistencia, justificaciones y plantilla
  * de talleres. Requiere `manage.py seed_demo` (docente.demo asignado a
@@ -17,7 +19,7 @@ test("docente toma asistencia de su sección y el estado se guarda solo", async 
   await entrarComo(page, "docente.demo");
   await expect(page).toHaveURL(/\/operativo$/);
 
-  await page.getByRole("link", { name: "Asistencia" }).click();
+  await menu(page).getByRole("link", { name: "Asistencia" }).click();
   await expect(page.getByRole("heading", { name: "Tomar asistencia" })).toBeVisible();
 
   const primeraFila = page.locator(".tomar-asistencia__fila").first();
@@ -41,7 +43,7 @@ test("docente toma asistencia de su sección y el estado se guarda solo", async 
 test("registrar la hora de llegada deja que el sistema decida presente o tarde (RN-11)", async ({ page }) => {
   await entrarComo(page, "docente.demo");
   await expect(page).toHaveURL(/\/operativo$/);
-  await page.getByRole("link", { name: "Asistencia" }).click();
+  await menu(page).getByRole("link", { name: "Asistencia" }).click();
 
   // Una fecha lo bastante rara para que ninguna otra prueba la use.
   await page.locator("#fecha").fill("2031-02-02");
@@ -66,11 +68,11 @@ test("registrar la hora de llegada deja que el sistema decida presente o tarde (
 test("docente registra una justificación y Dirección la resuelve", async ({ page }) => {
   await entrarComo(page, "docente.demo");
   await expect(page).toHaveURL(/\/operativo$/);
-  await page.getByRole("link", { name: "Asistencia" }).click();
+  await menu(page).getByRole("link", { name: "Asistencia" }).click();
   await page.locator(".tomar-asistencia__fila").first().getByRole("button", { name: "Ausente" }).click();
   await expect(page.locator(".tomar-asistencia__fila").first().getByRole("button", { name: "Ausente" })).toHaveClass(/--activo/);
 
-  await page.getByRole("link", { name: "Justificaciones" }).click();
+  await menu(page).getByRole("link", { name: "Justificaciones" }).click();
   await page.getByRole("button", { name: "Registrar justificación" }).click();
   await page.getByLabel("Falta a justificar").selectOption({ index: 1 });
   await page.getByLabel("Tipo de justificación").selectOption({ index: 1 });
@@ -82,7 +84,7 @@ test("docente registra una justificación y Dirección la resuelve", async ({ pa
   await page.getByRole("button", { name: "Cerrar sesión" }).click();
   await entrarComo(page, "dir.demo");
   await expect(page).toHaveURL(/\/administrativo$/);
-  await page.getByRole("link", { name: "Justificaciones" }).click();
+  await menu(page).getByRole("link", { name: "Justificaciones" }).click();
 
   const fila = page.locator("tr", { hasText: "pendiente" }).first();
   await fila.getByRole("button", { name: "Aprobar" }).click();
@@ -93,7 +95,7 @@ test("tallerista descarga y sube la plantilla de asistencia de su taller", async
   await entrarComo(page, "tallerista.demo");
   await expect(page).toHaveURL(/\/operativo$/);
 
-  await page.getByRole("link", { name: "Plantilla de talleres" }).click();
+  await menu(page).getByRole("link", { name: "Plantilla de talleres" }).click();
   await expect(page.getByRole("heading", { name: "Plantilla de asistencia de talleres" })).toBeVisible();
 
   const [descarga] = await Promise.all([

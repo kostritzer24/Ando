@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 
+import { menu } from "./utils";
+
 /**
  * Fase 8 (RF-06, RF-22, RF-26): grilla de horario (Dirección), horario
  * propio (docente) y calendario. Requiere `manage.py seed_demo`
@@ -17,7 +19,7 @@ test("Dirección arma el horario de un docente y lo puede quitar", async ({ page
   await entrarComo(page, "dir.demo");
   await expect(page).toHaveURL(/\/administrativo$/);
 
-  await page.getByRole("link", { name: "Horarios" }).click();
+  await menu(page).getByRole("link", { name: "Horarios" }).click();
   await expect(page.getByRole("heading", { name: "Horario" })).toBeVisible();
 
   // Los usuarios de siembra no tienen nombre/apellido cargados, así que
@@ -38,15 +40,15 @@ test("Dirección arma el horario de un docente y lo puede quitar", async ({ page
   // (no se puede pedir una segunda clase en un espacio ya lleno).
   await expect(primeraCelda.getByRole("button", { name: "+" })).toHaveCount(0);
 
-  page.once("dialog", (dialogo) => dialogo.accept());
   await primeraCelda.getByRole("button", { name: "Quitar" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Quitar clase" }).click();
   await expect(primeraCelda.getByRole("button", { name: "+" })).toBeVisible();
 });
 
 test("docente ve su propio horario después de que Dirección lo arma", async ({ page }) => {
   await entrarComo(page, "dir.demo");
   await expect(page).toHaveURL(/\/administrativo$/);
-  await page.getByRole("link", { name: "Horarios" }).click();
+  await menu(page).getByRole("link", { name: "Horarios" }).click();
 
   await page.getByLabel("Docente o tallerista").selectOption({ label: "docente.demo" });
 
@@ -60,7 +62,7 @@ test("docente ve su propio horario después de que Dirección lo arma", async ({
   await entrarComo(page, "docente.demo");
   await expect(page).toHaveURL(/\/operativo$/);
 
-  await page.getByRole("link", { name: "Mi horario" }).click();
+  await menu(page).getByRole("link", { name: "Mi horario" }).click();
   await expect(page.getByRole("heading", { name: "Mi horario" })).toBeVisible();
   await expect(page.locator(".mi-horario__celda")).toContainText("Matemática");
 });
@@ -69,7 +71,7 @@ test("docente publica un evento propio y Dirección publica uno institucional", 
   await entrarComo(page, "docente.demo");
   await expect(page).toHaveURL(/\/operativo$/);
 
-  await page.getByRole("link", { name: "Calendario" }).click();
+  await menu(page).getByRole("link", { name: "Calendario" }).click();
   await expect(page.getByRole("heading", { name: "Calendario" })).toBeVisible();
 
   // Un docente no puede elegir "institucional" — el select ni lo ofrece
@@ -94,7 +96,7 @@ test("docente publica un evento propio y Dirección publica uno institucional", 
   await page.getByRole("button", { name: "Cerrar sesión" }).click();
   await entrarComo(page, "dir.demo");
   await expect(page).toHaveURL(/\/administrativo$/);
-  await page.getByRole("link", { name: "Calendario" }).click();
+  await menu(page).getByRole("link", { name: "Calendario" }).click();
 
   const tituloInstitucional = `Suspensión de labores ${Date.now()}`;
   await page.getByRole("button", { name: "Publicar evento" }).click();
@@ -112,7 +114,7 @@ test("docente publica un evento propio y Dirección publica uno institucional", 
 
   await page.getByRole("button", { name: "Cerrar sesión" }).click();
   await entrarComo(page, "docente.demo");
-  await page.getByRole("link", { name: "Calendario" }).click();
+  await menu(page).getByRole("link", { name: "Calendario" }).click();
 
   // El aviso institucional es visible, pero sin botones de editar/eliminar.
   const filaInstitucional = page.locator("tr", { hasText: tituloInstitucional });

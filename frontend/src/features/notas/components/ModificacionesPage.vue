@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 
-import { useAuthStore } from "@/features/auth/stores/authStore";
 import { enrollmentsApi, studentsApi } from "@/features/estudiantes/api/estudiantesApi";
-import { DataTable, EmptyState, ErrorBanner } from "@/shared/components";
+import { CargandoBloque, DataTable, EmptyState, ErrorBanner, PageHeader } from "@/shared/components";
+import { usePermisos } from "@/shared/permisos";
 import type { Activity, Enrollment, Grade, GradeChangeRequest, Student } from "@/shared/types/models";
 
 import { activitiesApi, gradeChangeRequestsApi, gradesApi, resolverModificacion } from "../api/notasApi";
 
-const auth = useAuthStore();
-const puedeResolver = computed(() => auth.usuario?.role_name === "Dirección");
+const permisos = usePermisos();
+const puedeResolver = computed(() => permisos.puedeEditar("modificacion_notas"));
 
 const cargando = ref(true);
 const error = ref("");
@@ -62,10 +62,10 @@ onMounted(cargar);
 
 <template>
   <section class="modificaciones-page">
-    <h1>{{ puedeResolver ? "Solicitudes de modificación" : "Mis solicitudes de modificación" }}</h1>
+    <PageHeader :titulo='puedeResolver ? "Solicitudes de modificación" : "Mis solicitudes de modificación"' />
 
     <ErrorBanner v-if="error" :mensaje="error" etiqueta-accion="Reintentar" @accion="cargar" />
-    <p v-else-if="cargando">Cargando…</p>
+    <CargandoBloque v-else-if="cargando" />
     <EmptyState
       v-else-if="solicitudes.length === 0"
       titulo="No hay solicitudes"
@@ -105,11 +105,6 @@ onMounted(cargar);
 </template>
 
 <style scoped>
-.modificaciones-page h1 {
-  font-family: var(--fuente-titulo);
-  font-size: var(--texto-md);
-  margin: 0 0 var(--espacio-xl);
-}
 
 .modificaciones-page__accion {
   background: none;

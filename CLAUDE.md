@@ -25,6 +25,8 @@ python -m pytest --cov=apps.<app>.domain --cov=apps.<app>.services --cov-report=
 
 **macOS-only gotcha:** any command touching PDF generation (`apps.documents`, `grading` boletín, `communication` reporte de conducta, `apps.reports`) needs `export DYLD_LIBRARY_PATH=/opt/homebrew/lib` in the same shell first — WeasyPrint needs Homebrew's Pango/Cairo, and Anaconda's Python ships its own conflicting `libcairo`/`libharfbuzz` that wins without this. Use `DYLD_LIBRARY_PATH` (priority), not `DYLD_FALLBACK_LIBRARY_PATH` — the fallback only fixes `import weasyprint`, not actual rendering (segfaults mid-PDF instead).
 
+**Windows gotcha:** WeasyPrint needs native GTK/Pango DLLs that `pip` does not install. On the current dev machine the only copy is the one bundled with SWI-Prolog, and it only loads when its folder is registered explicitly: `WEASYPRINT_DLL_DIRECTORIES='C:\Program Files\swipl\bin'` in the same shell before any `manage.py` command (without it, Django fails at startup importing `weasyprint`, `OSError: cannot load library ... libgobject-2.0-0.dll`). The venv lives in `.venv\Scripts\`, not `.venv/bin/`.
+
 ### Frontend (Vue 3 + Vite) — run from `frontend/`
 
 ```bash
@@ -40,7 +42,12 @@ npx playwright test e2e/<file>.spec.ts --workers=1   # one spec file at a time �
 npm run types:generate                  # regenerates src/shared/types/api.ts against the live local backend — never hand-edit that file
 ```
 
-**Playwright gotcha:** run one spec file at a time (`--workers=1`), not the whole `e2e/` suite — chaining specs trips the login rate limit (RNF-05: 10 attempts/min per IP, not relaxed in dev), producing false failures (redirect back to `/ingresar`) that look like bugs but aren't. If several specs fail with that exact symptom right after a burst of logins, re-run them in isolation before assuming a regression.
+**Playwright gotcha:** run one spec file at a time (`--workers=1`), not the whole `e2e/` suite — chaining specs trips the login rate limit (RNF-05: 10 attempts/min per IP, not relaxed in dev), producing false failures (the test stays on `/ingresar`, whose error now reads "Demasiados intentos seguidos" — before the fix in `fase-14-ui-ux` it misleadingly said "Usuario o contraseña incorrectos") that look like bugs but aren't. If several specs fail with that exact symptom right after a burst of logins, re-run them in isolation before assuming a regression.
+
+**The specs also depend on each other's data** (they share the one seeded db, nothing is cleaned up), so they don't all pass on a single freshly reset db in any order:
+- `portal-publico` needs **its own freshly reset db**. Its setup books Monday period 1 (collides with `horarios`), records today's attendance (collides with `asistencia`), adds a 100-point exam to Matemática Unit 1 (RN-02 caps a unit at 100, so it fails after `notas` added activities, and `notas` can't add any after it), and publishes the Unit 1 report card `pagos-documentos-boletines` expects in "Borrador".
+- Everything else passes on one fresh db in this order: iniciar-sesion, sesion-persistente, reportes (counts exactly the 5 seeded enrollments — before `expedientes-asignaciones`, which enrolls more), catalogo-cursos, catalogo-ciclos-secciones, horarios, asistencia, notas, pagos-documentos-boletines, expedientes-asignaciones, comunicacion (its RN-16 test locks `familia.demo` for 24h — keep it after anything that logs in as the family), usuarios.
+- Wait ~65 s between files for the login rate limit. Re-running a spec on a db it already touched can fail for the same reasons (e.g. `Encargado De Prueba` created twice).
 
 ## Architecture
 
@@ -63,6 +70,7 @@ Enforced convention: a view never imports a model to write directly; a model nev
 
 - `PermisoPorArea`: default-deny (`DenyAll`); every `Role` has a `permissions` JSON map (`area → ver/editar/sin_acceso`), seeded in `apps/accounts/management/commands/seed_fase3.py` and documented in `docs/permisos-roles.md`. Every view declares `area = "..."`; GET needs `ver`, everything else needs `editar` unless the view overrides `nivel_requerido()`.
 - `ScopedQuerysetMixin`: object-level scoping. Every list/detail view implements `scope_queryset(queryset, user)` — **never** compare a URL id against `request.user` directly; a wrong compare there leaks another family's/section's data.
+- Frontend side of the same matrix: `/auth/me/` and `/auth/login/` return the role's `permissions` map, and `frontend/src/shared/permisos.ts` (`usePermisos()` → `puedeVer(area)` / `puedeEditar(area)`) is how menus, routes (`meta.area` + the router guard) and buttons decide what to offer. **Never gate UI on `role_name`** for anything the matrix already answers — hand-written role lists drifted from the matrix before (Administrador/Coordinación missing screens they're granted, Encargado de pagos shown one that 403s). `role_name` checks remain only for true business rules that aren't area permissions (e.g. only Dirección resolves justifications, the taller template is Tallerista-only).
 - Recurring exception pattern (used for `ActivityTypeViewSet`, `JustificationTypeViewSet`, `ConductRuleArticleViewSet`): a role without area access to a whole catalog still needs read access to one field of it to use a form (e.g. a maestro guía picking a conduct-code article without administering the catalog). Solved by routing only `list`/`retrieve` through a different `area` in `get_permissions()`, keeping write on the catalog's own area — never by granting broader access.
 
 ### The `public_id` vs internal `id` trap
@@ -99,7 +107,9 @@ Three portals share one router, gated by `meta.roles` and a `beforeEach` guard r
 
 ### Git workflow
 
-One branch per phase, each branching from the *previous phase's* branch, not from `main` (`fase-01-plan-maestro` → `fase-02-...` → … ). `main` is deliberately frozen (end of Fase 3) pending a full review — nothing has been merged into it.
+Phases 1–13 were built as a chain of branches, each from the previous phase's branch (`fase-01-plan-maestro` → `fase-02-...` → … → `fase-13-endurecimiento`), and `main` stayed frozen until the end of Fase 13, when it was fast-forwarded to `fase-13-endurecimiento`.
+
+From then on: every new branch starts from an up-to-date `main` and goes back into it through a pull request. Claude creates branches and commits; the user runs `git push` (SSH key with a passphrase) — never push on the user's behalf.
 
 ## Testing conventions
 

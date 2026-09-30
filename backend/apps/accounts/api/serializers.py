@@ -29,8 +29,28 @@ class UserSerializer(serializers.ModelSerializer):
             "role_name",
             "is_active",
             "must_change_password",
+            "locked_until",
+            "last_login",
         ]
-        read_only_fields = ["public_id", "role_name", "must_change_password"]
+        read_only_fields = [
+            "public_id",
+            "username",
+            "role_name",
+            "must_change_password",
+            "locked_until",
+            "last_login",
+        ]
+
+
+class MeSerializer(UserSerializer):
+    """`/auth/me/`: la persona más los permisos de su rol por área
+    (RNF-03), para que el frontend arme el menú y los botones desde la
+    misma matriz que aplica el backend, en vez de repetir nombres de rol."""
+
+    permissions = serializers.JSONField(source="role.permissions", read_only=True)
+
+    class Meta(UserSerializer.Meta):
+        fields = [*UserSerializer.Meta.fields, "permissions"]
 
 
 class UserCreateSerializer(serializers.Serializer):

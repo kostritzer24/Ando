@@ -3,7 +3,10 @@ import { computed, onMounted, reactive, ref } from "vue";
 
 import { assignmentsApi } from "@/features/asignaciones/api/asignacionesApi";
 import { useAuthStore } from "@/features/auth/stores/authStore";
-import { AppButton, AppModal, DataTable, EmptyState, ErrorBanner, FormSelect } from "@/shared/components";
+import { AppButton, AppModal, CargandoBloque, DataTable, EmptyState, ErrorBanner, FormSelect, PageHeader } from "@/shared/components";
+import { usePermisos } from "@/shared/permisos";
+import { avisar } from "@/shared/composables/useAvisos";
+import { confirmar } from "@/shared/composables/useConfirmar";
 import type { CalendarEvent, TeacherAssignment } from "@/shared/types/models";
 
 import { calendarEventsApi } from "../api/horariosApi";
@@ -13,6 +16,10 @@ const TIPO_ASIGNACION_DOCENTE = "asignacion_docente";
 
 const auth = useAuthStore();
 const esDireccion = computed(() => auth.usuario?.role_name === "Dirección");
+// Publicar es "editar" en Horarios y calendario (Dirección y docentes);
+// Coordinación y Administrador consultan.
+const permisos = usePermisos();
+const puedePublicar = computed(() => permisos.puedeEditar("horarios_calendario"));
 
 const opcionesTipo = computed(() =>
   esDireccion.value
@@ -130,9 +137,20 @@ async function guardar(): Promise<void> {
 }
 
 async function eliminar(evento: CalendarEvent): Promise<void> {
-  if (!confirm("¿Eliminar este evento del calendario?")) return;
-  await calendarEventsApi.darDeBaja(evento.public_id);
-  await cargar();
+  const confirmado = await confirmar({
+    titulo: "¿Quitar este evento del calendario?",
+    mensaje: "Deja de verse en el calendario de docentes y familias.",
+    etiquetaConfirmar: "Quitar evento",
+    peligro: true,
+  });
+  if (!confirmado) return;
+  try {
+    await calendarEventsApi.darDeBaja(evento.public_id);
+    avisar("Evento quitado del calendario.");
+    await cargar();
+  } catch {
+    avisar("No se pudo quitar el evento. Probá de nuevo.", "error");
+  }
 }
 
 onMounted(cargar);
@@ -140,13 +158,14 @@ onMounted(cargar);
 
 <template>
   <section class="calendario-page">
-    <header class="calendario-page__cabecera">
-      <h1>Calendario</h1>
-      <AppButton @click="abrirNuevo">Publicar evento</AppButton>
-    </header>
+    <PageHeader titulo="Calendario">
+      <template #acciones>
+        <AppButton v-if="puedePublicar" @click="abrirNuevo" :deshabilitado="cargando">Publicar evento</AppButton>
+      </template>
+    </PageHeader>
 
     <ErrorBanner v-if="error" :mensaje="error" etiqueta-accion="Reintentar" @accion="cargar" />
-    <p v-else-if="cargando">Cargando…</p>
+    <CargandoBloque v-else-if="cargando" />
     <EmptyState
       v-else-if="eventos.length === 0"
       titulo="Todavía no hay eventos"
@@ -221,18 +240,7 @@ onMounted(cargar);
 </template>
 
 <style scoped>
-.calendario-page__cabecera {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: var(--espacio-xl);
-}
 
-.calendario-page__cabecera h1 {
-  font-family: var(--fuente-titulo);
-  font-size: var(--texto-md);
-  margin: 0;
-}
 
 .calendario-page__accion {
   background: none;

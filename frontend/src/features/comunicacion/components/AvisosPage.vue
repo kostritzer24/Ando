@@ -2,8 +2,10 @@
 import { computed, onMounted, reactive, ref } from "vue";
 
 import { seccionesApi } from "@/features/catalogo/api/catalogoApi";
-import { useAuthStore } from "@/features/auth/stores/authStore";
-import { AppButton, AppModal, EmptyState, ErrorBanner, FormField, FormSelect } from "@/shared/components";
+import { AppButton, AppModal, CargandoBloque, EmptyState, ErrorBanner, FormField, FormSelect, PageHeader } from "@/shared/components";
+import { avisar } from "@/shared/composables/useAvisos";
+import { confirmar } from "@/shared/composables/useConfirmar";
+import { usePermisos } from "@/shared/permisos";
 import type { Announcement, Section } from "@/shared/types/models";
 
 import { announcementsApi } from "../api/comunicacionApi";
@@ -11,8 +13,11 @@ import { announcementsApi } from "../api/comunicacionApi";
 const AUDIENCIA_TODOS = "todos";
 const AUDIENCIA_SECCION = "seccion";
 
-const auth = useAuthStore();
-const esDireccion = computed(() => auth.usuario?.role_name === "Dirección");
+// Publica y retira quien edita Avisos (Dirección); el resto consulta.
+// Los nombres de sección salen de Datos maestros, que no todos alcanzan.
+const permisos = usePermisos();
+const puedePublicar = computed(() => permisos.puedeEditar("avisos"));
+const veSecciones = computed(() => permisos.puedeVer("datos_maestros"));
 
 const cargando = ref(true);
 const error = ref("");
@@ -34,7 +39,7 @@ async function cargar(): Promise<void> {
   try {
     const [avisosResp, seccionesResp] = await Promise.all([
       announcementsApi.listar(),
-      esDireccion.value ? seccionesApi.listar() : Promise.resolve({ results: [] as Section[] }),
+      veSecciones.value ? seccionesApi.listar() : Promise.resolve({ results: [] as Section[] }),
     ]);
     avisos.value = avisosResp.results;
     secciones.value = seccionesResp.results;
@@ -87,8 +92,20 @@ async function guardar(): Promise<void> {
 }
 
 async function retirar(aviso: Announcement): Promise<void> {
-  await announcementsApi.darDeBaja(aviso.public_id);
-  await cargar();
+  const confirmado = await confirmar({
+    titulo: `¿Retirar el aviso "${aviso.title}"?`,
+    mensaje: "Deja de verse en la cartelera de docentes y familias.",
+    etiquetaConfirmar: "Retirar aviso",
+    peligro: true,
+  });
+  if (!confirmado) return;
+  try {
+    await announcementsApi.darDeBaja(aviso.public_id);
+    avisar("Aviso retirado de la cartelera.");
+    await cargar();
+  } catch {
+    avisar("No se pudo retirar el aviso. Probá de nuevo.", "error");
+  }
 }
 
 onMounted(cargar);
@@ -96,14 +113,16 @@ onMounted(cargar);
 
 <template>
   <section class="avisos-page">
-    <h1>Cartelera de avisos</h1>
+    <PageHeader titulo="Cartelera de avisos" descripcion="Lo que ven docentes y familias en su portal.">
+      <template #acciones>
+        <AppButton v-if="puedePublicar" :deshabilitado="cargando" @click="abrirNuevo">Publicar aviso</AppButton>
+      </template>
+    </PageHeader>
 
     <ErrorBanner v-if="error" :mensaje="error" etiqueta-accion="Reintentar" @accion="cargar" />
-    <p v-else-if="cargando">Cargando…</p>
+    <CargandoBloque v-else-if="cargando" />
 
     <template v-else>
-      <AppButton v-if="esDireccion" @click="abrirNuevo">Publicar aviso</AppButton>
-
       <EmptyState
         v-if="avisos.length === 0"
         titulo="No hay avisos"
@@ -119,9 +138,7 @@ onMounted(cargar);
               {{ aviso.audience === "todos" ? "Todos" : nombreSeccion(aviso.target_section) }}
             </p>
           </div>
-          <button v-if="esDireccion" type="button" class="avisos-page__accion" @click="retirar(aviso)">
-            Retirar
-          </button>
+          <AppButton v-if="puedePublicar" variante="discreto" compacto @click="retirar(aviso)">Retirar</AppButton>
         </li>
       </ul>
     </template>
@@ -162,11 +179,6 @@ onMounted(cargar);
 </template>
 
 <style scoped>
-.avisos-page h1 {
-  font-family: var(--fuente-titulo);
-  font-size: var(--texto-md);
-  margin: 0 0 var(--espacio-lg);
-}
 
 .avisos-page__lista {
   list-style: none;

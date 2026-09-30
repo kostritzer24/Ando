@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 
-import { EmptyState, ErrorBanner } from "@/shared/components";
+import { CargandoBloque, EmptyState, ErrorBanner, PageHeader } from "@/shared/components";
 
 import { type BloqueHorarioPropio, DIAS, obtenerMiHorario, PERIODOS } from "../api/horariosApi";
 
@@ -30,10 +30,10 @@ onMounted(cargar);
 
 <template>
   <section class="mi-horario">
-    <h1>Mi horario</h1>
+    <PageHeader titulo="Mi horario" />
 
     <ErrorBanner v-if="error" :mensaje="error" etiqueta-accion="Reintentar" @accion="cargar" />
-    <p v-else-if="cargando">Cargando…</p>
+    <CargandoBloque v-else-if="cargando" />
     <EmptyState
       v-else-if="bloques.length === 0"
       titulo="Todavía no tenés horario asignado"
@@ -63,11 +63,6 @@ onMounted(cargar);
 </template>
 
 <style scoped>
-.mi-horario h1 {
-  font-family: var(--fuente-titulo);
-  font-size: var(--texto-md);
-  margin: 0 0 var(--espacio-xl);
-}
 
 .mi-horario__tabla {
   border-collapse: collapse;

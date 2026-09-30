@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { isAxiosError } from "axios";
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 
@@ -6,6 +7,7 @@ import { DESTINO_POR_ROL } from "@/app/router";
 import { AppButton, ErrorBanner, FormField } from "@/shared/components";
 
 import { useAuthStore } from "../stores/authStore";
+import PantallaAcceso from "./PantallaAcceso.vue";
 
 const auth = useAuthStore();
 const router = useRouter();
@@ -14,6 +16,24 @@ const username = ref("");
 const password = ref("");
 const enviando = ref(false);
 const mensajeError = ref("");
+
+// Antes todo error decía "Usuario o contraseña incorrectos": una familia
+// bloqueada temporalmente (RN-16) o alguien que chocó con el límite de
+// intentos (RNF-05) creía que se había equivocado de contraseña y volvía a
+// intentar, alargando el bloqueo.
+function mensajeDeError(error: unknown): string {
+  if (!isAxiosError(error) || !error.response) {
+    return "No se pudo conectar con el sistema. Revisá tu conexión e intentá de nuevo.";
+  }
+  if (error.response.status === 429) {
+    return "Demasiados intentos seguidos. Esperá un minuto y volvé a intentar.";
+  }
+  const detalle = (error.response.data as { detail?: unknown } | undefined)?.detail;
+  if (typeof detalle === "string" && detalle.includes("bloqueada")) {
+    return detalle;
+  }
+  return "Usuario o contraseña incorrectos. Volvé a intentar.";
+}
 
 async function enviar(): Promise<void> {
   mensajeError.value = "";
@@ -25,8 +45,8 @@ async function enviar(): Promise<void> {
       return;
     }
     await router.push(DESTINO_POR_ROL[usuario.role_name] ?? "/");
-  } catch {
-    mensajeError.value = "Usuario o contraseña incorrectos. Volvé a intentar.";
+  } catch (error) {
+    mensajeError.value = mensajeDeError(error);
   } finally {
     enviando.value = false;
   }
@@ -34,19 +54,11 @@ async function enviar(): Promise<void> {
 </script>
 
 <template>
-  <main class="login-page">
-    <h1 class="login-page__titulo">Ingresar</h1>
-    <p class="login-page__subtitulo">Entrá con el usuario y la contraseña que te dio el centro.</p>
-
-    <ErrorBanner v-if="mensajeError" :mensaje="mensajeError" class="login-page__error" />
+  <PantallaAcceso titulo="Ingresar" subtitulo="Entrá con el usuario y la contraseña que te dio el centro.">
+    <ErrorBanner v-if="mensajeError" :mensaje="mensajeError" />
 
     <form class="login-page__formulario" @submit.prevent="enviar">
-      <FormField
-        id="username"
-        etiqueta="Usuario"
-        v-model="username"
-        autocomplete="username"
-      />
+      <FormField id="username" etiqueta="Usuario" v-model="username" autocomplete="username" autocapitalize="none" spellcheck="false" />
       <FormField
         id="password"
         etiqueta="Contraseña"
@@ -54,35 +66,14 @@ async function enviar(): Promise<void> {
         v-model="password"
         autocomplete="current-password"
       />
-      <AppButton tipo="submit" :deshabilitado="enviando">
+      <AppButton tipo="submit" bloque :deshabilitado="enviando">
         {{ enviando ? "Entrando…" : "Entrar" }}
       </AppButton>
     </form>
-  </main>
+  </PantallaAcceso>
 </template>
 
 <style scoped>
-.login-page {
-  max-width: 24rem;
-  margin: 0 auto;
-  padding: 3rem 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: var(--espacio-xl);
-}
-
-.login-page__titulo {
-  font-family: var(--fuente-titulo);
-  font-weight: 800;
-  font-size: 1.6rem;
-  margin: 0;
-}
-
-.login-page__subtitulo {
-  margin: 0;
-  color: var(--color-tinta-suave);
-}
-
 .login-page__formulario {
   display: flex;
   flex-direction: column;

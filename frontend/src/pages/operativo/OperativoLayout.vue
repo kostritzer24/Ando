@@ -1,47 +1,84 @@
 <script setup lang="ts">
+import {
+  CalendarDays,
+  ClipboardCheck,
+  Clock,
+  FileCheck,
+  FilePen,
+  FileSpreadsheet,
+  House,
+  Inbox,
+  Megaphone,
+  NotebookPen,
+  ShieldAlert,
+  Upload,
+} from "lucide-vue-next";
 import { computed } from "vue";
 
 import { useAuthStore } from "@/features/auth/stores/authStore";
 import { AdminShell } from "@/shared/components";
+import type { GrupoNavegacion } from "@/shared/components/AdminShell.vue";
 
 const auth = useAuthStore();
 
-const navegacion = computed(() => {
-  const items = [
-    { a: "/operativo", etiqueta: "Inicio" },
-    { a: "/operativo/asistencia", etiqueta: "Asistencia" },
-    { a: "/operativo/justificaciones", etiqueta: "Justificaciones" },
-    { a: "/operativo/mi-horario", etiqueta: "Mi horario" },
-    { a: "/operativo/calendario", etiqueta: "Calendario" },
-    { a: "/operativo/avisos", etiqueta: "Avisos" },
-  ];
-  if (auth.usuario?.role_name === "Tallerista") {
-    items.push({ a: "/operativo/plantilla-asistencia", etiqueta: "Plantilla de talleres" });
-  }
-  // ADR-0001: los talleres no califican — Tallerista nunca tiene "notas".
-  if (["Docente", "Docente con sección a cargo"].includes(auth.usuario?.role_name ?? "")) {
-    items.push(
-      { a: "/operativo/notas/unidad", etiqueta: "Diseñar unidad" },
-      { a: "/operativo/notas/capturar", etiqueta: "Capturar notas" },
-      { a: "/operativo/notas/plantilla", etiqueta: "Plantilla de notas" },
-      { a: "/operativo/notas/modificaciones", etiqueta: "Modificaciones" },
-    );
-  }
-  // Solo el maestro guía tiene alcance de "editar" en reportes de
-  // conducta y buzón (docs/permisos-roles.md) — Docente/Tallerista solo
-  // ven avisos, ya agregado arriba para todo el portal operativo.
-  if (auth.usuario?.role_name === "Docente con sección a cargo") {
-    items.push(
-      { a: "/operativo/reportes-conducta", etiqueta: "Reportes de conducta" },
-      { a: "/operativo/buzon", etiqueta: "Buzón" },
-    );
-  }
-  return items;
-});
+// Cada opción declara su área de docs/permisos-roles.md; AdminShell la
+// filtra con la matriz del rol. Tallerista no ve Notas porque su rol no
+// tiene esa área (ADR-0001: los talleres no califican), y solo el maestro
+// guía tiene Reportes de conducta y Buzón.
+const navegacion = computed<GrupoNavegacion[]>(() => [
+  { items: [{ a: "/operativo", etiqueta: "Inicio", icono: House, exacto: true }] },
+  {
+    titulo: "Asistencia",
+    items: [
+      { a: "/operativo/asistencia", etiqueta: "Asistencia", icono: ClipboardCheck, area: "asistencia" },
+      { a: "/operativo/justificaciones", etiqueta: "Justificaciones", icono: FileCheck, area: "asistencia" },
+      {
+        a: "/operativo/plantilla-asistencia",
+        etiqueta: "Plantilla de talleres",
+        icono: FileSpreadsheet,
+        area: "asistencia",
+        nivel: "editar",
+        // La plantilla es de asistencia de talleres: es del tallerista,
+        // no de cualquiera que registre asistencia.
+        visible: auth.usuario?.role_name === "Tallerista",
+      },
+    ],
+  },
+  {
+    titulo: "Notas",
+    items: [
+      { a: "/operativo/notas/unidad", etiqueta: "Diseñar unidad", icono: NotebookPen, area: "notas", nivel: "editar" },
+      { a: "/operativo/notas/capturar", etiqueta: "Capturar notas", icono: FilePen, area: "notas", nivel: "editar" },
+      { a: "/operativo/notas/plantilla", etiqueta: "Plantilla de notas", icono: Upload, area: "notas", nivel: "editar" },
+      { a: "/operativo/notas/modificaciones", etiqueta: "Modificaciones", icono: FileCheck, area: "notas", nivel: "editar" },
+    ],
+  },
+  {
+    titulo: "Horarios",
+    items: [
+      { a: "/operativo/mi-horario", etiqueta: "Mi horario", icono: Clock, area: "horarios_calendario" },
+      { a: "/operativo/calendario", etiqueta: "Calendario", icono: CalendarDays, area: "horarios_calendario" },
+    ],
+  },
+  {
+    titulo: "Comunicación",
+    items: [
+      { a: "/operativo/avisos", etiqueta: "Avisos", icono: Megaphone, area: "avisos" },
+      {
+        a: "/operativo/reportes-conducta",
+        etiqueta: "Reportes de conducta",
+        icono: ShieldAlert,
+        area: "reportes_conducta",
+        nivel: "editar",
+      },
+      { a: "/operativo/buzon", etiqueta: "Buzón", icono: Inbox, area: "buzon", nivel: "editar" },
+    ],
+  },
+]);
 </script>
 
 <template>
-  <AdminShell :navegacion="navegacion">
+  <AdminShell portal="Portal operativo" :navegacion="navegacion" ruta-cuenta="/operativo/cuenta">
     <RouterView />
   </AdminShell>
 </template>

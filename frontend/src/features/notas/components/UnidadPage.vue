@@ -2,7 +2,7 @@
 import { computed, onMounted, reactive, ref, watch } from "vue";
 
 import { assignmentsApi } from "@/features/asignaciones/api/asignacionesApi";
-import { AppButton, AppModal, DataTable, ErrorBanner, FormField, FormSelect } from "@/shared/components";
+import { AppButton, AppModal, CargandoBloque, DataTable, ErrorBanner, FormField, FormSelect, PageHeader } from "@/shared/components";
 import type { Activity, ActivityType, GradingUnit, TeacherAssignment } from "@/shared/types/models";
 
 import { activitiesApi, activityTypesApi, unidadesDeCiclo } from "../api/notasApi";
@@ -145,10 +145,10 @@ onMounted(async () => {
 
 <template>
   <section class="unidad-page">
-    <h1>Diseñar la unidad</h1>
+    <PageHeader titulo="Diseñar la unidad" />
 
     <ErrorBanner v-if="error" :mensaje="error" etiqueta-accion="Reintentar" @accion="cargarActividades" />
-    <p v-else-if="cargando">Cargando…</p>
+    <CargandoBloque v-else-if="cargando" />
 
     <template v-else>
       <div class="unidad-page__filtros">
@@ -218,17 +218,13 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.unidad-page h1 {
-  font-family: var(--fuente-titulo);
-  font-size: var(--texto-md);
-  margin: 0 0 var(--espacio-xl);
-}
 
 .unidad-page__filtros {
-  display: flex;
-  gap: var(--espacio-xl);
-  margin-bottom: var(--espacio-xl);
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+  gap: var(--espacio-md) var(--espacio-lg);
+  align-items: end;
+  max-width: 52rem;
 }
 
 .unidad-page__resumen {

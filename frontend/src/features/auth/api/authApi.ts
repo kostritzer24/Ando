@@ -1,16 +1,11 @@
 import { http } from "@/app/http";
+import type { Permisos } from "@/shared/permisos";
+import type { components } from "@/shared/types/api";
 
-export interface Usuario {
-  public_id: string;
-  username: string;
-  email: string;
-  first_name: string;
-  last_name: string;
-  role: string;
-  role_name: string;
-  is_active: boolean;
-  must_change_password: boolean;
-}
+/** La persona en sesión con los permisos de su rol por área (`/auth/me/`
+ * y `/auth/login/`). El esquema los declara como JSON sin forma, así que
+ * se tipan acá. */
+export type Usuario = Omit<components["schemas"]["Me"], "permissions"> & { permissions: Permisos };
 
 interface RespuestaLogin {
   access: string;

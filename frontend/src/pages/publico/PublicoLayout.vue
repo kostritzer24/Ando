@@ -1,10 +1,11 @@
 <script setup lang="ts">
+import { BookOpen, ClipboardCheck, House, LogOut, Megaphone, UserRound, Wallet } from "lucide-vue-next";
 import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import { useAuthStore } from "@/features/auth/stores/authStore";
 import { usePortalStore } from "@/features/portal/stores/portalStore";
-import { AppModal, BottomTabBar, ErrorBanner, ListRow, TopAppBar } from "@/shared/components";
+import { AppModal, BottomTabBar, CargandoBloque, ErrorBanner, ListRow, TopAppBar } from "@/shared/components";
 
 const auth = useAuthStore();
 const portal = usePortalStore();
@@ -19,11 +20,11 @@ const nombreEstudiante = computed(() => {
 });
 
 const pestanas = [
-  { valor: "/portal", etiqueta: "Inicio" },
-  { valor: "/portal/notas", etiqueta: "Notas" },
-  { valor: "/portal/asistencia", etiqueta: "Asistencia" },
-  { valor: "/portal/pagos", etiqueta: "Pagos" },
-  { valor: "/portal/avisos", etiqueta: "Avisos" },
+  { valor: "/portal", etiqueta: "Inicio", icono: House },
+  { valor: "/portal/notas", etiqueta: "Notas", icono: BookOpen },
+  { valor: "/portal/asistencia", etiqueta: "Asistencia", icono: ClipboardCheck },
+  { valor: "/portal/pagos", etiqueta: "Pagos", icono: Wallet },
+  { valor: "/portal/avisos", etiqueta: "Avisos", icono: Megaphone },
 ];
 
 function elegir(publicId: string): void {
@@ -46,7 +47,7 @@ onMounted(() => {
 <template>
   <div class="portal-layout">
     <ErrorBanner v-if="portal.error" :mensaje="portal.error" etiqueta-accion="Reintentar" @accion="portal.cargarEstudiantes" />
-    <p v-else-if="portal.cargando" class="portal-layout__cargando">Cargando…</p>
+    <div v-else-if="portal.cargando" class="portal-layout__cargando"><CargandoBloque :filas="3" /></div>
 
     <template v-else>
       <TopAppBar
@@ -54,10 +55,18 @@ onMounted(() => {
         :nombre-seccion="portal.seccionPrincipal"
         @cambiar-estudiante="modalAbierto = true"
       >
-        <template #marca>El Patojismo</template>
+        <template #marca><img src="/marca.png" alt="" width="24" height="24" /></template>
+        <template #acciones>
+          <RouterLink to="/portal/cuenta" class="portal-layout__salir">
+            <UserRound aria-hidden="true" />
+            Mi cuenta
+          </RouterLink>
+          <button type="button" class="portal-layout__salir" @click="salir">
+            <LogOut aria-hidden="true" />
+            Cerrar sesión
+          </button>
+        </template>
       </TopAppBar>
-
-      <button type="button" class="portal-layout__salir" @click="salir">Cerrar sesión</button>
 
       <main class="portal-layout__contenido">
         <RouterView />
@@ -88,12 +97,23 @@ onMounted(() => {
 </template>
 
 <style scoped>
+/* Mobile-first (RNF-01): una columna de teléfono. En pantallas grandes
+   se queda en esa columna, centrada, en vez de estirarse. */
 .portal-layout {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  min-height: 100dvh;
   max-width: 30rem;
   margin: 0 auto;
+  background: var(--color-papel);
+}
+
+@media (min-width: 40rem) {
+  .portal-layout {
+    border-left: 1px solid var(--color-linea);
+    border-right: 1px solid var(--color-linea);
+  }
 }
 
 .portal-layout__cargando {
@@ -102,18 +122,27 @@ onMounted(() => {
 
 .portal-layout__contenido {
   flex: 1;
-  padding: var(--espacio-lg) var(--espacio-xl);
-  overflow-y: auto;
+  padding: var(--espacio-xl) var(--espacio-lg) var(--espacio-3xl);
 }
 
 .portal-layout__salir {
-  align-self: flex-end;
-  margin: var(--espacio-sm) var(--espacio-xl) 0 0;
+  display: inline-flex;
+  text-decoration: none;
+  align-items: center;
+  gap: var(--espacio-xs);
+  min-height: var(--area-tactil-minima);
+  padding: 0 var(--espacio-xs);
   background: none;
   border: none;
   color: var(--color-tinta-suave);
   font-size: var(--texto-sm);
+  font-weight: 500;
   cursor: pointer;
+}
+
+.portal-layout__salir svg {
+  width: 1rem;
+  height: 1rem;
 }
 
 .portal-layout__opcion-estudiante {

@@ -9,9 +9,14 @@ defineEmits<{ "cambiar-estudiante": [] }>();
 
 <template>
   <header class="top-app-bar">
-    <div class="top-app-bar__marca">
-      <slot name="marca" />
-      <span>El Patojismo</span>
+    <div class="top-app-bar__fila-marca">
+      <div class="top-app-bar__marca">
+        <slot name="marca" />
+        <span>El Patojismo</span>
+      </div>
+      <div class="top-app-bar__acciones">
+        <slot name="acciones" />
+      </div>
     </div>
     <div class="top-app-bar__estudiante">
       <div class="top-app-bar__nombre">
@@ -27,15 +32,31 @@ defineEmits<{ "cambiar-estudiante": [] }>();
 
 <style scoped>
 .top-app-bar {
-  padding: 0 var(--espacio-xl) var(--espacio-lg);
+  padding: var(--espacio-xs) var(--espacio-lg) var(--espacio-md);
+  padding-top: calc(var(--espacio-xs) + env(safe-area-inset-top, 0px));
+  background: var(--color-papel);
   border-bottom: 1px solid var(--color-linea);
+}
+
+.top-app-bar__fila-marca {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espacio-md);
+  min-height: var(--area-tactil-minima);
+  margin-bottom: var(--espacio-sm);
+}
+
+.top-app-bar__acciones {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-2xs);
 }
 
 .top-app-bar__marca {
   display: flex;
   align-items: center;
   gap: var(--espacio-sm);
-  margin-bottom: var(--espacio-lg);
   font-family: var(--fuente-titulo);
   font-weight: 700;
   font-size: var(--texto-base);
