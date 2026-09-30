@@ -3,7 +3,7 @@ import { computed, onMounted, reactive, ref, watch } from "vue";
 
 import { assignmentsApi } from "@/features/asignaciones/api/asignacionesApi";
 import { enrollmentsApi, studentsApi } from "@/features/estudiantes/api/estudiantesApi";
-import { AppButton, AppModal, ErrorBanner, FormField, FormSelect } from "@/shared/components";
+import { AppButton, AppModal, CargandoBloque, ErrorBanner, FormField, FormSelect, PageHeader } from "@/shared/components";
 import type { Activity, Enrollment, Grade, Student, TeacherAssignment } from "@/shared/types/models";
 
 import { activitiesApi, gradesApi, registrarPunteo, solicitarModificacion, unidadesDeCiclo } from "../api/notasApi";
@@ -176,10 +176,10 @@ onMounted(async () => {
 
 <template>
   <section class="capturar-notas">
-    <h1>Capturar notas</h1>
+    <PageHeader titulo="Capturar notas" />
 
     <ErrorBanner v-if="error" :mensaje="error" etiqueta-accion="Reintentar" @accion="cargarRoster" />
-    <p v-else-if="cargando">Cargando…</p>
+    <CargandoBloque v-else-if="cargando" />
 
     <template v-else>
       <div class="capturar-notas__filtros">
@@ -199,7 +199,7 @@ onMounted(async () => {
         />
       </div>
 
-      <p v-if="cargandoRoster">Cargando…</p>
+      <CargandoBloque v-if="cargandoRoster" />
       <p v-else-if="!actividadElegida" class="capturar-notas__vacio">
         Elegí una actividad para capturar el punteo.
       </p>
@@ -266,11 +266,6 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.capturar-notas h1 {
-  font-family: var(--fuente-titulo);
-  font-size: var(--texto-md);
-  margin: 0 0 var(--espacio-xl);
-}
 
 .capturar-notas__filtros {
   display: flex;

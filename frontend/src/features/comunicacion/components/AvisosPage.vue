@@ -3,7 +3,7 @@ import { computed, onMounted, reactive, ref } from "vue";
 
 import { seccionesApi } from "@/features/catalogo/api/catalogoApi";
 import { useAuthStore } from "@/features/auth/stores/authStore";
-import { AppButton, AppModal, EmptyState, ErrorBanner, FormField, FormSelect } from "@/shared/components";
+import { AppButton, AppModal, CargandoBloque, EmptyState, ErrorBanner, FormField, FormSelect, PageHeader } from "@/shared/components";
 import type { Announcement, Section } from "@/shared/types/models";
 
 import { announcementsApi } from "../api/comunicacionApi";
@@ -96,10 +96,10 @@ onMounted(cargar);
 
 <template>
   <section class="avisos-page">
-    <h1>Cartelera de avisos</h1>
+    <PageHeader titulo="Cartelera de avisos" />
 
     <ErrorBanner v-if="error" :mensaje="error" etiqueta-accion="Reintentar" @accion="cargar" />
-    <p v-else-if="cargando">Cargando…</p>
+    <CargandoBloque v-else-if="cargando" />
 
     <template v-else>
       <AppButton v-if="esDireccion" @click="abrirNuevo">Publicar aviso</AppButton>
@@ -162,11 +162,6 @@ onMounted(cargar);
 </template>
 
 <style scoped>
-.avisos-page h1 {
-  font-family: var(--fuente-titulo);
-  font-size: var(--texto-md);
-  margin: 0 0 var(--espacio-lg);
-}
 
 .avisos-page__lista {
   list-style: none;

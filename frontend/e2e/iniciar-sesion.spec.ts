@@ -14,7 +14,8 @@ test("una persona con rol Dirección entra y llega al portal administrativo", as
   await page.getByRole("button", { name: "Entrar" }).click();
 
   await expect(page).toHaveURL(/\/administrativo$/);
-  await expect(page.getByRole("heading", { name: "Portal administrativo" })).toBeVisible();
+  await expect(page.getByText("Portal administrativo")).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: /^Hola/ })).toBeVisible();
 });
 
 test("una contraseña incorrecta muestra un error y no entra", async ({ page }) => {

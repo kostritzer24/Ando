@@ -2,7 +2,7 @@
 import { computed, onMounted, ref, watch } from "vue";
 
 import { assignmentsApi } from "@/features/asignaciones/api/asignacionesApi";
-import { AppButton, ErrorBanner, FormSelect } from "@/shared/components";
+import { AppButton, CargandoBloque, ErrorBanner, FormSelect, PageHeader } from "@/shared/components";
 import type { TeacherAssignment } from "@/shared/types/models";
 
 import {
@@ -126,10 +126,10 @@ onMounted(async () => {
 
 <template>
   <section class="plantilla-notas">
-    <h1>Plantilla de calificaciones</h1>
+    <PageHeader titulo="Plantilla de calificaciones" />
 
     <ErrorBanner v-if="error" :mensaje="error" etiqueta-accion="Reintentar" @accion="cargar" />
-    <p v-else-if="cargando">Cargando…</p>
+    <CargandoBloque v-else-if="cargando" />
 
     <template v-else>
       <div class="plantilla-notas__filtros">
@@ -190,11 +190,6 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.plantilla-notas h1 {
-  font-family: var(--fuente-titulo);
-  font-size: var(--texto-md);
-  margin: 0 0 var(--espacio-xl);
-}
 
 .plantilla-notas__filtros {
   display: flex;

@@ -26,3 +26,13 @@ describe("PageHeader", () => {
     expect(conExtras.find(".page-header__acciones").text()).toBe("Guardar");
   });
 });
+
+describe("PageHeader — acciones condicionales", () => {
+  it("no deja el contenedor de acciones cuando el slot llega vacío (botón con v-if falso)", () => {
+    const wrapper = mount(PageHeader, {
+      props: { titulo: "Secciones" },
+      slots: { acciones: '<button v-if="false">Agregar</button>' },
+    });
+    expect(wrapper.find(".page-header__acciones").exists()).toBe(false);
+  });
+});

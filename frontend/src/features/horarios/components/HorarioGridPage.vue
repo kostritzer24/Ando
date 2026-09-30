@@ -2,7 +2,9 @@
 import { computed, onMounted, reactive, ref } from "vue";
 
 import { assignmentsApi, listarUsuariosPorRoles } from "@/features/asignaciones/api/asignacionesApi";
-import { AppButton, AppModal, ErrorBanner, FormSelect } from "@/shared/components";
+import { AppButton, AppModal, CargandoBloque, ErrorBanner, FormSelect, PageHeader } from "@/shared/components";
+import { avisar } from "@/shared/composables/useAvisos";
+import { confirmar } from "@/shared/composables/useConfirmar";
 import type { components } from "@/shared/types/api";
 import type { ScheduleBlock, TeacherAssignment } from "@/shared/types/models";
 
@@ -124,9 +126,19 @@ async function guardarBloque(): Promise<void> {
 }
 
 async function quitarBloque(bloque: ScheduleBlock): Promise<void> {
-  if (!confirm("¿Quitar esta clase del horario?")) return;
-  await scheduleBlocksApi.darDeBaja(bloque.public_id);
-  await cargar();
+  const confirmado = await confirmar({
+    titulo: "¿Quitar esta clase del horario?",
+    etiquetaConfirmar: "Quitar clase",
+    peligro: true,
+  });
+  if (!confirmado) return;
+  try {
+    await scheduleBlocksApi.darDeBaja(bloque.public_id);
+    avisar("Clase quitada del horario.");
+    await cargar();
+  } catch {
+    avisar("No se pudo quitar la clase. Probá de nuevo.", "error");
+  }
 }
 
 onMounted(cargar);
@@ -134,10 +146,10 @@ onMounted(cargar);
 
 <template>
   <section class="horario-grid">
-    <h1>Horario</h1>
+    <PageHeader titulo="Horario" />
 
     <ErrorBanner v-if="error" :mensaje="error" etiqueta-accion="Reintentar" @accion="cargar" />
-    <p v-else-if="cargando">Cargando…</p>
+    <CargandoBloque v-else-if="cargando" />
 
     <template v-else>
       <FormSelect
@@ -203,11 +215,6 @@ onMounted(cargar);
 </template>
 
 <style scoped>
-.horario-grid h1 {
-  font-family: var(--fuente-titulo);
-  font-size: var(--texto-md);
-  margin: 0 0 var(--espacio-xl);
-}
 
 .horario-grid__tabla {
   border-collapse: collapse;

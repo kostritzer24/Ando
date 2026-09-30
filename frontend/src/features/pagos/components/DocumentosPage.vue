@@ -4,7 +4,7 @@ import { computed, onMounted, reactive, ref } from "vue";
 import { useAuthStore } from "@/features/auth/stores/authStore";
 import { tiposDocumentoApi } from "@/features/catalogo/api/catalogoApi";
 import { enrollmentsApi, studentsApi } from "@/features/estudiantes/api/estudiantesApi";
-import { AppButton, DataTable, EmptyState, ErrorBanner, FormField, FormSelect } from "@/shared/components";
+import { AppButton, CargandoBloque, DataTable, EmptyState, ErrorBanner, FormField, FormSelect, PageHeader } from "@/shared/components";
 import type { DocumentType, Enrollment, IssuedDocument, Student } from "@/shared/types/models";
 
 import { descargarArchivo, descargarDocumento, emitirDocumento, issuedDocumentsApi } from "../api/pagosApi";
@@ -110,10 +110,10 @@ onMounted(cargar);
 
 <template>
   <section class="documentos-page">
-    <h1>Documentos emitidos</h1>
+    <PageHeader titulo="Documentos emitidos" />
 
     <ErrorBanner v-if="error" :mensaje="error" etiqueta-accion="Reintentar" @accion="cargar" />
-    <p v-else-if="cargando">Cargando…</p>
+    <CargandoBloque v-else-if="cargando" />
 
     <template v-else>
       <template v-if="puedeEmitir">
@@ -176,11 +176,6 @@ onMounted(cargar);
 </template>
 
 <style scoped>
-.documentos-page h1 {
-  font-family: var(--fuente-titulo);
-  font-size: var(--texto-md);
-  margin: 0 0 var(--espacio-xl);
-}
 
 .documentos-page h2 {
   font-family: var(--fuente-titulo);

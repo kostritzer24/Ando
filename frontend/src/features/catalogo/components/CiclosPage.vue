@@ -2,7 +2,7 @@
 import { computed, onMounted, reactive, ref } from "vue";
 
 import { useAuthStore } from "@/features/auth/stores/authStore";
-import { AppButton, AppModal, DataTable, ErrorBanner, FormField, FormSelect } from "@/shared/components";
+import { AppButton, AppModal, CargandoBloque, DataTable, ErrorBanner, FormField, FormSelect, PageHeader } from "@/shared/components";
 import type { GradingUnit, SchoolCycle } from "@/shared/types/models";
 
 import { ciclosApi, unidadesApi } from "../api/catalogoApi";
@@ -119,13 +119,14 @@ onMounted(cargarCiclos);
 
 <template>
   <section class="ciclos-page">
-    <header class="ciclos-page__cabecera">
-      <h1>Ciclos escolares y unidades</h1>
-      <AppButton v-if="puedeEditar" @click="abrirNuevoCiclo">Agregar ciclo</AppButton>
-    </header>
+    <PageHeader titulo="Ciclos escolares y unidades">
+      <template #acciones>
+        <AppButton v-if="puedeEditar" @click="abrirNuevoCiclo" :deshabilitado="cargando">Agregar ciclo</AppButton>
+      </template>
+    </PageHeader>
 
     <ErrorBanner v-if="error" :mensaje="error" etiqueta-accion="Reintentar" @accion="cargarCiclos" />
-    <p v-else-if="cargando">Cargando…</p>
+    <CargandoBloque v-else-if="cargando" />
 
     <DataTable
       v-else
@@ -153,7 +154,7 @@ onMounted(cargarCiclos);
       </header>
 
       <ErrorBanner v-if="errorUnidades" :mensaje="errorUnidades" />
-      <p v-else-if="cargandoUnidades">Cargando…</p>
+      <CargandoBloque v-else-if="cargandoUnidades" />
       <p v-else-if="unidades.length === 0" class="ciclos-page__vacio">
         Este ciclo todavía no tiene unidades.
       </p>
@@ -217,7 +218,6 @@ onMounted(cargarCiclos);
   margin-bottom: var(--espacio-xl);
 }
 
-.ciclos-page__cabecera h1,
 .ciclos-page__cabecera h2 {
   font-family: var(--fuente-titulo);
   font-size: var(--texto-md);

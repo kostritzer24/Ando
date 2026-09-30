@@ -2,7 +2,7 @@
 import { computed, onMounted, reactive, ref, watch } from "vue";
 
 import { enrollmentsApi, studentsApi } from "@/features/estudiantes/api/estudiantesApi";
-import { AppButton, DataTable, ErrorBanner, FormField, FormSelect } from "@/shared/components";
+import { AppButton, CargandoBloque, DataTable, ErrorBanner, FormField, FormSelect, PageHeader } from "@/shared/components";
 import type { Enrollment, Payment, Student } from "@/shared/types/models";
 
 import {
@@ -158,10 +158,10 @@ onMounted(async () => {
 
 <template>
   <section class="pagos-page">
-    <h1>Pagos y solvencia</h1>
+    <PageHeader titulo="Pagos y solvencia" />
 
     <ErrorBanner v-if="error" :mensaje="error" etiqueta-accion="Reintentar" @accion="cargar" />
-    <p v-else-if="cargando">Cargando…</p>
+    <CargandoBloque v-else-if="cargando" />
 
     <template v-else>
       <AppButton variante="secundario" :deshabilitado="descargandoReporte" @click="descargarReporteInsolventes">
@@ -175,7 +175,7 @@ onMounted(async () => {
         v-model="inscripcionElegida"
       />
 
-      <p v-if="cargandoDetalle">Cargando…</p>
+      <CargandoBloque v-if="cargandoDetalle" />
 
       <template v-else-if="inscripcionElegida && solvencia">
         <div
@@ -232,11 +232,6 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.pagos-page h1 {
-  font-family: var(--fuente-titulo);
-  font-size: var(--texto-md);
-  margin: 0 0 var(--espacio-xl);
-}
 
 .pagos-page h2 {
   font-family: var(--fuente-titulo);

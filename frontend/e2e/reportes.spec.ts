@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 
+import { menu } from "./utils";
+
 /**
  * Fase 12 (RF-15, sección 11): los ocho reportes institucionales con
  * filtros y descarga en PDF, más las métricas del estudio. Requiere
@@ -18,7 +20,7 @@ test("Dirección consulta reportes institucionales, cambia de reporte y descarga
   await entrarComo(page, "dir.demo");
   await expect(page).toHaveURL(/\/administrativo$/);
 
-  await page.getByRole("link", { name: "Reportes", exact: true }).click();
+  await menu(page).getByRole("link", { name: "Reportes", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Reportes institucionales" })).toBeVisible();
 
   // Por omisión carga "Consolidado de notas" — cambiar a insolventes.
@@ -36,7 +38,7 @@ test("Dirección consulta reportes institucionales, cambia de reporte y descarga
   await page.getByRole("button", { name: "Consultar" }).click();
   await expect(page.locator("tbody tr")).toHaveCount(5);
 
-  await page.getByRole("link", { name: "Métricas" }).click();
+  await menu(page).getByRole("link", { name: "Métricas" }).click();
   await expect(page.getByRole("heading", { name: "Métricas del estudio" })).toBeVisible();
   await expect(page.getByText("Procesos administrativos gestionados por el sistema")).toBeVisible();
   await expect(page.getByText("Encargados que consultaron el portal esta semana")).toBeVisible();
@@ -48,10 +50,10 @@ test("Encargado de pagos descarga el reporte de insolventes desde Pagos, pero no
   await entrarComo(page, "pagos.demo");
   await expect(page).toHaveURL(/\/administrativo$/);
 
-  await expect(page.getByRole("link", { name: "Reportes", exact: true })).toHaveCount(0);
-  await expect(page.getByRole("link", { name: "Métricas" })).toHaveCount(0);
+  await expect(menu(page).getByRole("link", { name: "Reportes", exact: true })).toHaveCount(0);
+  await expect(menu(page).getByRole("link", { name: "Métricas" })).toHaveCount(0);
 
-  await page.getByRole("link", { name: "Pagos y solvencia" }).click();
+  await menu(page).getByRole("link", { name: "Pagos y solvencia" }).click();
   const descarga = page.waitForEvent("download");
   await page.getByRole("button", { name: "Reporte de estudiantes insolventes" }).click();
   await descarga;
@@ -61,5 +63,5 @@ test("un docente no llega a los reportes institucionales", async ({ page }) => {
   await entrarComo(page, "docente.demo");
   await expect(page).toHaveURL(/\/operativo$/);
 
-  await expect(page.getByRole("link", { name: "Reportes", exact: true })).toHaveCount(0);
+  await expect(menu(page).getByRole("link", { name: "Reportes", exact: true })).toHaveCount(0);
 });

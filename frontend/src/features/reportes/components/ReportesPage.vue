@@ -2,7 +2,7 @@
 import { computed, onMounted, reactive, ref, watch } from "vue";
 
 import { ciclosApi, seccionesApi, unidadesApi } from "@/features/catalogo/api/catalogoApi";
-import { AppButton, DataTable, EmptyState, ErrorBanner, FormSelect } from "@/shared/components";
+import { AppButton, CargandoBloque, DataTable, EmptyState, ErrorBanner, FormSelect, PageHeader } from "@/shared/components";
 import type { GradingUnit, SchoolCycle, Section } from "@/shared/types/models";
 
 import { REPORTES, consultarReporte, descargarReportePdf } from "../api/reportesApi";
@@ -102,10 +102,10 @@ onMounted(async () => {
 
 <template>
   <section class="reportes-page">
-    <h1>Reportes institucionales</h1>
+    <PageHeader titulo="Reportes institucionales" />
 
     <ErrorBanner v-if="error" :mensaje="error" etiqueta-accion="Reintentar" @accion="consultar" />
-    <p v-else-if="cargandoBase">Cargando…</p>
+    <CargandoBloque v-else-if="cargandoBase" />
 
     <template v-else>
       <div class="reportes-page__filtros">
@@ -142,7 +142,7 @@ onMounted(async () => {
         </AppButton>
       </div>
 
-      <p v-if="cargandoFilas">Cargando…</p>
+      <CargandoBloque v-if="cargandoFilas" />
       <EmptyState
         v-else-if="filas.length === 0"
         titulo="Sin resultados"
@@ -154,11 +154,6 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.reportes-page h1 {
-  font-family: var(--fuente-titulo);
-  font-size: var(--texto-md);
-  margin: 0 0 var(--espacio-lg);
-}
 
 .reportes-page__filtros {
   display: flex;

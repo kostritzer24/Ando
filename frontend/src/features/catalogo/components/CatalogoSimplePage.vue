@@ -2,7 +2,9 @@
 import { computed, onMounted, reactive, ref } from "vue";
 
 import { useAuthStore } from "@/features/auth/stores/authStore";
-import { AppButton, AppModal, DataTable, EmptyState, ErrorBanner, FormField, FormSelect } from "@/shared/components";
+import { AppButton, AppModal, CargandoBloque, DataTable, EmptyState, ErrorBanner, FormField, FormSelect, PageHeader } from "@/shared/components";
+import { avisar } from "@/shared/composables/useAvisos";
+import { confirmar } from "@/shared/composables/useConfirmar";
 import type { Registro, RecursoGenerico } from "@/shared/api/resource";
 
 import type { CatalogoConfig } from "../config/campos";
@@ -81,11 +83,21 @@ async function guardar(): Promise<void> {
 }
 
 async function darDeBaja(registro: Registro): Promise<void> {
-  if (!confirm(`¿Dar de baja "${registro.name ?? registro.code ?? registro.public_id}"?`)) {
-    return;
+  const nombre = String(registro.name ?? registro.code ?? registro.public_id);
+  const confirmado = await confirmar({
+    titulo: `¿Dar de baja "${nombre}"?`,
+    mensaje: "Deja de aparecer en los formularios. Se puede reactivar después.",
+    etiquetaConfirmar: "Dar de baja",
+    peligro: true,
+  });
+  if (!confirmado) return;
+  try {
+    await props.recurso.darDeBaja(registro.public_id);
+    avisar(`"${nombre}" dado de baja.`);
+    await cargar();
+  } catch {
+    avisar(`No se pudo dar de baja "${nombre}". Probá de nuevo.`, "error");
   }
-  await props.recurso.darDeBaja(registro.public_id);
-  await cargar();
 }
 
 async function reactivar(registro: Registro): Promise<void> {
@@ -98,14 +110,15 @@ onMounted(cargar);
 
 <template>
   <section class="catalogo-simple">
-    <header class="catalogo-simple__cabecera">
-      <h1>{{ config.titulo }}</h1>
-      <AppButton v-if="puedeEditar" @click="abrirNuevo">Agregar {{ config.tituloSingular }}</AppButton>
-    </header>
+    <PageHeader :titulo="config.titulo">
+      <template #acciones>
+        <AppButton v-if="puedeEditar" @click="abrirNuevo" :deshabilitado="cargando">Agregar {{ config.tituloSingular }}</AppButton>
+      </template>
+    </PageHeader>
 
     <ErrorBanner v-if="error" :mensaje="error" etiqueta-accion="Reintentar" @accion="cargar" />
 
-    <p v-else-if="cargando">Cargando…</p>
+    <CargandoBloque v-else-if="cargando" />
 
     <EmptyState
       v-else-if="registros.length === 0"
@@ -198,18 +211,7 @@ onMounted(cargar);
 </template>
 
 <style scoped>
-.catalogo-simple__cabecera {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: var(--espacio-xl);
-}
 
-.catalogo-simple__cabecera h1 {
-  font-family: var(--fuente-titulo);
-  font-size: var(--texto-md);
-  margin: 0;
-}
 
 .catalogo-simple__toggle-inactivos {
   display: flex;

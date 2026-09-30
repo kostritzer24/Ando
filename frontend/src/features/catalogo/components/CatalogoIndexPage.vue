@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { PageHeader } from "@/shared/components";
 const catalogos = [
   { a: "/administrativo/catalogo/ciclos", etiqueta: "Ciclos escolares y unidades" },
   { a: "/administrativo/catalogo/secciones", etiqueta: "Secciones" },
@@ -13,7 +14,7 @@ const catalogos = [
 
 <template>
   <section class="catalogo-index">
-    <h1>Datos maestros</h1>
+    <PageHeader titulo="Datos maestros" />
     <nav class="catalogo-index__lista">
       <RouterLink v-for="item in catalogos" :key="item.a" :to="item.a" class="catalogo-index__enlace">
         {{ item.etiqueta }}
@@ -23,11 +24,6 @@ const catalogos = [
 </template>
 
 <style scoped>
-.catalogo-index h1 {
-  font-family: var(--fuente-titulo);
-  font-size: var(--texto-md);
-  margin: 0 0 var(--espacio-xl);
-}
 
 .catalogo-index__lista {
   display: flex;

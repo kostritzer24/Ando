@@ -9,7 +9,7 @@ import {
 } from "@/features/pagos/api/pagosApi";
 import type { EstadoSolvencia } from "@/features/pagos/api/pagosApi";
 import { usePortalStore } from "@/features/portal/stores/portalStore";
-import { ErrorBanner } from "@/shared/components";
+import { CargandoBloque, ErrorBanner, PageHeader } from "@/shared/components";
 import type { IssuedDocument } from "@/shared/types/models";
 
 const MESES = [
@@ -73,10 +73,10 @@ onMounted(cargar);
 
 <template>
   <section class="pagos-page">
-    <h1>Pagos y solvencia</h1>
+    <PageHeader titulo="Pagos y solvencia" />
 
     <ErrorBanner v-if="error" :mensaje="error" etiqueta-accion="Reintentar" @accion="cargar" />
-    <p v-else-if="cargando">Cargando…</p>
+    <CargandoBloque v-else-if="cargando" />
 
     <template v-else-if="solvencia">
       <div
@@ -118,11 +118,6 @@ onMounted(cargar);
 </template>
 
 <style scoped>
-.pagos-page h1 {
-  font-family: var(--fuente-titulo);
-  font-size: var(--texto-md);
-  margin: 0 0 var(--espacio-lg);
-}
 
 .pagos-page h2 {
   font-family: var(--fuente-titulo);

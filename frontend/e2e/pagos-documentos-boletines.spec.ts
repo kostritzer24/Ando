@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 
+import { menu } from "./utils";
+
 /**
  * Fase 9 (RF-07 a RF-09, RF-11, RF-14): registrar pagos y consultar
  * solvencia, emitir constancia de solvencia, emitir documentos generales
@@ -31,7 +33,7 @@ test("Encargado de pagos consulta solvencia, registra un pago y emite la constan
   await entrarComo(page, "pagos.demo");
   await expect(page).toHaveURL(/\/administrativo$/);
 
-  await page.getByRole("link", { name: "Pagos y solvencia" }).click();
+  await menu(page).getByRole("link", { name: "Pagos y solvencia" }).click();
   await expect(page.getByRole("heading", { name: "Pagos y solvencia" })).toBeVisible();
 
   // María Ximena está al día (seed_demo la paga por completo).
@@ -68,7 +70,7 @@ test("Dirección emite documentos generales y Pagos solo ve las constancias de s
   await entrarComo(page, "dir.demo");
   await expect(page).toHaveURL(/\/administrativo$/);
 
-  await page.getByRole("link", { name: "Documentos" }).click();
+  await menu(page).getByRole("link", { name: "Documentos" }).click();
   await expect(page.getByRole("heading", { name: "Documentos emitidos" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Emitir documento" })).toBeVisible();
 
@@ -94,7 +96,7 @@ test("Dirección emite documentos generales y Pagos solo ve las constancias de s
 
   await page.getByRole("button", { name: "Cerrar sesión" }).click();
   await entrarComo(page, "pagos.demo");
-  await page.getByRole("link", { name: "Documentos" }).click();
+  await menu(page).getByRole("link", { name: "Documentos" }).click();
 
   // Pagos no emite documentos generales: el formulario no se muestra.
   await expect(page.getByRole("heading", { name: "Emitir documento" })).toHaveCount(0);
@@ -109,7 +111,7 @@ test("Dirección genera, aprueba y publica boletines, y RN-09 bloquea la publica
   await entrarComo(page, "dir.demo");
   await expect(page).toHaveURL(/\/administrativo$/);
 
-  await page.getByRole("link", { name: "Boletines" }).click();
+  await menu(page).getByRole("link", { name: "Boletines" }).click();
   await expect(page.getByRole("heading", { name: "Boletines" })).toBeVisible();
 
   // Segundo básico: María Ximena (solvente) y Juan Carlos (becado) — ambos

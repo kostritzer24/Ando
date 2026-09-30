@@ -3,7 +3,9 @@ import { computed, onMounted, reactive, ref } from "vue";
 
 import { useAuthStore } from "@/features/auth/stores/authStore";
 import { cursosApi, seccionesApi } from "@/features/catalogo/api/catalogoApi";
-import { AppButton, AppModal, DataTable, EmptyState, ErrorBanner, FormSelect } from "@/shared/components";
+import { AppButton, AppModal, CargandoBloque, DataTable, EmptyState, ErrorBanner, FormSelect, PageHeader } from "@/shared/components";
+import { avisar } from "@/shared/composables/useAvisos";
+import { confirmar } from "@/shared/composables/useConfirmar";
 import type { components } from "@/shared/types/api";
 import type { Course, Section, TeacherAssignment } from "@/shared/types/models";
 
@@ -128,9 +130,20 @@ async function guardar(): Promise<void> {
 }
 
 async function darDeBaja(asignacion: TeacherAssignment): Promise<void> {
-  if (!confirm("¿Dar de baja esta asignación?")) return;
-  await assignmentsApi.darDeBaja(asignacion.public_id);
-  await cargar();
+  const confirmado = await confirmar({
+    titulo: "¿Dar de baja esta asignación?",
+    mensaje: "La persona deja de tener ese curso a su cargo. El historial se conserva.",
+    etiquetaConfirmar: "Dar de baja",
+    peligro: true,
+  });
+  if (!confirmado) return;
+  try {
+    await assignmentsApi.darDeBaja(asignacion.public_id);
+    avisar("Asignación dada de baja.");
+    await cargar();
+  } catch {
+    avisar("No se pudo dar de baja la asignación. Probá de nuevo.", "error");
+  }
 }
 
 onMounted(cargar);
@@ -138,13 +151,14 @@ onMounted(cargar);
 
 <template>
   <section class="asignaciones-page">
-    <header class="asignaciones-page__cabecera">
-      <h1>Asignaciones de docentes y talleristas</h1>
-      <AppButton v-if="puedeEditar" @click="abrirNueva">Agregar asignación</AppButton>
-    </header>
+    <PageHeader titulo="Asignaciones de docentes y talleristas">
+      <template #acciones>
+        <AppButton v-if="puedeEditar" @click="abrirNueva" :deshabilitado="cargando">Agregar asignación</AppButton>
+      </template>
+    </PageHeader>
 
     <ErrorBanner v-if="error" :mensaje="error" etiqueta-accion="Reintentar" @accion="cargar" />
-    <p v-else-if="cargando">Cargando…</p>
+    <CargandoBloque v-else-if="cargando" />
     <EmptyState
       v-else-if="asignaciones.length === 0"
       titulo="Todavía no hay asignaciones"
@@ -154,19 +168,20 @@ onMounted(cargar);
     <DataTable
       v-else
       :columnas="[
-        { clave: 'teacher', etiqueta: 'Docente' },
-        { clave: 'course', etiqueta: 'Curso' },
-        { clave: 'section', etiqueta: 'Sección' },
+        { clave: 'teacher', etiqueta: 'Docente', texto: (a) => nombreDocente(a.teacher) },
+        { clave: 'course', etiqueta: 'Curso', texto: (a) => nombreCurso(a.course) },
+        { clave: 'section', etiqueta: 'Sección', texto: (a) => nombreSeccion(a.section) },
       ]"
       :filas="asignaciones"
+      buscable
+      placeholder-busqueda="Buscar asignación"
+      descripcion="Asignaciones de docentes y talleristas"
     >
-      <template #celda-teacher="{ fila }">{{ nombreDocente((fila as TeacherAssignment).teacher) }}</template>
-      <template #celda-course="{ fila }">{{ nombreCurso((fila as TeacherAssignment).course) }}</template>
-      <template #celda-section="{ fila }">{{ nombreSeccion((fila as TeacherAssignment).section) }}</template>
+      <template #celda-teacher="{ fila }">{{ nombreDocente(fila.teacher) }}</template>
+      <template #celda-course="{ fila }">{{ nombreCurso(fila.course) }}</template>
+      <template #celda-section="{ fila }">{{ nombreSeccion(fila.section) }}</template>
       <template v-if="puedeEditar" #acciones="{ fila }">
-        <button type="button" class="asignaciones-page__accion" @click="darDeBaja(fila as TeacherAssignment)">
-          Dar de baja
-        </button>
+        <AppButton variante="discreto" compacto @click="darDeBaja(fila)">Dar de baja</AppButton>
       </template>
     </DataTable>
 
@@ -200,27 +215,8 @@ onMounted(cargar);
 </template>
 
 <style scoped>
-.asignaciones-page__cabecera {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: var(--espacio-xl);
-}
 
-.asignaciones-page__cabecera h1 {
-  font-family: var(--fuente-titulo);
-  font-size: var(--texto-md);
-  margin: 0;
-}
 
-.asignaciones-page__accion {
-  background: none;
-  border: none;
-  color: var(--color-accion);
-  font-size: var(--texto-sm);
-  font-weight: 600;
-  cursor: pointer;
-}
 
 .asignaciones-page__formulario {
   display: flex;

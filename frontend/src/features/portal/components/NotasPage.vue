@@ -4,7 +4,7 @@ import { computed, onMounted, ref, watch } from "vue";
 import { unidadesApi } from "@/features/catalogo/api/catalogoApi";
 import { descargarArchivo } from "@/features/pagos/api/pagosApi";
 import { usePortalStore } from "@/features/portal/stores/portalStore";
-import { AppButton, EmptyState, ErrorBanner } from "@/shared/components";
+import { AppButton, CargandoBloque, EmptyState, ErrorBanner, PageHeader } from "@/shared/components";
 import type { Grade, GradingUnit, ReportCard } from "@/shared/types/models";
 
 import { descargarBoletin, gradesApi, reportCardsApi } from "../api/portalApi";
@@ -102,10 +102,10 @@ onMounted(cargar);
 
 <template>
   <section class="notas-page">
-    <h1>Notas</h1>
+    <PageHeader titulo="Notas" />
 
     <ErrorBanner v-if="error" :mensaje="error" etiqueta-accion="Reintentar" @accion="cargar" />
-    <p v-else-if="cargando">Cargando…</p>
+    <CargandoBloque v-else-if="cargando" />
 
     <template v-else>
       <EmptyState
@@ -151,11 +151,6 @@ onMounted(cargar);
 </template>
 
 <style scoped>
-.notas-page h1 {
-  font-family: var(--fuente-titulo);
-  font-size: var(--texto-md);
-  margin: 0 0 var(--espacio-lg);
-}
 
 .notas-page h2 {
   font-family: var(--fuente-titulo);

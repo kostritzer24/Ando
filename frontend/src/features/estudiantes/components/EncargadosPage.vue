@@ -2,7 +2,7 @@
 import { computed, onMounted, reactive, ref } from "vue";
 
 import { useAuthStore } from "@/features/auth/stores/authStore";
-import { AppButton, AppModal, DataTable, EmptyState, ErrorBanner, FormField } from "@/shared/components";
+import { AppButton, AppModal, CargandoBloque, DataTable, EmptyState, ErrorBanner, FormField, PageHeader } from "@/shared/components";
 import type { Guardian, GuardianStudentLinkRead, Student } from "@/shared/types/models";
 
 import {
@@ -137,13 +137,14 @@ onMounted(cargar);
 
 <template>
   <section class="encargados-page">
-    <header class="encargados-page__cabecera">
-      <h1>Encargados</h1>
-      <AppButton v-if="puedeEditar" @click="abrirNuevo">Agregar encargado</AppButton>
-    </header>
+    <PageHeader titulo="Encargados">
+      <template #acciones>
+        <AppButton v-if="puedeEditar" @click="abrirNuevo" :deshabilitado="cargando">Agregar encargado</AppButton>
+      </template>
+    </PageHeader>
 
     <ErrorBanner v-if="error" :mensaje="error" etiqueta-accion="Reintentar" @accion="cargar" />
-    <p v-else-if="cargando">Cargando…</p>
+    <CargandoBloque v-else-if="cargando" />
     <EmptyState
       v-else-if="encargados.length === 0"
       titulo="Todavía no hay encargados"
@@ -158,11 +159,14 @@ onMounted(cargar);
         { clave: 'occupation', etiqueta: 'Ocupación' },
       ]"
       :filas="encargados"
+      buscable
+      placeholder-busqueda="Buscar encargado"
+      descripcion="Encargados"
     >
       <template #acciones="{ fila }">
-        <button type="button" class="encargados-page__accion" @click="verVinculos(fila as Guardian)">
-          {{ encargadoExpandido === (fila as Guardian).public_id ? "Ocultar vínculos" : "Ver vínculos" }}
-        </button>
+        <AppButton variante="discreto" compacto @click="verVinculos(fila)">
+          {{ encargadoExpandido === fila.public_id ? "Ocultar vínculos" : "Ver vínculos" }}
+        </AppButton>
       </template>
     </DataTable>
 
@@ -172,7 +176,7 @@ onMounted(cargar);
       class="encargados-page__vinculos"
     >
       <h2>Estudiantes vinculados a {{ encargado.full_name }}</h2>
-      <p v-if="cargandoVinculos">Cargando…</p>
+      <CargandoBloque v-if="cargandoVinculos" />
       <template v-else>
         <p v-if="vinculos.length === 0" class="encargados-page__vacio">Sin vínculos todavía.</p>
         <ul v-else class="encargados-page__lista">
@@ -238,18 +242,7 @@ onMounted(cargar);
 </template>
 
 <style scoped>
-.encargados-page__cabecera {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: var(--espacio-xl);
-}
 
-.encargados-page__cabecera h1 {
-  font-family: var(--fuente-titulo);
-  font-size: var(--texto-md);
-  margin: 0;
-}
 
 .encargados-page__accion {
   background: none;

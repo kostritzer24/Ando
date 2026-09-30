@@ -5,7 +5,7 @@ import { assignmentsApi } from "@/features/asignaciones/api/asignacionesApi";
 import { useAuthStore } from "@/features/auth/stores/authStore";
 import { seccionesApi } from "@/features/catalogo/api/catalogoApi";
 import { enrollmentsApi, studentsApi } from "@/features/estudiantes/api/estudiantesApi";
-import { ErrorBanner, FormSelect } from "@/shared/components";
+import { CargandoBloque, ErrorBanner, FormSelect, PageHeader } from "@/shared/components";
 import type { Attendance, Enrollment, Section, Student, TeacherAssignment } from "@/shared/types/models";
 
 import { attendanceApi, registrarAsistencia } from "../api/asistenciaApi";
@@ -170,10 +170,10 @@ onMounted(async () => {
 
 <template>
   <section class="tomar-asistencia">
-    <h1>Tomar asistencia</h1>
+    <PageHeader titulo="Tomar asistencia" />
 
     <ErrorBanner v-if="error" :mensaje="error" etiqueta-accion="Reintentar" @accion="cargarRoster" />
-    <p v-else-if="cargando">Cargando…</p>
+    <CargandoBloque v-else-if="cargando" />
 
     <template v-else>
       <div class="tomar-asistencia__filtros">
@@ -189,7 +189,7 @@ onMounted(async () => {
         </div>
       </div>
 
-      <p v-if="cargandoRoster">Cargando…</p>
+      <CargandoBloque v-if="cargandoRoster" />
       <p v-else-if="inscripciones.length === 0" class="tomar-asistencia__vacio">
         No hay estudiantes inscritos en esta sección.
       </p>
@@ -233,11 +233,6 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.tomar-asistencia h1 {
-  font-family: var(--fuente-titulo);
-  font-size: var(--texto-md);
-  margin: 0 0 var(--espacio-xl);
-}
 
 .tomar-asistencia__filtros {
   display: flex;

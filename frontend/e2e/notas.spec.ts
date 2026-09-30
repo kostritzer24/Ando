@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 
+import { menu } from "./utils";
+
 /**
  * Fase 7 (RF-17 a RF-20, RF-23, RF-10): diseñar unidad, capturar notas,
  * plantilla de calificaciones, solicitudes de modificación. Requiere
@@ -18,7 +20,7 @@ test("docente diseña una unidad y ve el total de puntos en vivo", async ({ page
   await entrarComo(page, "docente.demo");
   await expect(page).toHaveURL(/\/operativo$/);
 
-  await page.getByRole("link", { name: "Diseñar unidad" }).click();
+  await menu(page).getByRole("link", { name: "Diseñar unidad" }).click();
   await expect(page.getByRole("heading", { name: "Diseñar la unidad" })).toBeVisible();
 
   await page.getByRole("button", { name: "Agregar actividad" }).click();
@@ -37,7 +39,7 @@ test("docente captura una nota, solicita una corrección y Dirección la aprueba
   await expect(page).toHaveURL(/\/operativo$/);
 
   // Esta prueba no depende de la anterior: crea su propia actividad.
-  await page.getByRole("link", { name: "Diseñar unidad" }).click();
+  await menu(page).getByRole("link", { name: "Diseñar unidad" }).click();
   await page.getByRole("button", { name: "Agregar actividad" }).click();
   const nombreActividad = `Tarea de prueba ${Date.now()}`;
   await page.getByLabel("Nombre de la actividad").fill(nombreActividad);
@@ -47,7 +49,7 @@ test("docente captura una nota, solicita una corrección y Dirección la aprueba
   await page.getByRole("button", { name: "Guardar", exact: true }).click();
   await expect(page.locator("tr", { hasText: nombreActividad })).toBeVisible();
 
-  await page.getByRole("link", { name: "Capturar notas" }).click();
+  await menu(page).getByRole("link", { name: "Capturar notas" }).click();
   await expect(page.getByRole("heading", { name: "Capturar notas" })).toBeVisible();
   // La lista de actividades se carga de forma asíncrona después de elegir
   // la unidad por omisión — se espera a que la opción exista antes de leerla.
@@ -70,14 +72,14 @@ test("docente captura una nota, solicita una corrección y Dirección la aprueba
   await page.locator("#reason").fill("Se recalificó un ejercicio.");
   await page.getByRole("button", { name: "Enviar solicitud" }).click();
 
-  await page.getByRole("link", { name: "Modificaciones" }).click();
+  await menu(page).getByRole("link", { name: "Modificaciones" }).click();
   await expect(page.getByRole("heading", { name: "Mis solicitudes de modificación" })).toBeVisible();
   await expect(page.locator("tr", { hasText: "pendiente" })).toBeVisible();
 
   await page.getByRole("button", { name: "Cerrar sesión" }).click();
   await entrarComo(page, "dir.demo");
   await expect(page).toHaveURL(/\/administrativo$/);
-  await page.getByRole("link", { name: "Modificaciones de notas" }).click();
+  await menu(page).getByRole("link", { name: "Modificaciones de notas" }).click();
   await expect(page.getByRole("heading", { name: "Solicitudes de modificación" })).toBeVisible();
 
   const fila = page.locator("tr", { hasText: "pendiente" }).first();
@@ -89,7 +91,7 @@ test("docente descarga la plantilla de calificaciones de su unidad", async ({ pa
   await entrarComo(page, "docente.demo");
   await expect(page).toHaveURL(/\/operativo$/);
 
-  await page.getByRole("link", { name: "Plantilla de notas" }).click();
+  await menu(page).getByRole("link", { name: "Plantilla de notas" }).click();
   await expect(page.getByRole("heading", { name: "Plantilla de calificaciones" })).toBeVisible();
 
   const [descarga] = await Promise.all([

@@ -4,7 +4,7 @@ import { computed, onMounted, ref } from "vue";
 import { assignmentsApi } from "@/features/asignaciones/api/asignacionesApi";
 import { seccionesApi } from "@/features/catalogo/api/catalogoApi";
 import { useAuthStore } from "@/features/auth/stores/authStore";
-import { AppButton, ErrorBanner, FormSelect } from "@/shared/components";
+import { AppButton, CargandoBloque, ErrorBanner, FormSelect, PageHeader } from "@/shared/components";
 import type { Section, TeacherAssignment } from "@/shared/types/models";
 
 import { descargarPlantillaAsistencia, subirPlantillaAsistencia } from "../api/asistenciaApi";
@@ -110,10 +110,10 @@ onMounted(cargar);
 
 <template>
   <section class="plantilla-asistencia">
-    <h1>Plantilla de asistencia de talleres</h1>
+    <PageHeader titulo="Plantilla de asistencia de talleres" />
 
     <ErrorBanner v-if="error" :mensaje="error" etiqueta-accion="Reintentar" @accion="cargar" />
-    <p v-else-if="cargando">Cargando…</p>
+    <CargandoBloque v-else-if="cargando" />
     <p v-else-if="!puedeUsarPlantilla" class="plantilla-asistencia__nota">
       Esta pantalla es para el taller que tenés a cargo.
     </p>
@@ -154,11 +154,6 @@ onMounted(cargar);
 </template>
 
 <style scoped>
-.plantilla-asistencia h1 {
-  font-family: var(--fuente-titulo);
-  font-size: var(--texto-md);
-  margin: 0 0 var(--espacio-xl);
-}
 
 .plantilla-asistencia__nota {
   color: var(--color-tinta-suave);

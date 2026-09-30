@@ -3,7 +3,7 @@ import { computed, onMounted, reactive, ref } from "vue";
 
 import { articulosConvivenciaApi } from "@/features/catalogo/api/catalogoApi";
 import { enrollmentsApi, studentsApi } from "@/features/estudiantes/api/estudiantesApi";
-import { AppButton, AppModal, DataTable, EmptyState, ErrorBanner, FormField, FormSelect } from "@/shared/components";
+import { AppButton, AppModal, CargandoBloque, DataTable, EmptyState, ErrorBanner, FormField, FormSelect, PageHeader } from "@/shared/components";
 import type { ConductReport, ConductRuleArticle, Enrollment, Student } from "@/shared/types/models";
 
 import { conductReportsApi, crearReporteConducta, descargarReporteConducta } from "../api/comunicacionApi";
@@ -141,10 +141,10 @@ onMounted(cargar);
 
 <template>
   <section class="reportes-conducta-page">
-    <h1>Reportes de conducta</h1>
+    <PageHeader titulo="Reportes de conducta" />
 
     <ErrorBanner v-if="error" :mensaje="error" etiqueta-accion="Reintentar" @accion="cargar" />
-    <p v-else-if="cargando">Cargando…</p>
+    <CargandoBloque v-else-if="cargando" />
 
     <template v-else>
       <AppButton :deshabilitado="opcionesInscripcion.length === 0" @click="abrirNuevo">
@@ -227,11 +227,6 @@ onMounted(cargar);
 </template>
 
 <style scoped>
-.reportes-conducta-page h1 {
-  font-family: var(--fuente-titulo);
-  font-size: var(--texto-md);
-  margin: 0 0 var(--espacio-lg);
-}
 
 .reportes-conducta-page__tabla {
   margin-top: var(--espacio-lg);

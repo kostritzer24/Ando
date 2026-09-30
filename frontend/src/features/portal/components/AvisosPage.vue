@@ -4,7 +4,7 @@ import { computed, onMounted, reactive, ref, watch } from "vue";
 
 import { announcementsApi, messagesApi } from "@/features/comunicacion/api/comunicacionApi";
 import { usePortalStore } from "@/features/portal/stores/portalStore";
-import { AppButton, EmptyState, ErrorBanner, FormField } from "@/shared/components";
+import { AppButton, CargandoBloque, EmptyState, ErrorBanner, FormField, PageHeader } from "@/shared/components";
 import type { Announcement, Message } from "@/shared/types/models";
 
 const portal = usePortalStore();
@@ -74,10 +74,10 @@ onMounted(cargar);
 
 <template>
   <section class="avisos-page">
-    <h1>Avisos</h1>
+    <PageHeader titulo="Avisos" />
 
     <ErrorBanner v-if="error" :mensaje="error" etiqueta-accion="Reintentar" @accion="cargar" />
-    <p v-else-if="cargando">Cargando…</p>
+    <CargandoBloque v-else-if="cargando" />
 
     <template v-else>
       <EmptyState
@@ -123,11 +123,6 @@ onMounted(cargar);
 </template>
 
 <style scoped>
-.avisos-page h1 {
-  font-family: var(--fuente-titulo);
-  font-size: var(--texto-md);
-  margin: 0 0 var(--espacio-lg);
-}
 
 .avisos-page h2 {
   font-family: var(--fuente-titulo);

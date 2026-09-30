@@ -4,7 +4,7 @@ import { computed, onMounted, ref, watch } from "vue";
 
 import { seccionesApi, unidadesApi } from "@/features/catalogo/api/catalogoApi";
 import { enrollmentsApi, studentsApi } from "@/features/estudiantes/api/estudiantesApi";
-import { AppButton, DataTable, EmptyState, ErrorBanner, FormSelect, TagPill } from "@/shared/components";
+import { AppButton, CargandoBloque, DataTable, EmptyState, ErrorBanner, FormSelect, PageHeader, TagPill } from "@/shared/components";
 import type { Enrollment, GradingUnit, ReportCard, Section, Student } from "@/shared/types/models";
 
 import { aprobarBoletin, generarBoletines, publicarBoletin, reportCardsApi } from "../api/pagosApi";
@@ -166,10 +166,10 @@ onMounted(async () => {
 
 <template>
   <section class="boletines-page">
-    <h1>Boletines</h1>
+    <PageHeader titulo="Boletines" />
 
     <ErrorBanner v-if="error" :mensaje="error" etiqueta-accion="Reintentar" @accion="cargar" />
-    <p v-else-if="cargando">Cargando…</p>
+    <CargandoBloque v-else-if="cargando" />
 
     <template v-else>
       <div class="boletines-page__filtros">
@@ -233,11 +233,6 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.boletines-page h1 {
-  font-family: var(--fuente-titulo);
-  font-size: var(--texto-md);
-  margin: 0 0 var(--espacio-xl);
-}
 
 .boletines-page__filtros {
   display: flex;

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 
-import { ErrorBanner } from "@/shared/components";
+import { CargandoBloque, ErrorBanner, PageHeader } from "@/shared/components";
 
 import { consultarMetricas } from "../api/reportesApi";
 import type { Metricas } from "../api/reportesApi";
@@ -27,10 +27,10 @@ onMounted(cargar);
 
 <template>
   <section class="metricas-page">
-    <h1>Métricas del estudio</h1>
+    <PageHeader titulo="Métricas del estudio" />
 
     <ErrorBanner v-if="error" :mensaje="error" etiqueta-accion="Reintentar" @accion="cargar" />
-    <p v-else-if="cargando">Cargando…</p>
+    <CargandoBloque v-else-if="cargando" />
 
     <template v-else-if="metricas">
       <p class="metricas-page__periodo">
@@ -53,11 +53,6 @@ onMounted(cargar);
 </template>
 
 <style scoped>
-.metricas-page h1 {
-  font-family: var(--fuente-titulo);
-  font-size: var(--texto-md);
-  margin: 0 0 var(--espacio-sm);
-}
 
 .metricas-page__periodo {
   color: var(--color-tinta-suave);

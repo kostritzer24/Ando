@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ChevronLeft } from "lucide-vue-next";
+import { Comment, computed, Fragment, useSlots, type VNode } from "vue";
 
 defineProps<{
   titulo: string;
@@ -10,6 +11,19 @@ defineProps<{
   volverA?: string;
   etiquetaVolver?: string;
 }>();
+
+const slots = useSlots();
+
+// Un `<template #acciones>` cuyo botón tiene `v-if` falso sigue llegando
+// como slot, pero vacío: sin esta revisión quedaba un hueco debajo del
+// título para los roles que no pueden editar.
+function tieneContenido(nodos: VNode[]): boolean {
+  return nodos.some((nodo) =>
+    nodo.type === Comment ? false : nodo.type === Fragment ? tieneContenido(nodo.children as VNode[]) : true,
+  );
+}
+
+const hayAcciones = computed(() => tieneContenido(slots.acciones?.() ?? []));
 </script>
 
 <template>
@@ -24,7 +38,7 @@ defineProps<{
         <p v-if="descripcion" class="page-header__descripcion">{{ descripcion }}</p>
         <slot name="detalle" />
       </div>
-      <div v-if="$slots.acciones" class="page-header__acciones">
+      <div v-if="hayAcciones" class="page-header__acciones">
         <slot name="acciones" />
       </div>
     </div>
