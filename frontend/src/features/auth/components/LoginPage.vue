@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { isAxiosError } from "axios";
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 
@@ -16,6 +17,24 @@ const password = ref("");
 const enviando = ref(false);
 const mensajeError = ref("");
 
+// Antes todo error decía "Usuario o contraseña incorrectos": una familia
+// bloqueada temporalmente (RN-16) o alguien que chocó con el límite de
+// intentos (RNF-05) creía que se había equivocado de contraseña y volvía a
+// intentar, alargando el bloqueo.
+function mensajeDeError(error: unknown): string {
+  if (!isAxiosError(error) || !error.response) {
+    return "No se pudo conectar con el sistema. Revisá tu conexión e intentá de nuevo.";
+  }
+  if (error.response.status === 429) {
+    return "Demasiados intentos seguidos. Esperá un minuto y volvé a intentar.";
+  }
+  const detalle = (error.response.data as { detail?: unknown } | undefined)?.detail;
+  if (typeof detalle === "string" && detalle.includes("bloqueada")) {
+    return detalle;
+  }
+  return "Usuario o contraseña incorrectos. Volvé a intentar.";
+}
+
 async function enviar(): Promise<void> {
   mensajeError.value = "";
   enviando.value = true;
@@ -26,8 +45,8 @@ async function enviar(): Promise<void> {
       return;
     }
     await router.push(DESTINO_POR_ROL[usuario.role_name] ?? "/");
-  } catch {
-    mensajeError.value = "Usuario o contraseña incorrectos. Volvé a intentar.";
+  } catch (error) {
+    mensajeError.value = mensajeDeError(error);
   } finally {
     enviando.value = false;
   }

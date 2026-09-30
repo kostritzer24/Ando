@@ -1,4 +1,6 @@
 from django.conf import settings
+from django.utils import timezone
+from django.utils.dateformat import format as formatear_fecha
 from drf_spectacular.utils import extend_schema
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
@@ -51,6 +53,21 @@ def _delete_refresh_cookie(response: Response) -> None:
     response.delete_cookie(settings.REFRESH_COOKIE_NAME, path=_AUTH_COOKIE_PATH)
 
 
+# "30 de septiembre": en el formato de Django, la barra escapa letras que
+# si no serían códigos de fecha ("d" es el día, "e" la zona horaria).
+FORMATO_DIA = r"j \d\e F"
+
+
+def _cuando(momento) -> str:
+    """Hora local de Guatemala, no UTC (el datetime llega en UTC con
+    USE_TZ). El bloqueo por RN-16 dura 24 horas: si no es hoy, se dice el
+    día — "después de las 11:24" sin fecha hacía pensar que era hoy."""
+    local = timezone.localtime(momento)
+    if local.date() == timezone.localdate():
+        return f"las {local:%H:%M}"
+    return f"las {local:%H:%M} del {formatear_fecha(local, FORMATO_DIA)}"
+
+
 class LoginView(APIView):
     """POST /auth/login/ — RF-27. Devuelve el token de acceso en el cuerpo
     y deja el token de refresco en una cookie HttpOnly/Secure/SameSite=Strict
@@ -70,8 +87,8 @@ class LoginView(APIView):
             raise AuthenticationFailed("Usuario o contraseña incorrectos.") from None
         except UsuarioBloqueado as exc:
             raise AuthenticationFailed(
-                "Esta cuenta está bloqueada temporalmente por demasiados intentos. "
-                f"Podés volver a intentar después de las {exc.bloqueado_hasta:%H:%M}."
+                "Esta cuenta está bloqueada temporalmente. "
+                f"Podés volver a intentar después de {_cuando(exc.bloqueado_hasta)}."
             ) from exc
 
         response = Response(
