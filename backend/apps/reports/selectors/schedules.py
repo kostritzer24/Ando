@@ -19,7 +19,5 @@ def resumen_horarios(*, section_id: str | None = None) -> list[dict]:
             "day_of_week": bloque.day_of_week,
             "period_number": bloque.period_number,
         }
-        for bloque in bloques.order_by(
-            "assignment__section", "day_of_week", "period_number"
-        )
+        for bloque in bloques.order_by("assignment__section", "day_of_week", "period_number")
     ]

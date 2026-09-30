@@ -60,9 +60,13 @@ def contenido_boletin(boletin: ReportCard) -> dict:
     calificación se duplica ni se recalcula distinto de como ya la ve el
     docente en `nota_de_unidad` (RF-18)."""
     inscripcion = boletin.enrollment
-    asignaciones = TeacherAssignment.objects.filter(
-        section=inscripcion.section, cycle=inscripcion.cycle, is_active=True
-    ).select_related("course").order_by("course__name")
+    asignaciones = (
+        TeacherAssignment.objects.filter(
+            section=inscripcion.section, cycle=inscripcion.cycle, is_active=True
+        )
+        .select_related("course")
+        .order_by("course__name")
+    )
     cursos = []
     for asignacion in asignaciones:
         nota = nota_de_unidad(enrollment=inscripcion, unit=boletin.unit, assignment=asignacion)

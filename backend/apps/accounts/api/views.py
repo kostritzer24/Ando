@@ -94,9 +94,7 @@ class LoginView(APIView):
                 f"Podés volver a intentar después de {_cuando(exc.bloqueado_hasta)}."
             ) from exc
 
-        response = Response(
-            {"access": str(refresh.access_token), "user": MeSerializer(user).data}
-        )
+        response = Response({"access": str(refresh.access_token), "user": MeSerializer(user).data})
         _set_refresh_cookie(response, str(refresh))
         return response
 

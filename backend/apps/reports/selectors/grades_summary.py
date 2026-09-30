@@ -20,9 +20,7 @@ def resumen_notas(*, cycle_id: str | None = None, section_id: str | None = None)
 
     filas = []
     for inscripcion in inscripciones:
-        unidades = list(
-            GradingUnit.objects.filter(cycle=inscripcion.cycle).order_by("number")
-        )
+        unidades = list(GradingUnit.objects.filter(cycle=inscripcion.cycle).order_by("number"))
         asignaciones = TeacherAssignment.objects.filter(
             section=inscripcion.section, cycle=inscripcion.cycle, is_active=True
         ).select_related("course")
