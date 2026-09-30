@@ -3,16 +3,39 @@
  * (docs/diseno/direccion-visual.md). Un solo tema: esta dirección se
  * comprometió deliberadamente con un único aspecto visual, claro y
  * funcional, no con modo oscuro.
+ *
+ * Mobile-first: los valores base son los del teléfono. Los puntos de
+ * quiebre no pueden ser variables CSS (no funcionan dentro de @media), así
+ * que se usan siempre estos dos, escritos a mano:
+ *   - 40rem (640px): tableta vertical — formularios y tablas se ensanchan.
+ *   - 64rem (1024px): escritorio — aparece la barra lateral fija.
  */
 
 :root {
-  /* Color */
+  /* Color — acción */
   --color-accion: #1c6ea4;
+  --color-accion-hover: #155a87;
+  --color-accion-suave: #e7f1f8;
+
+  /* Color — neutros */
   --color-tinta: #14181c;
   --color-tinta-suave: #5b6570;
   --color-linea: #d8dde1;
+  --color-linea-fuerte: #b9c1c8;
+  /* Borde de campos de formulario: 3.29:1 sobre blanco, el mínimo de 3:1
+     que WCAG 2.1 (1.4.11) exige al contorno de un control. */
+  --color-borde-campo: #858f99;
   --color-papel: #ffffff;
-  --color-fondo: #eef1f3;
+  --color-fondo: #f3f5f7;
+  --color-hover: #eef1f3;
+
+  /* Color — estado (texto sobre blanco, todos ≥ 4.5:1 para WCAG AA) */
+  --color-exito: #24531a;
+  --color-peligro: #b42318;
+  --color-peligro-hover: #912018;
+  /* Íconos de estado sobre fondo tinta (avisos flotantes) */
+  --color-exito-sobre-tinta: #9bd88a;
+  --color-peligro-sobre-tinta: #f5a3a3;
 
   --color-etiqueta-taller-fondo: #e4f1de;
   --color-etiqueta-taller-texto: #24531a;
@@ -27,32 +50,77 @@
   --fuente-titulo: "Archivo", system-ui, sans-serif;
   --fuente-cuerpo: "Public Sans", system-ui, sans-serif;
 
-  --texto-2xs: 0.64rem;
-  --texto-xs: 0.72rem;
-  --texto-sm: 0.8rem;
-  --texto-base: 0.88rem;
-  --texto-md: 1.05rem;
+  /* Escala: el cuerpo es 1rem (16px) — por debajo de eso, iOS hace zoom
+     automático al enfocar un campo de formulario. */
+  --texto-2xs: 0.72rem;
+  --texto-xs: 0.78rem;
+  --texto-sm: 0.875rem;
+  --texto-base: 1rem;
+  --texto-md: 1.125rem;
+  --texto-lg: 1.375rem;
+  --texto-titulo: 1.5rem;
   --texto-numeral: 2.6rem;
 
-  /* Espaciado (compacto a propósito — ver docs/diseno/direccion-visual.md) */
+  --interlineado: 1.5;
+  --interlineado-titulo: 1.2;
+
+  /* Espaciado */
   --espacio-2xs: 0.15rem;
   --espacio-xs: 0.3rem;
   --espacio-sm: 0.5rem;
-  --espacio-md: 0.65rem;
-  --espacio-lg: 0.9rem;
-  --espacio-xl: 1.1rem;
+  --espacio-md: 0.75rem;
+  --espacio-lg: 1rem;
+  --espacio-xl: 1.25rem;
+  --espacio-2xl: 1.5rem;
+  --espacio-3xl: 2rem;
+  --espacio-4xl: 3rem;
+
+  /* Margen lateral de la página: angosto en el teléfono, amplio en escritorio */
+  --margen-pagina: var(--espacio-lg);
 
   /* Forma */
-  --radio-sm: 3px;
+  --radio-sm: 4px;
   --radio-md: 6px;
-  --radio-lg: 8px;
+  --radio-lg: 10px;
+
+  /* Sombra: una sola, y solo para lo que flota sobre la página (menú
+     lateral en el teléfono, diálogo, aviso). Nunca en el contenido. */
+  --sombra-flotante: 0 8px 24px rgb(20 24 28 / 16%), 0 2px 6px rgb(20 24 28 / 8%);
+
+  /* Capas */
+  --capa-barra: 20;
+  --capa-menu: 40;
+  --capa-modal: 100;
+  --capa-aviso: 120;
 
   /* Área táctil mínima (sección 15.2 del prompt maestro) */
   --area-tactil-minima: 44px;
+
+  /* Estructura */
+  --alto-barra: 3.5rem;
+  --ancho-menu: 16.5rem;
+  --ancho-contenido: 72rem;
+
+  /* Movimiento */
+  --transicion: 160ms ease-out;
 }
 
-* {
+@media (min-width: 64rem) {
+  :root {
+    --margen-pagina: var(--espacio-3xl);
+    --texto-titulo: 1.75rem;
+  }
+}
+
+*,
+*::before,
+*::after {
   box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
@@ -60,6 +128,75 @@ body {
   background: var(--color-fondo);
   color: var(--color-tinta);
   font-family: var(--fuente-cuerpo);
+  font-size: var(--texto-base);
+  line-height: var(--interlineado);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--fuente-titulo);
+  line-height: var(--interlineado-titulo);
+  margin: 0;
+}
+
+h1 {
+  font-size: var(--texto-titulo);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+h2 {
+  font-size: var(--texto-lg);
+  font-weight: 700;
+}
+
+h3 {
+  font-size: var(--texto-md);
+  font-weight: 700;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+a {
+  color: var(--color-accion);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accion);
+  outline-offset: 2px;
+}
+
+/* Bloquea el desplazamiento de la página mientras hay un diálogo o el
+   menú lateral abierto encima. */
+body.sin-desplazamiento {
+  overflow: hidden;
+}
+
+/* Solo para lectores de pantalla */
+.solo-lector {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {

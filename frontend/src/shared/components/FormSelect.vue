@@ -43,13 +43,14 @@ defineEmits<{ "update:modelValue": [string] }>();
 .form-select__etiqueta {
   font-family: var(--fuente-cuerpo);
   font-weight: 600;
-  font-size: var(--texto-base);
+  font-size: var(--texto-sm);
 }
 
 .form-select__input {
+  width: 100%;
   min-height: var(--area-tactil-minima);
   padding: 0 0.75rem;
-  border: 1px solid var(--color-linea);
+  border: 1px solid var(--color-borde-campo);
   border-radius: var(--radio-md);
   font-family: var(--fuente-cuerpo);
   font-size: var(--texto-base);
@@ -60,11 +61,16 @@ defineEmits<{ "update:modelValue": [string] }>();
 .form-select__input:focus-visible {
   outline: 2px solid var(--color-accion);
   outline-offset: 1px;
+  border-color: var(--color-accion);
+}
+
+.form-select__input[aria-invalid="true"] {
+  border-color: var(--color-peligro);
 }
 
 .form-select__error {
   margin: 0;
   font-size: var(--texto-sm);
-  color: var(--color-etiqueta-alerta-texto);
+  color: var(--color-peligro);
 }
 </style>
