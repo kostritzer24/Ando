@@ -1,5 +1,4 @@
-import { http } from "@/app/http";
-import { crearRecursoCrud } from "@/shared/api/resource";
+import { crearRecursoCrud, obtenerTodas } from "@/shared/api/resource";
 import type {
   ActivityType,
   ConductRuleArticle,
@@ -7,7 +6,6 @@ import type {
   DocumentType,
   GradingUnit,
   JustificationType,
-  Paginada,
   Scholarship,
   SchoolCycle,
   Section,
@@ -34,8 +32,8 @@ export const unidadesApi = (cicloId: string) =>
 // administración completa de usuarios (RF-01) todavía no tiene pantalla
 // propia, queda pendiente de agregar al backlog de frontend.
 export async function listarDocentesConSeccion(): Promise<Usuario[]> {
-  // La paginación por omisión (25) alcanza sin pedir más: el centro tiene
-  // 8 docentes en total (sección 1 del prompt maestro).
-  const { data } = await http.get<Paginada<Usuario>>("/users/");
+  // `/users/` incluye también las cuentas de las familias — con solo la
+  // primera página (25) un docente podía quedar fuera del selector.
+  const data = await obtenerTodas<Usuario>("/users/");
   return data.results.filter((usuario) => usuario.role_name === "Docente con sección a cargo");
 }

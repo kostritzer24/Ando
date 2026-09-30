@@ -1,10 +1,9 @@
 import { http } from "@/app/http";
-import { crearRecursoCrud } from "@/shared/api/resource";
+import { crearRecursoCrud, obtenerTodas } from "@/shared/api/resource";
 import type {
   Enrollment,
   Guardian,
   GuardianStudentLinkRead,
-  Paginada,
   Role,
   Student,
   StudentSensitive,
@@ -73,6 +72,6 @@ export async function crearUsuarioFamilia(payload: {
 }
 
 async function obtenerRolPorNombre(nombre: string): Promise<Role | undefined> {
-  const { data } = await http.get<Paginada<Role>>("/roles/");
+  const data = await obtenerTodas<Role>("/roles/");
   return data.results.find((rol) => rol.name === nombre);
 }

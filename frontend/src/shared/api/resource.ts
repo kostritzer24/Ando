@@ -30,11 +30,35 @@ export function comoRecursoGenerico<T extends { public_id: string }>(
   return recurso as unknown as RecursoGenerico;
 }
 
+type ParametrosLista = Record<string, string | number | boolean | undefined>;
+
+/** Tamaño de página que se le pide al backend (`PaginacionEstandar`
+ * acepta hasta 200) para traer una lista completa en una sola llamada. */
+const TAMANO_PAGINA_COMPLETA = 200;
+
+/** Trae todas las páginas de un endpoint paginado. Ninguna pantalla del
+ * sistema pagina contra el servidor — las tablas buscan y paginan en el
+ * cliente —, así que leer solo `results` de la primera página cortaba en
+ * silencio cualquier lista de más de 25 registros (p. ej. los 144
+ * estudiantes). Sigue `next` por si algún día hay más de 200. */
+export async function obtenerTodas<T>(ruta: string, params?: ParametrosLista): Promise<Paginada<T>> {
+  const { data } = await http.get<Paginada<T>>(ruta, {
+    params: { page_size: TAMANO_PAGINA_COMPLETA, ...params },
+  });
+  const resultados = [...data.results];
+  let siguiente = data.next;
+  while (siguiente) {
+    const { data: pagina } = await http.get<Paginada<T>>(siguiente);
+    resultados.push(...pagina.results);
+    siguiente = pagina.next;
+  }
+  return { count: data.count, next: null, previous: null, results: resultados };
+}
+
 export function crearRecursoCrud<T extends { public_id: string }>(rutaBase: string) {
   return {
-    async listar(params?: Record<string, string | number | boolean | undefined>): Promise<Paginada<T>> {
-      const { data } = await http.get<Paginada<T>>(rutaBase, { params });
-      return data;
+    async listar(params?: ParametrosLista): Promise<Paginada<T>> {
+      return obtenerTodas<T>(rutaBase, params);
     },
     async obtener(publicId: string): Promise<T> {
       const { data } = await http.get<T>(`${rutaBase}${publicId}/`);
