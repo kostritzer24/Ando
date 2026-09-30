@@ -14,7 +14,9 @@ defineEmits<{ "cambiar-estudiante": [] }>();
         <slot name="marca" />
         <span>El Patojismo</span>
       </div>
-      <slot name="acciones" />
+      <div class="top-app-bar__acciones">
+        <slot name="acciones" />
+      </div>
     </div>
     <div class="top-app-bar__estudiante">
       <div class="top-app-bar__nombre">
@@ -43,6 +45,12 @@ defineEmits<{ "cambiar-estudiante": [] }>();
   gap: var(--espacio-md);
   min-height: var(--area-tactil-minima);
   margin-bottom: var(--espacio-sm);
+}
+
+.top-app-bar__acciones {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-2xs);
 }
 
 .top-app-bar__marca {

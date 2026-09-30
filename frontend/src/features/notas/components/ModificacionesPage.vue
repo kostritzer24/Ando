@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 
-import { useAuthStore } from "@/features/auth/stores/authStore";
 import { enrollmentsApi, studentsApi } from "@/features/estudiantes/api/estudiantesApi";
 import { CargandoBloque, DataTable, EmptyState, ErrorBanner, PageHeader } from "@/shared/components";
+import { usePermisos } from "@/shared/permisos";
 import type { Activity, Enrollment, Grade, GradeChangeRequest, Student } from "@/shared/types/models";
 
 import { activitiesApi, gradeChangeRequestsApi, gradesApi, resolverModificacion } from "../api/notasApi";
 
-const auth = useAuthStore();
-const puedeResolver = computed(() => auth.usuario?.role_name === "Dirección");
+const permisos = usePermisos();
+const puedeResolver = computed(() => permisos.puedeEditar("modificacion_notas"));
 
 const cargando = ref(true);
 const error = ref("");

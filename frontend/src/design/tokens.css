@@ -180,6 +180,26 @@ a {
   outline-offset: 2px;
 }
 
+/* Ritmo vertical de toda pantalla: cada bloque directo de la página
+   (cabecera, filtros, tabla, formulario, subtítulo) queda separado igual,
+   sin que cada página lo tenga que resolver — antes varias dejaban un botón
+   pegado a la tabla de abajo. Los dos `:not()` le dan especificidad
+   (0,2,1) a propósito: le gana al `margin: 0` con que las páginas limpian
+   el margen del navegador en sus párrafos, así que el ritmo es el mismo en
+   todas. Los diálogos se excluyen: son capas fijas y un margen los
+   correría. */
+:where(#contenido, .portal-layout__contenido) > section > :not(.app-modal__fondo) + :not(.app-modal__fondo) {
+  margin-top: var(--espacio-xl);
+}
+
+:where(#contenido, .portal-layout__contenido) > section > :where(h2, section):not(:first-child) {
+  margin-top: var(--espacio-3xl);
+}
+
+:where(#contenido, .portal-layout__contenido) > section > h2 + * {
+  margin-top: var(--espacio-md);
+}
+
 /* Bloquea el desplazamiento de la página mientras hay un diálogo o el
    menú lateral abierto encima. */
 body.sin-desplazamiento {

@@ -36,3 +36,16 @@ describe("FormField", () => {
     expect(wrapper.find("input").attributes("aria-invalid")).toBe("true");
   });
 });
+
+describe("FormField multilínea", () => {
+  it("dibuja un textarea con su etiqueta y emite lo que se escribe", async () => {
+    const wrapper = mount(FormField, {
+      props: { id: "hechos", etiqueta: "Hechos ocurridos", modelValue: "", multilinea: true },
+    });
+    const area = wrapper.find("textarea#hechos");
+    expect(area.exists()).toBe(true);
+    expect(wrapper.find('label[for="hechos"]').text()).toBe("Hechos ocurridos");
+    await area.setValue("Llegó tarde");
+    expect(wrapper.emitted("update:modelValue")?.[0]).toEqual(["Llegó tarde"]);
+  });
+});

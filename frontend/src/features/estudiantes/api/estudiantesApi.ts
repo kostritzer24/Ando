@@ -52,10 +52,10 @@ export async function desvincularEstudiante(
 }
 
 // Un encargado necesita una cuenta de usuario antes de poder crearse
-// (Guardian.user es obligatorio) — RF-01 todavía no tiene pantalla de
-// administración general de usuarios, así que esta pantalla arma las dos
-// cosas en un solo paso: primero el usuario con rol "Padre de familia",
-// después el perfil de encargado sobre ese usuario.
+// (Guardian.user es obligatorio): esta pantalla arma las dos cosas en un
+// solo paso, primero el usuario con rol "Padre de familia" y después el
+// perfil de encargado. Por eso la pantalla de Usuarios no ofrece ese rol
+// al crear una cuenta: saldría suelta, sin encargado ni estudiante.
 export async function crearUsuarioFamilia(payload: {
   username: string;
   contrasena_temporal: string;

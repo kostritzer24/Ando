@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from "vue";
 
-import { useAuthStore } from "@/features/auth/stores/authStore";
 import { AppButton, AppModal, CargandoBloque, DataTable, EmptyState, ErrorBanner, FormField, FormSelect, PageHeader } from "@/shared/components";
+import { usePermisos } from "@/shared/permisos";
 import { avisar } from "@/shared/composables/useAvisos";
 import { confirmar } from "@/shared/composables/useConfirmar";
 import type { components } from "@/shared/types/api";
@@ -12,8 +12,8 @@ import { ciclosApi, listarDocentesConSeccion, seccionesApi } from "../api/catalo
 
 type Usuario = components["schemas"]["User"];
 
-const auth = useAuthStore();
-const puedeEditar = computed(() => auth.usuario?.role_name !== "Coordinación");
+const permisos = usePermisos();
+const puedeEditar = computed(() => permisos.puedeEditar("datos_maestros"));
 
 const secciones = ref<Section[]>([]);
 const ciclos = ref<SchoolCycle[]>([]);

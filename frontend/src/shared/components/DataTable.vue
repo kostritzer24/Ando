@@ -9,6 +9,9 @@ export interface ColumnaTabla<T = Record<string, unknown>> {
    * muestra algo distinto del valor crudo (un nombre en vez de un id). */
   texto?: (fila: T) => string;
   ordenable?: boolean;
+  /** En el teléfono ocupa todo el ancho del bloque en vez de media
+   * columna — para textos largos como el detalle de la bitácora. */
+  completa?: boolean;
 }
 
 const props = withDefaults(
@@ -154,7 +157,12 @@ function claveDe(fila: F, indice: number): string | number {
       </thead>
       <tbody>
         <tr v-for="(fila, indice) in filasVisibles" :key="claveDe(fila, indice)">
-          <td v-for="columna in columnas" :key="columna.clave" :data-etiqueta="columna.etiqueta">
+          <td
+            v-for="columna in columnas"
+            :key="columna.clave"
+            :data-etiqueta="columna.etiqueta"
+            :class="{ 'data-table__celda--completa': columna.completa }"
+          >
             <slot :name="`celda-${columna.clave}`" :fila="fila">
               {{ campo(fila, columna.clave) }}
             </slot>
@@ -284,6 +292,10 @@ function claveDe(fila: F, indice: number): string | number {
   display: block;
   font-size: var(--texto-xs);
   color: var(--color-tinta-suave);
+}
+
+.data-table__tabla td.data-table__celda--completa {
+  grid-column: 1 / -1;
 }
 
 /* Una etiqueta sin valor debajo ("Letra" en una sección sin letra) solo
@@ -420,6 +432,10 @@ function claveDe(fila: F, indice: number): string | number {
   .data-table__tabla td:first-child,
   .data-table__tabla td:empty {
     display: table-cell;
+    /* En tabla, "anywhere" deja que una columna se encoja partiendo
+       palabras a la mitad ("admin.de mo"); acá solo se parte si una
+       palabra sola no cabe. */
+    overflow-wrap: break-word;
     padding: var(--espacio-md) var(--espacio-lg);
     border-bottom: 1px solid var(--color-linea);
     vertical-align: middle;

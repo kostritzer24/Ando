@@ -3,15 +3,15 @@ import { computed, onMounted, reactive, ref } from "vue";
 import { useRouter } from "vue-router";
 
 import { becasApi, seccionesApi } from "@/features/catalogo/api/catalogoApi";
-import { useAuthStore } from "@/features/auth/stores/authStore";
 import { AppButton, AppModal, CargandoBloque, DataTable, EmptyState, ErrorBanner, FormField, FormSelect, PageHeader } from "@/shared/components";
+import { usePermisos } from "@/shared/permisos";
 import type { ColumnaTabla } from "@/shared/components/DataTable.vue";
 import type { Scholarship, Section, Student } from "@/shared/types/models";
 
 import { enrollmentsApi, studentsApi } from "../api/estudiantesApi";
 
-const auth = useAuthStore();
-const puedeInscribir = computed(() => auth.usuario?.role_name === "Dirección");
+const permisos = usePermisos();
+const puedeInscribir = computed(() => permisos.puedeEditar("estudiantes_encargados"));
 
 const router = useRouter();
 

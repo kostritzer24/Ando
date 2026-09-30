@@ -7,8 +7,10 @@ withDefaults(
     tipo?: string;
     pista?: string;
     mensajeError?: string;
+    /** Área de texto de varias líneas, para relatos (hechos, compromisos). */
+    multilinea?: boolean;
   }>(),
-  { tipo: "text" },
+  { tipo: "text", multilinea: false },
 );
 
 defineEmits<{ "update:modelValue": [string] }>();
@@ -22,7 +24,19 @@ defineOptions({ inheritAttrs: false });
   <div class="form-field">
     <label :for="id" class="form-field__etiqueta">{{ etiqueta }}</label>
     <p v-if="pista" :id="`${id}-pista`" class="form-field__pista">{{ pista }}</p>
+    <textarea
+      v-if="multilinea"
+      :id="id"
+      class="form-field__input form-field__input--multilinea"
+      :value="modelValue"
+      rows="4"
+      :aria-describedby="pista ? `${id}-pista` : undefined"
+      :aria-invalid="Boolean(mensajeError)"
+      v-bind="$attrs"
+      @input="$emit('update:modelValue', ($event.target as HTMLTextAreaElement).value)"
+    />
     <input
+      v-else
       :id="id"
       class="form-field__input"
       :type="tipo"
@@ -65,6 +79,13 @@ defineOptions({ inheritAttrs: false });
   font-size: var(--texto-base);
   background: var(--color-papel);
   color: var(--color-tinta);
+}
+
+.form-field__input--multilinea {
+  min-height: 6rem;
+  padding: var(--espacio-sm) 0.75rem;
+  line-height: var(--interlineado);
+  resize: vertical;
 }
 
 .form-field__input:focus-visible {

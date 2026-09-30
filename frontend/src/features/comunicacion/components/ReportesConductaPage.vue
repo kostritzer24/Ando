@@ -8,6 +8,7 @@ import type { ConductReport, ConductRuleArticle, Enrollment, Student } from "@/s
 
 import { conductReportsApi, crearReporteConducta, descargarReporteConducta } from "../api/comunicacionApi";
 import { descargarArchivo } from "@/features/pagos/api/pagosApi";
+import { usePermisos } from "@/shared/permisos";
 
 const GRAVEDADES = [
   { valor: "leve", etiqueta: "Leve" },
@@ -24,6 +25,11 @@ const SANCIONES = [
   { valor: "evaluacion_expulsion", etiqueta: "Evaluación para expulsión" },
   { valor: "otra", etiqueta: "Otra" },
 ];
+
+// Registran el maestro guía (de su sección) y Dirección; el resto de los
+// roles que llegan acá solo consulta (docs/permisos-roles.md).
+const permisos = usePermisos();
+const puedeRegistrar = computed(() => permisos.puedeEditar("reportes_conducta"));
 
 const cargando = ref(true);
 const error = ref("");
@@ -141,16 +147,25 @@ onMounted(cargar);
 
 <template>
   <section class="reportes-conducta-page">
-    <PageHeader titulo="Reportes de conducta" />
+    <PageHeader
+      titulo="Reportes de conducta"
+      descripcion="Faltas al código de convivencia, con sus medidas y compromisos."
+    >
+      <template #acciones>
+        <AppButton
+          v-if="puedeRegistrar"
+          :deshabilitado="cargando || opcionesInscripcion.length === 0"
+          @click="abrirNuevo"
+        >
+          Registrar reporte
+        </AppButton>
+      </template>
+    </PageHeader>
 
     <ErrorBanner v-if="error" :mensaje="error" etiqueta-accion="Reintentar" @accion="cargar" />
     <CargandoBloque v-else-if="cargando" />
 
     <template v-else>
-      <AppButton :deshabilitado="opcionesInscripcion.length === 0" @click="abrirNuevo">
-        Registrar reporte
-      </AppButton>
-
       <EmptyState
         v-if="reportes.length === 0"
         titulo="No hay reportes"
@@ -158,7 +173,6 @@ onMounted(cargar);
       />
       <DataTable
         v-else
-        class="reportes-conducta-page__tabla"
         :columnas="[
           { clave: 'estudiante', etiqueta: 'Estudiante' },
           { clave: 'report_date', etiqueta: 'Fecha' },
@@ -175,19 +189,19 @@ onMounted(cargar);
         "
       >
         <template #acciones="{ fila }">
-          <button
-            type="button"
-            class="reportes-conducta-page__accion"
-            :disabled="descargandoId === (fila as unknown as ConductReport).public_id"
+          <AppButton
+            variante="discreto"
+            compacto
+            :deshabilitado="descargandoId === (fila as unknown as ConductReport).public_id"
             @click="descargar(fila as unknown as ConductReport)"
           >
             Descargar PDF
-          </button>
+          </AppButton>
         </template>
       </DataTable>
     </template>
 
-    <AppModal v-if="modalAbierto" titulo="Registrar reporte de conducta" @cerrar="modalAbierto = false">
+    <AppModal v-if="modalAbierto" titulo="Registrar reporte de conducta" amplio @cerrar="modalAbierto = false">
       <form class="reportes-conducta-page__formulario" @submit.prevent="guardar">
         <ErrorBanner v-if="errorGuardado" :mensaje="errorGuardado" />
         <FormSelect
@@ -196,8 +210,10 @@ onMounted(cargar);
           :opciones="opcionesInscripcion"
           v-model="formulario.enrollment"
         />
-        <FormField id="report_date" etiqueta="Fecha" tipo="date" v-model="formulario.report_date" />
-        <FormSelect id="severity" etiqueta="Tipo de falta" :opciones="GRAVEDADES" v-model="formulario.severity" />
+        <div class="reportes-conducta-page__dos-columnas">
+          <FormField id="report_date" etiqueta="Fecha" tipo="date" v-model="formulario.report_date" />
+          <FormSelect id="severity" etiqueta="Tipo de falta" :opciones="GRAVEDADES" v-model="formulario.severity" />
+        </div>
 
         <fieldset class="reportes-conducta-page__articulos">
           <legend>Artículos del código de convivencia incumplidos</legend>
@@ -212,14 +228,14 @@ onMounted(cargar);
           v-model="formulario.other_violation_detail"
         />
 
-        <FormField id="incident_description" etiqueta="Hechos ocurridos" v-model="formulario.incident_description" />
-        <FormField id="immediate_actions" etiqueta="Medidas inmediatas tomadas" v-model="formulario.immediate_actions" />
+        <FormField multilinea id="incident_description" etiqueta="Hechos ocurridos" v-model="formulario.incident_description" />
+        <FormField multilinea id="immediate_actions" etiqueta="Medidas inmediatas tomadas" v-model="formulario.immediate_actions" />
         <FormSelect id="sanction_type" etiqueta="Sanción" :opciones="SANCIONES" v-model="formulario.sanction_type" />
         <FormField id="sanction_detail" etiqueta="Detalle de la sanción (opcional)" v-model="formulario.sanction_detail" />
-        <FormField id="commitments" etiqueta="Compromisos establecidos" v-model="formulario.commitments" />
+        <FormField multilinea id="commitments" etiqueta="Compromisos establecidos" v-model="formulario.commitments" />
 
-        <AppButton tipo="submit" :deshabilitado="guardando">
-          {{ guardando ? "Guardando…" : "Guardar" }}
+        <AppButton tipo="submit" bloque :deshabilitado="guardando">
+          {{ guardando ? "Guardando…" : "Guardar reporte" }}
         </AppButton>
       </form>
     </AppModal>
@@ -227,47 +243,58 @@ onMounted(cargar);
 </template>
 
 <style scoped>
-
-.reportes-conducta-page__tabla {
-  margin-top: var(--espacio-lg);
-}
-
-.reportes-conducta-page__accion {
-  background: none;
-  border: none;
-  color: var(--color-accion);
-  font-size: var(--texto-sm);
-  font-weight: 600;
-  cursor: pointer;
-  padding: 0.3rem 0.5rem;
-}
-
 .reportes-conducta-page__formulario {
   display: flex;
   flex-direction: column;
   gap: var(--espacio-lg);
 }
 
+.reportes-conducta-page__dos-columnas {
+  display: grid;
+  gap: var(--espacio-lg);
+}
+
+/* Sin alto máximo: dentro del diálogo, un segundo desplazamiento anidado
+   en el teléfono hacía que la lista de artículos se trabara con el dedo. */
 .reportes-conducta-page__articulos {
-  border: 1px solid var(--color-linea);
+  margin: 0;
+  padding: var(--espacio-sm) var(--espacio-md) var(--espacio-md);
+  border: 1px solid var(--color-borde-campo);
   border-radius: var(--radio-md);
-  padding: var(--espacio-md);
-  display: flex;
-  flex-direction: column;
-  gap: var(--espacio-xs);
-  max-height: 12rem;
-  overflow-y: auto;
 }
 
 .reportes-conducta-page__articulos legend {
+  padding: 0 var(--espacio-xs);
+  font-size: var(--texto-sm);
   font-weight: 600;
-  padding: 0 0.3rem;
 }
 
 .reportes-conducta-page__articulos label {
   display: flex;
-  align-items: baseline;
-  gap: var(--espacio-xs);
+  align-items: flex-start;
+  gap: var(--espacio-sm);
+  min-height: var(--area-tactil-minima);
+  padding: var(--espacio-sm) 0;
   font-size: var(--texto-sm);
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.reportes-conducta-page__articulos label + label {
+  border-top: 1px solid var(--color-linea);
+}
+
+.reportes-conducta-page__articulos input {
+  flex: none;
+  width: 1.15rem;
+  height: 1.15rem;
+  margin: 0.1rem 0 0;
+  accent-color: var(--color-accion);
+}
+
+@media (min-width: 40rem) {
+  .reportes-conducta-page__dos-columnas {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 </style>

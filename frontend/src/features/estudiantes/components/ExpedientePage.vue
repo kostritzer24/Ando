@@ -2,8 +2,8 @@
 import { computed, onMounted, reactive, ref } from "vue";
 import { useRoute } from "vue-router";
 
-import { useAuthStore } from "@/features/auth/stores/authStore";
 import { AppButton, CargandoBloque, ErrorBanner, FormField, PageHeader } from "@/shared/components";
+import { usePermisos } from "@/shared/permisos";
 import type { Student, StudentSensitive } from "@/shared/types/models";
 
 import { actualizarDatosSensibles, obtenerDatosSensibles, studentsApi } from "../api/estudiantesApi";
@@ -11,19 +11,17 @@ import { actualizarDatosSensibles, obtenerDatosSensibles, studentsApi } from "..
 const route = useRoute();
 const publicId = route.params.publicId as string;
 
-const auth = useAuthStore();
 // docs/permisos-roles.md: "Estudiantes y encargados (datos generales)"
 // es E solo para Dirección — el resto de roles que llegan a esta
 // pantalla (Coordinación, Administrador, ...) la ven de solo lectura.
-const puedeEditarGeneral = computed(() => auth.usuario?.role_name === "Dirección");
+const permisos = usePermisos();
+const puedeEditarGeneral = computed(() => permisos.puedeEditar("estudiantes_encargados"));
 // "Datos sensibles" es más angosto todavía (RNF-04): Dirección edita,
 // Administrador solo consulta (y esa consulta queda en AccessLog), el
 // resto de roles ni siquiera debería pedirle esto al backend.
 const alcanceDatosSensibles = computed<"editar" | "ver" | "ninguno">(() => {
-  const rol = auth.usuario?.role_name;
-  if (rol === "Dirección") return "editar";
-  if (rol === "Administrador del sistema") return "ver";
-  return "ninguno";
+  const nivel = permisos.nivel("datos_sensibles");
+  return nivel === "sin_acceso" ? "ninguno" : nivel;
 });
 
 const estudiante = ref<Student | null>(null);

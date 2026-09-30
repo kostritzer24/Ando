@@ -1,14 +1,22 @@
 <script setup lang="ts">
-import { LogOut, Menu, X } from "lucide-vue-next";
+import { LogOut, Menu, UserRound, X } from "lucide-vue-next";
 import { computed, nextTick, onBeforeUnmount, ref, watch, type Component } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import { useAuthStore } from "@/features/auth/stores/authStore";
+import { type Area, type Nivel, usePermisos } from "@/shared/permisos";
 
 export interface ItemNavegacion {
   a: string;
   etiqueta: string;
   icono: Component;
+  /** Área de docs/permisos-roles.md que la pantalla consulta: la opción
+   * solo aparece si el rol tiene al menos `nivel` ("ver" por omisión). */
+  area?: Area;
+  nivel?: Nivel;
+  /** Condición extra que no es de permisos sino de negocio (la plantilla
+   * de talleres es solo para Tallerista). */
+  visible?: boolean;
   /** Solo se marca activo en esa ruta exacta (el "Inicio" del portal,
    * que es prefijo de todas las demás). */
   exacto?: boolean;
@@ -20,12 +28,29 @@ export interface GrupoNavegacion {
   items: ItemNavegacion[];
 }
 
-defineProps<{
+const props = defineProps<{
   portal: string;
   navegacion: GrupoNavegacion[];
+  /** Pantalla "Mi cuenta" del portal (datos propios y cambio de contraseña). */
+  rutaCuenta: string;
 }>();
 
 const auth = useAuthStore();
+const { nivel } = usePermisos();
+
+function alcanza(item: ItemNavegacion): boolean {
+  if (item.visible === false) return false;
+  if (!item.area) return true;
+  const tiene = nivel(item.area);
+  return item.nivel === "editar" ? tiene === "editar" : tiene !== "sin_acceso";
+}
+
+// Los grupos que se quedan sin opciones para este rol no se muestran.
+const gruposVisibles = computed(() =>
+  props.navegacion
+    .map((grupo) => ({ ...grupo, items: grupo.items.filter(alcanza) }))
+    .filter((grupo) => grupo.items.length > 0),
+);
 const route = useRoute();
 const router = useRouter();
 
@@ -109,11 +134,14 @@ async function salir(): Promise<void> {
       </RouterLink>
 
       <div class="admin-shell__usuario">
-        <span class="admin-shell__avatar" aria-hidden="true">{{ iniciales }}</span>
-        <span class="admin-shell__usuario-textos">
-          <span class="admin-shell__usuario-nombre">{{ nombreUsuario }}</span>
-          <span class="admin-shell__usuario-rol">{{ auth.usuario?.role_name }}</span>
-        </span>
+        <RouterLink :to="rutaCuenta" class="admin-shell__cuenta" title="Mi cuenta">
+          <span class="admin-shell__avatar" aria-hidden="true">{{ iniciales }}</span>
+          <span class="admin-shell__usuario-textos">
+            <span class="admin-shell__usuario-nombre">{{ nombreUsuario }}</span>
+            <span class="admin-shell__usuario-rol">{{ auth.usuario?.role_name }}</span>
+          </span>
+          <span class="solo-lector">Mi cuenta</span>
+        </RouterLink>
         <button type="button" class="admin-shell__salir" @click="salir">
           <LogOut aria-hidden="true" />
           Cerrar sesión
@@ -144,7 +172,7 @@ async function salir(): Promise<void> {
       </div>
 
       <nav class="admin-shell__nav" aria-label="Navegación principal">
-        <div v-for="(grupo, indice) in navegacion" :key="grupo.titulo ?? indice" class="admin-shell__grupo">
+        <div v-for="(grupo, indice) in gruposVisibles" :key="grupo.titulo ?? indice" class="admin-shell__grupo">
           <p v-if="grupo.titulo" class="admin-shell__grupo-titulo">{{ grupo.titulo }}</p>
           <RouterLink
             v-for="item in grupo.items"
@@ -168,10 +196,16 @@ async function salir(): Promise<void> {
             <span class="admin-shell__usuario-rol">{{ auth.usuario?.role_name }}</span>
           </span>
         </div>
-        <button type="button" class="admin-shell__salir admin-shell__salir--pie" @click="salir">
-          <LogOut aria-hidden="true" />
-          Cerrar sesión
-        </button>
+        <div class="admin-shell__acciones-pie">
+          <RouterLink :to="rutaCuenta" class="admin-shell__salir admin-shell__salir--pie">
+            <UserRound aria-hidden="true" />
+            Mi cuenta
+          </RouterLink>
+          <button type="button" class="admin-shell__salir admin-shell__salir--pie" @click="salir">
+            <LogOut aria-hidden="true" />
+            Cerrar sesión
+          </button>
+        </div>
       </div>
     </aside>
 
@@ -279,6 +313,22 @@ async function salir(): Promise<void> {
   align-items: center;
   gap: var(--espacio-md);
   padding-right: var(--espacio-xs);
+}
+
+.admin-shell__cuenta {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-md);
+  min-width: 0;
+  min-height: var(--area-tactil-minima);
+  padding: 0 var(--espacio-xs);
+  border-radius: var(--radio-md);
+  color: inherit;
+  text-decoration: none;
+}
+
+.admin-shell__cuenta:hover {
+  background: var(--color-hover);
 }
 
 .admin-shell__avatar {
@@ -461,10 +511,18 @@ async function salir(): Promise<void> {
   display: flex;
 }
 
+/* Uno debajo del otro: lado a lado, en un panel de 85vw, los dos textos
+   se partían en dos líneas. */
+.admin-shell__acciones-pie {
+  display: grid;
+  gap: var(--espacio-sm);
+}
+
 .admin-shell__salir--pie {
   display: flex;
   justify-content: center;
   min-height: var(--area-tactil-minima);
+  text-decoration: none;
 }
 
 /* ---- Contenido ---- */

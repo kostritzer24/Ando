@@ -114,21 +114,21 @@ onMounted(async () => {
           v-if="reporte.filtros.includes('cycle')"
           id="cycle"
           etiqueta="Ciclo (opcional)"
-          :opciones="opcionesCiclo"
+          :opciones="[{ valor: '', etiqueta: 'Todos los ciclos' }, ...opcionesCiclo]"
           v-model="filtros.cycle"
         />
         <FormSelect
           v-if="reporte.filtros.includes('section')"
           id="section"
           etiqueta="Sección (opcional)"
-          :opciones="opcionesSeccion"
+          :opciones="[{ valor: '', etiqueta: 'Todas las secciones' }, ...opcionesSeccion]"
           v-model="filtros.section"
         />
         <FormSelect
           v-if="reporte.filtros.includes('unit')"
           id="unit"
           etiqueta="Unidad (opcional)"
-          :opciones="opcionesUnidad"
+          :opciones="[{ valor: '', etiqueta: 'Todas las unidades' }, ...opcionesUnidad]"
           v-model="filtros.unit"
         />
       </div>
@@ -156,10 +156,11 @@ onMounted(async () => {
 <style scoped>
 
 .reportes-page__filtros {
-  display: flex;
-  gap: var(--espacio-xl);
-  flex-wrap: wrap;
-  margin-bottom: var(--espacio-lg);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+  gap: var(--espacio-md) var(--espacio-lg);
+  align-items: end;
+  max-width: 52rem;
 }
 
 .reportes-page__acciones {

@@ -5,7 +5,9 @@ import {
   GraduationCap,
   Inbox,
   Megaphone,
+  ChartColumn,
   UserCheck,
+  UserCog,
   Users,
   Wallet,
 } from "lucide-vue-next";
@@ -15,6 +17,8 @@ import { useAuthStore } from "@/features/auth/stores/authStore";
 import { messagesApi } from "@/features/comunicacion/api/comunicacionApi";
 import { gradeChangeRequestsApi } from "@/features/notas/api/notasApi";
 import { CargandoBloque, ErrorBanner, PageHeader } from "@/shared/components";
+import { type Area, usePermisos } from "@/shared/permisos";
+import type { GradeChangeRequest, Message } from "@/shared/types/models";
 
 interface Acceso {
   a: string;
@@ -24,28 +28,37 @@ interface Acceso {
 }
 
 const auth = useAuthStore();
-const rol = computed(() => auth.usuario?.role_name ?? "");
-const esDireccion = computed(() => rol.value === "Dirección");
+const permisos = usePermisos();
 
 const saludo = computed(() => `Hola, ${auth.usuario?.first_name || auth.usuario?.username || ""}`.trim());
 const hoy = new Intl.DateTimeFormat("es-GT", { weekday: "long", day: "numeric", month: "long" }).format(new Date());
 const fechaHoy = hoy.charAt(0).toUpperCase() + hoy.slice(1);
 
-// Pendientes: solo lo que espera una decisión de Dirección. Los demás
-// roles administrativos no resuelven nada de esto (docs/permisos-roles.md).
+// Pendientes: solo lo que espera una decisión de quien entra. Se piden
+// solo si el rol puede resolverlos (autorizar cambios de nota, responder
+// el buzón), según la matriz de su rol.
+const resuelveModificaciones = computed(() => permisos.puedeEditar("modificacion_notas"));
+const respondeBuzon = computed(() => permisos.puedeEditar("buzon"));
+const muestraPendientes = computed(() => resuelveModificaciones.value || respondeBuzon.value);
+
 const cargando = ref(false);
 const error = ref("");
 const modificacionesPendientes = ref(0);
 const mensajesSinResponder = ref(0);
 
 async function cargarPendientes(): Promise<void> {
-  if (!esDireccion.value) return;
+  if (!muestraPendientes.value) return;
   cargando.value = true;
   error.value = "";
   try {
-    const [solicitudes, mensajes] = await Promise.all([gradeChangeRequestsApi.listar(), messagesApi.listar()]);
-    modificacionesPendientes.value = solicitudes.results.filter((s) => s.status === "pendiente").length;
-    mensajesSinResponder.value = mensajes.results.filter((m) => m.status !== "respondido").length;
+    const [solicitudes, mensajes] = await Promise.all([
+      resuelveModificaciones.value ? gradeChangeRequestsApi.listar() : Promise.resolve({ results: [] }),
+      respondeBuzon.value ? messagesApi.listar() : Promise.resolve({ results: [] }),
+    ]);
+    modificacionesPendientes.value = (solicitudes.results as GradeChangeRequest[]).filter(
+      (s) => s.status === "pendiente",
+    ).length;
+    mensajesSinResponder.value = (mensajes.results as Message[]).filter((m) => m.status !== "respondido").length;
   } catch {
     error.value = "No se pudieron cargar los pendientes.";
   } finally {
@@ -58,7 +71,8 @@ const pendientes = computed(() =>
     {
       a: "/administrativo/notas/modificaciones",
       cantidad: modificacionesPendientes.value,
-      texto: (n: number) => (n === 1 ? "solicitud de cambio de nota por resolver" : "solicitudes de cambio de nota por resolver"),
+      texto: (n: number) =>
+        n === 1 ? "solicitud de cambio de nota por resolver" : "solicitudes de cambio de nota por resolver",
       icono: FilePen,
     },
     {
@@ -70,27 +84,20 @@ const pendientes = computed(() =>
   ].filter((p) => p.cantidad > 0),
 );
 
-const accesos = computed<Acceso[]>(() => {
-  if (rol.value === "Encargado de pagos") {
-    return [
-      { a: "/administrativo/pagos", etiqueta: "Pagos y solvencia", detalle: "Registrar pagos y ver quién está al día", icono: Wallet },
-      { a: "/administrativo/documentos", etiqueta: "Documentos", detalle: "Emitir constancias", icono: FileBadge },
-      { a: "/administrativo/estudiantes", etiqueta: "Estudiantes", detalle: "Buscar un estudiante", icono: GraduationCap },
-    ];
-  }
-  const lista: Acceso[] = [
-    { a: "/administrativo/estudiantes", etiqueta: "Estudiantes", detalle: "Inscribir y ver expedientes", icono: GraduationCap },
-    { a: "/administrativo/encargados", etiqueta: "Encargados", detalle: "Familias y sus vínculos", icono: Users },
-    { a: "/administrativo/asignaciones", etiqueta: "Asignaciones", detalle: "Quién da cada curso", icono: UserCheck },
-  ];
-  if (esDireccion.value) {
-    lista.push(
-      { a: "/administrativo/avisos", etiqueta: "Avisos", detalle: "Publicar en la cartelera", icono: Megaphone },
-      { a: "/administrativo/pagos", etiqueta: "Pagos y solvencia", detalle: "Estado de pagos del ciclo", icono: Wallet },
-    );
-  }
-  return lista;
-});
+// Lo más usado, en orden de frecuencia, filtrado por lo que el rol
+// alcanza: Encargado de pagos ve Pagos primero, Administrador ve Usuarios.
+const CANDIDATOS: (Acceso & { area: Area })[] = [
+  { a: "/administrativo/estudiantes", etiqueta: "Estudiantes", detalle: "Expedientes e inscripciones", icono: GraduationCap, area: "estudiantes_encargados" },
+  { a: "/administrativo/pagos", etiqueta: "Pagos y solvencia", detalle: "Quién está al día con sus pagos", icono: Wallet, area: "pagos_solvencia" },
+  { a: "/administrativo/documentos", etiqueta: "Documentos", detalle: "Constancias y cartas emitidas", icono: FileBadge, area: "documentos" },
+  { a: "/administrativo/encargados", etiqueta: "Encargados", detalle: "Familias y sus vínculos", icono: Users, area: "estudiantes_encargados" },
+  { a: "/administrativo/usuarios", etiqueta: "Usuarios", detalle: "Cuentas, roles y contraseñas", icono: UserCog, area: "usuarios_roles" },
+  { a: "/administrativo/avisos", etiqueta: "Avisos", detalle: "La cartelera de docentes y familias", icono: Megaphone, area: "avisos" },
+  { a: "/administrativo/asignaciones", etiqueta: "Asignaciones", detalle: "Quién da cada curso", icono: UserCheck, area: "horarios_calendario" },
+  { a: "/administrativo/reportes", etiqueta: "Reportes", detalle: "Reportes institucionales en PDF", icono: ChartColumn, area: "reportes_institucionales" },
+];
+
+const accesos = computed(() => CANDIDATOS.filter((c) => permisos.puedeVer(c.area)).slice(0, 5));
 
 onMounted(cargarPendientes);
 </script>
@@ -99,7 +106,7 @@ onMounted(cargarPendientes);
   <section class="inicio">
     <PageHeader :titulo="saludo" :descripcion="fechaHoy" />
 
-    <section v-if="esDireccion" class="inicio__bloque" aria-labelledby="titulo-pendientes">
+    <section v-if="muestraPendientes" class="inicio__bloque" aria-labelledby="titulo-pendientes">
       <h2 id="titulo-pendientes" class="inicio__subtitulo">Pendientes</h2>
       <ErrorBanner v-if="error" :mensaje="error" etiqueta-accion="Reintentar" @accion="cargarPendientes" />
       <CargandoBloque v-else-if="cargando" :filas="2" />

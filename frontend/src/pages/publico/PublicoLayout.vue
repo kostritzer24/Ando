@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { BookOpen, ClipboardCheck, House, LogOut, Megaphone, Wallet } from "lucide-vue-next";
+import { BookOpen, ClipboardCheck, House, LogOut, Megaphone, UserRound, Wallet } from "lucide-vue-next";
 import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
@@ -57,6 +57,10 @@ onMounted(() => {
       >
         <template #marca><img src="/marca.png" alt="" width="24" height="24" /></template>
         <template #acciones>
+          <RouterLink to="/portal/cuenta" class="portal-layout__salir">
+            <UserRound aria-hidden="true" />
+            Mi cuenta
+          </RouterLink>
           <button type="button" class="portal-layout__salir" @click="salir">
             <LogOut aria-hidden="true" />
             Cerrar sesión
@@ -123,6 +127,7 @@ onMounted(() => {
 
 .portal-layout__salir {
   display: inline-flex;
+  text-decoration: none;
   align-items: center;
   gap: var(--espacio-xs);
   min-height: var(--area-tactil-minima);

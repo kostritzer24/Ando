@@ -1989,11 +1989,15 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description GET /roles/ — RNF-03. Solo Dirección y Administrador. */
+        /**
+         * @description GET /roles/ — RNF-03. Solo Dirección y Administrador. De solo
+         *     lectura: los permisos de cada rol son la matriz de
+         *     docs/permisos-roles.md, sembrada por `seed_fase3`; cambiarlos desde la
+         *     API (o borrar un rol con usuarios) la dejaría desalineada en silencio.
+         */
         get: operations["v1_roles_list"];
         put?: never;
-        /** @description GET /roles/ — RNF-03. Solo Dirección y Administrador. */
-        post: operations["v1_roles_create"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2007,17 +2011,19 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description GET /roles/ — RNF-03. Solo Dirección y Administrador. */
+        /**
+         * @description GET /roles/ — RNF-03. Solo Dirección y Administrador. De solo
+         *     lectura: los permisos de cada rol son la matriz de
+         *     docs/permisos-roles.md, sembrada por `seed_fase3`; cambiarlos desde la
+         *     API (o borrar un rol con usuarios) la dejaría desalineada en silencio.
+         */
         get: operations["v1_roles_retrieve"];
-        /** @description GET /roles/ — RNF-03. Solo Dirección y Administrador. */
-        put: operations["v1_roles_update"];
+        put?: never;
         post?: never;
-        /** @description GET /roles/ — RNF-03. Solo Dirección y Administrador. */
-        delete: operations["v1_roles_destroy"];
+        delete?: never;
         options?: never;
         head?: never;
-        /** @description GET /roles/ — RNF-03. Solo Dirección y Administrador. */
-        patch: operations["v1_roles_partial_update"];
+        patch?: never;
         trace?: never;
     };
     "/api/v1/schedule-blocks/": {
@@ -2340,17 +2346,9 @@ export interface paths {
          *     Administrador (docs/permisos-roles.md).
          */
         get: operations["v1_users_retrieve"];
-        /**
-         * @description RF-01: crear usuarios y asignarles un rol. Solo Dirección y
-         *     Administrador (docs/permisos-roles.md).
-         */
-        put: operations["v1_users_update"];
+        put?: never;
         post?: never;
-        /**
-         * @description RF-01: crear usuarios y asignarles un rol. Solo Dirección y
-         *     Administrador (docs/permisos-roles.md).
-         */
-        delete: operations["v1_users_destroy"];
+        delete?: never;
         options?: never;
         head?: never;
         /**
@@ -2497,7 +2495,7 @@ export interface components {
              */
             date: string;
             /** Estado */
-            status: components["schemas"]["StatusCf4Enum"];
+            status: components["schemas"]["Status75aEnum"];
             /** Origen */
             readonly source: components["schemas"]["SourceEnum"];
             readonly recorded_by: string;
@@ -2510,7 +2508,7 @@ export interface components {
             enrollment: string;
             /** Format: date */
             date: string;
-            status?: components["schemas"]["StatusCf4Enum"];
+            status?: components["schemas"]["Status75aEnum"];
             /** Format: time */
             check_in_time?: string;
         };
@@ -2776,7 +2774,7 @@ export interface components {
             reason: string;
             readonly requested_by: string;
             /** Estado */
-            readonly status: components["schemas"]["Status89aEnum"];
+            readonly status: components["schemas"]["Status39dEnum"];
             readonly authorized_by: string;
             /**
              * Fecha de decisión
@@ -2889,7 +2887,7 @@ export interface components {
             /** Motivo */
             reason_detail?: string;
             /** Format: uri */
-            supporting_document?: string;
+            supporting_document?: string | null;
             readonly has_supporting_document: boolean;
             /** Resolución */
             readonly resolution: components["schemas"]["ResolutionEnum"];
@@ -2914,6 +2912,41 @@ export interface components {
         Login: {
             username: string;
             password: string;
+        };
+        /**
+         * @description `/auth/me/`: la persona más los permisos de su rol por área
+         *     (RNF-03), para que el frontend arme el menú y los botones desde la
+         *     misma matriz que aplica el backend, en vez de repetir nombres de rol.
+         */
+        Me: {
+            /** Format: uuid */
+            readonly public_id: string;
+            /** Nombre de usuario */
+            readonly username: string;
+            /** Correo electrónico */
+            email?: string;
+            /** Nombres */
+            first_name?: string;
+            /** Apellidos */
+            last_name?: string;
+            /** Format: uuid */
+            role: string;
+            readonly role_name: string;
+            /** Activo */
+            is_active?: boolean;
+            /** Debe cambiar la contraseña */
+            readonly must_change_password: boolean;
+            /**
+             * Bloqueado hasta
+             * Format: date-time
+             */
+            readonly locked_until: string | null;
+            /**
+             * Último inicio de sesión
+             * Format: date-time
+             */
+            readonly last_login: string | null;
+            readonly permissions: unknown;
         };
         Message: {
             /** Format: uuid */
@@ -3464,7 +3497,7 @@ export interface components {
              */
             date?: string;
             /** Estado */
-            status?: components["schemas"]["StatusCf4Enum"];
+            status?: components["schemas"]["Status75aEnum"];
             /** Origen */
             readonly source?: components["schemas"]["SourceEnum"];
             readonly recorded_by?: string;
@@ -3654,7 +3687,7 @@ export interface components {
             /** Motivo */
             reason_detail?: string;
             /** Format: uri */
-            supporting_document?: string;
+            supporting_document?: string | null;
             readonly has_supporting_document?: boolean;
             /** Resolución */
             readonly resolution?: components["schemas"]["ResolutionEnum"];
@@ -3673,19 +3706,6 @@ export interface components {
             name?: string;
             /** Requiere documento de respaldo */
             requires_document?: boolean;
-            /** Activo */
-            is_active?: boolean;
-        };
-        PatchedRole: {
-            /** Format: uuid */
-            readonly public_id?: string;
-            /** Nombre */
-            name?: string;
-            /**
-             * Permisos
-             * @description Mapa de área (AREAS_PERMISO) → nivel (NIVELES_PERMISO).
-             */
-            permissions?: unknown;
             /** Activo */
             is_active?: boolean;
         };
@@ -3809,11 +3829,8 @@ export interface components {
             /** Format: uuid */
             readonly public_id?: string;
             /** Nombre de usuario */
-            username?: string;
-            /**
-             * Correo electrónico
-             * Format: email
-             */
+            readonly username?: string;
+            /** Correo electrónico */
             email?: string;
             /** Nombres */
             first_name?: string;
@@ -3826,6 +3843,16 @@ export interface components {
             is_active?: boolean;
             /** Debe cambiar la contraseña */
             readonly must_change_password?: boolean;
+            /**
+             * Bloqueado hasta
+             * Format: date-time
+             */
+            readonly locked_until?: string | null;
+            /**
+             * Último inicio de sesión
+             * Format: date-time
+             */
+            readonly last_login?: string | null;
         };
         Payment: {
             /** Format: uuid */
@@ -4013,7 +4040,7 @@ export interface components {
          *     * `rechazada` - Rechazada
          * @enum {string}
          */
-        Status89aEnum: "pendiente" | "aprobada" | "rechazada";
+        Status39dEnum: "pendiente" | "aprobada" | "rechazada";
         /**
          * @description * `presente` - Presente
          *     * `tarde` - Tarde
@@ -4021,7 +4048,7 @@ export interface components {
          *     * `justificado` - Justificado
          * @enum {string}
          */
-        StatusCf4Enum: "presente" | "tarde" | "ausente" | "justificado";
+        Status75aEnum: "presente" | "tarde" | "ausente" | "justificado";
         /**
          * @description Serializer general: nunca incluye `health_notes` ni
          *     `socioeconomic_notes` (RNF-04) — esos solo viven en
@@ -4088,11 +4115,8 @@ export interface components {
             /** Format: uuid */
             readonly public_id: string;
             /** Nombre de usuario */
-            username: string;
-            /**
-             * Correo electrónico
-             * Format: email
-             */
+            readonly username: string;
+            /** Correo electrónico */
             email?: string;
             /** Nombres */
             first_name?: string;
@@ -4105,11 +4129,20 @@ export interface components {
             is_active?: boolean;
             /** Debe cambiar la contraseña */
             readonly must_change_password: boolean;
+            /**
+             * Bloqueado hasta
+             * Format: date-time
+             */
+            readonly locked_until: string | null;
+            /**
+             * Último inicio de sesión
+             * Format: date-time
+             */
+            readonly last_login: string | null;
         };
         /** @description RF-01: crear usuario y asignarle un rol, con contraseña temporal. */
         UserCreate: {
             username: string;
-            /** Format: email */
             email?: string;
             first_name?: string;
             last_name?: string;
@@ -4129,8 +4162,10 @@ export interface operations {
     v1_access_log_list: {
         parameters: {
             query?: {
-                /** @description A page number within the paginated result set. */
+                /** @description Un número de página dentro del conjunto de resultados paginado. */
                 page?: number;
+                /** @description Número de resultados a devolver por página. */
+                page_size?: number;
             };
             header?: never;
             path?: never;
@@ -4151,8 +4186,10 @@ export interface operations {
     v1_activities_list: {
         parameters: {
             query?: {
-                /** @description A page number within the paginated result set. */
+                /** @description Un número de página dentro del conjunto de resultados paginado. */
                 page?: number;
+                /** @description Número de resultados a devolver por página. */
+                page_size?: number;
             };
             header?: never;
             path?: never;
@@ -4293,8 +4330,10 @@ export interface operations {
     v1_activity_types_list: {
         parameters: {
             query?: {
-                /** @description A page number within the paginated result set. */
+                /** @description Un número de página dentro del conjunto de resultados paginado. */
                 page?: number;
+                /** @description Número de resultados a devolver por página. */
+                page_size?: number;
             };
             header?: never;
             path?: never;
@@ -4435,8 +4474,10 @@ export interface operations {
     v1_announcements_list: {
         parameters: {
             query?: {
-                /** @description A page number within the paginated result set. */
+                /** @description Un número de página dentro del conjunto de resultados paginado. */
                 page?: number;
+                /** @description Número de resultados a devolver por página. */
+                page_size?: number;
             };
             header?: never;
             path?: never;
@@ -4577,8 +4618,10 @@ export interface operations {
     v1_assignments_list: {
         parameters: {
             query?: {
-                /** @description A page number within the paginated result set. */
+                /** @description Un número de página dentro del conjunto de resultados paginado. */
                 page?: number;
+                /** @description Número de resultados a devolver por página. */
+                page_size?: number;
             };
             header?: never;
             path?: never;
@@ -4719,8 +4762,10 @@ export interface operations {
     v1_attendance_list: {
         parameters: {
             query?: {
-                /** @description A page number within the paginated result set. */
+                /** @description Un número de página dentro del conjunto de resultados paginado. */
                 page?: number;
+                /** @description Número de resultados a devolver por página. */
+                page_size?: number;
             };
             header?: never;
             path?: never;
@@ -4925,8 +4970,10 @@ export interface operations {
     v1_audit_log_list: {
         parameters: {
             query?: {
-                /** @description A page number within the paginated result set. */
+                /** @description Un número de página dentro del conjunto de resultados paginado. */
                 page?: number;
+                /** @description Número de resultados a devolver por página. */
+                page_size?: number;
             };
             header?: never;
             path?: never;
@@ -4988,7 +5035,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["User"];
+                    "application/json": components["schemas"]["Me"];
                 };
             };
         };
@@ -5025,7 +5072,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["User"];
+                    "application/json": components["schemas"]["Me"];
                 };
             };
         };
@@ -5054,8 +5101,10 @@ export interface operations {
     v1_calendar_events_list: {
         parameters: {
             query?: {
-                /** @description A page number within the paginated result set. */
+                /** @description Un número de página dentro del conjunto de resultados paginado. */
                 page?: number;
+                /** @description Número de resultados a devolver por página. */
+                page_size?: number;
             };
             header?: never;
             path?: never;
@@ -5227,8 +5276,10 @@ export interface operations {
     v1_conduct_reports_list: {
         parameters: {
             query?: {
-                /** @description A page number within the paginated result set. */
+                /** @description Un número de página dentro del conjunto de resultados paginado. */
                 page?: number;
+                /** @description Número de resultados a devolver por página. */
+                page_size?: number;
             };
             header?: never;
             path?: never;
@@ -5316,8 +5367,10 @@ export interface operations {
     v1_conduct_rule_articles_list: {
         parameters: {
             query?: {
-                /** @description A page number within the paginated result set. */
+                /** @description Un número de página dentro del conjunto de resultados paginado. */
                 page?: number;
+                /** @description Número de resultados a devolver por página. */
+                page_size?: number;
             };
             header?: never;
             path?: never;
@@ -5458,8 +5511,10 @@ export interface operations {
     v1_courses_list: {
         parameters: {
             query?: {
-                /** @description A page number within the paginated result set. */
+                /** @description Un número de página dentro del conjunto de resultados paginado. */
                 page?: number;
+                /** @description Número de resultados a devolver por página. */
+                page_size?: number;
             };
             header?: never;
             path?: never;
@@ -5600,8 +5655,10 @@ export interface operations {
     v1_cycles_list: {
         parameters: {
             query?: {
-                /** @description A page number within the paginated result set. */
+                /** @description Un número de página dentro del conjunto de resultados paginado. */
                 page?: number;
+                /** @description Número de resultados a devolver por página. */
+                page_size?: number;
             };
             header?: never;
             path?: never;
@@ -5647,8 +5704,10 @@ export interface operations {
     v1_cycles_units_list: {
         parameters: {
             query?: {
-                /** @description A page number within the paginated result set. */
+                /** @description Un número de página dentro del conjunto de resultados paginado. */
                 page?: number;
+                /** @description Número de resultados a devolver por página. */
+                page_size?: number;
             };
             header?: never;
             path: {
@@ -5892,8 +5951,10 @@ export interface operations {
     v1_document_types_list: {
         parameters: {
             query?: {
-                /** @description A page number within the paginated result set. */
+                /** @description Un número de página dentro del conjunto de resultados paginado. */
                 page?: number;
+                /** @description Número de resultados a devolver por página. */
+                page_size?: number;
             };
             header?: never;
             path?: never;
@@ -6034,8 +6095,10 @@ export interface operations {
     v1_documents_list: {
         parameters: {
             query?: {
-                /** @description A page number within the paginated result set. */
+                /** @description Un número de página dentro del conjunto de resultados paginado. */
                 page?: number;
+                /** @description Número de resultados a devolver por página. */
+                page_size?: number;
             };
             header?: never;
             path?: never;
@@ -6123,8 +6186,10 @@ export interface operations {
     v1_enrollments_list: {
         parameters: {
             query?: {
-                /** @description A page number within the paginated result set. */
+                /** @description Un número de página dentro del conjunto de resultados paginado. */
                 page?: number;
+                /** @description Número de resultados a devolver por página. */
+                page_size?: number;
             };
             header?: never;
             path?: never;
@@ -6265,8 +6330,10 @@ export interface operations {
     v1_grade_change_requests_list: {
         parameters: {
             query?: {
-                /** @description A page number within the paginated result set. */
+                /** @description Un número de página dentro del conjunto de resultados paginado. */
                 page?: number;
+                /** @description Número de resultados a devolver por página. */
+                page_size?: number;
             };
             header?: never;
             path?: never;
@@ -6387,8 +6454,10 @@ export interface operations {
     v1_grades_list: {
         parameters: {
             query?: {
-                /** @description A page number within the paginated result set. */
+                /** @description Un número de página dentro del conjunto de resultados paginado. */
                 page?: number;
+                /** @description Número de resultados a devolver por página. */
+                page_size?: number;
             };
             header?: never;
             path?: never;
@@ -6641,8 +6710,10 @@ export interface operations {
     v1_guardians_list: {
         parameters: {
             query?: {
-                /** @description A page number within the paginated result set. */
+                /** @description Un número de página dentro del conjunto de resultados paginado. */
                 page?: number;
+                /** @description Número de resultados a devolver por página. */
+                page_size?: number;
             };
             header?: never;
             path?: never;
@@ -6852,8 +6923,10 @@ export interface operations {
     v1_justification_types_list: {
         parameters: {
             query?: {
-                /** @description A page number within the paginated result set. */
+                /** @description Un número de página dentro del conjunto de resultados paginado. */
                 page?: number;
+                /** @description Número de resultados a devolver por página. */
+                page_size?: number;
             };
             header?: never;
             path?: never;
@@ -6994,8 +7067,10 @@ export interface operations {
     v1_justifications_list: {
         parameters: {
             query?: {
-                /** @description A page number within the paginated result set. */
+                /** @description Un número de página dentro del conjunto de resultados paginado. */
                 page?: number;
+                /** @description Número de resultados a devolver por página. */
+                page_size?: number;
             };
             header?: never;
             path?: never;
@@ -7184,8 +7259,10 @@ export interface operations {
     v1_messages_list: {
         parameters: {
             query?: {
-                /** @description A page number within the paginated result set. */
+                /** @description Un número de página dentro del conjunto de resultados paginado. */
                 page?: number;
+                /** @description Número de resultados a devolver por página. */
+                page_size?: number;
             };
             header?: never;
             path?: never;
@@ -7279,8 +7356,10 @@ export interface operations {
     v1_payments_list: {
         parameters: {
             query?: {
-                /** @description A page number within the paginated result set. */
+                /** @description Un número de página dentro del conjunto de resultados paginado. */
                 page?: number;
+                /** @description Número de resultados a devolver por página. */
+                page_size?: number;
             };
             header?: never;
             path?: never;
@@ -7347,8 +7426,10 @@ export interface operations {
     v1_report_cards_list: {
         parameters: {
             query?: {
-                /** @description A page number within the paginated result set. */
+                /** @description Un número de página dentro del conjunto de resultados paginado. */
                 page?: number;
+                /** @description Número de resultados a devolver por página. */
+                page_size?: number;
             };
             header?: never;
             path?: never;
@@ -7652,8 +7733,10 @@ export interface operations {
     v1_roles_list: {
         parameters: {
             query?: {
-                /** @description A page number within the paginated result set. */
+                /** @description Un número de página dentro del conjunto de resultados paginado. */
                 page?: number;
+                /** @description Número de resultados a devolver por página. */
+                page_size?: number;
             };
             header?: never;
             path?: never;
@@ -7667,31 +7750,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PaginatedRoleList"];
-                };
-            };
-        };
-    };
-    v1_roles_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["Role"];
-                "application/x-www-form-urlencoded": components["schemas"]["Role"];
-                "multipart/form-data": components["schemas"]["Role"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Role"];
                 };
             };
         };
@@ -7717,85 +7775,13 @@ export interface operations {
             };
         };
     };
-    v1_roles_update: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                public_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["Role"];
-                "application/x-www-form-urlencoded": components["schemas"]["Role"];
-                "multipart/form-data": components["schemas"]["Role"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Role"];
-                };
-            };
-        };
-    };
-    v1_roles_destroy: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                public_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No response body */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    v1_roles_partial_update: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                public_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["PatchedRole"];
-                "application/x-www-form-urlencoded": components["schemas"]["PatchedRole"];
-                "multipart/form-data": components["schemas"]["PatchedRole"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Role"];
-                };
-            };
-        };
-    };
     v1_schedule_blocks_list: {
         parameters: {
             query?: {
-                /** @description A page number within the paginated result set. */
+                /** @description Un número de página dentro del conjunto de resultados paginado. */
                 page?: number;
+                /** @description Número de resultados a devolver por página. */
+                page_size?: number;
             };
             header?: never;
             path?: never;
@@ -7962,8 +7948,10 @@ export interface operations {
     v1_scholarships_list: {
         parameters: {
             query?: {
-                /** @description A page number within the paginated result set. */
+                /** @description Un número de página dentro del conjunto de resultados paginado. */
                 page?: number;
+                /** @description Número de resultados a devolver por página. */
+                page_size?: number;
             };
             header?: never;
             path?: never;
@@ -8104,8 +8092,10 @@ export interface operations {
     v1_sections_list: {
         parameters: {
             query?: {
-                /** @description A page number within the paginated result set. */
+                /** @description Un número de página dentro del conjunto de resultados paginado. */
                 page?: number;
+                /** @description Número de resultados a devolver por página. */
+                page_size?: number;
             };
             header?: never;
             path?: never;
@@ -8292,8 +8282,10 @@ export interface operations {
     v1_students_list: {
         parameters: {
             query?: {
-                /** @description A page number within the paginated result set. */
+                /** @description Un número de página dentro del conjunto de resultados paginado. */
                 page?: number;
+                /** @description Número de resultados a devolver por página. */
+                page_size?: number;
             };
             header?: never;
             path?: never;
@@ -8482,8 +8474,10 @@ export interface operations {
     v1_users_list: {
         parameters: {
             query?: {
-                /** @description A page number within the paginated result set. */
+                /** @description Un número de página dentro del conjunto de resultados paginado. */
                 page?: number;
+                /** @description Número de resultados a devolver por página. */
+                page_size?: number;
             };
             header?: never;
             path?: never;
@@ -8544,53 +8538,6 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["User"];
                 };
-            };
-        };
-    };
-    v1_users_update: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                public_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["User"];
-                "application/x-www-form-urlencoded": components["schemas"]["User"];
-                "multipart/form-data": components["schemas"]["User"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["User"];
-                };
-            };
-        };
-    };
-    v1_users_destroy: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                public_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No response body */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
         };
     };

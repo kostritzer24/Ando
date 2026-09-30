@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from "vue";
 
-import { useAuthStore } from "@/features/auth/stores/authStore";
 import { AppButton, AppModal, CargandoBloque, DataTable, EmptyState, ErrorBanner, FormField, FormSelect, PageHeader } from "@/shared/components";
+import { usePermisos } from "@/shared/permisos";
 import { avisar } from "@/shared/composables/useAvisos";
 import { confirmar } from "@/shared/composables/useConfirmar";
 import type { Registro, RecursoGenerico } from "@/shared/api/resource";
@@ -11,12 +11,19 @@ import type { CatalogoConfig } from "../config/campos";
 
 const props = defineProps<{ config: CatalogoConfig; recurso: RecursoGenerico }>();
 
+// Un campo de opciones se muestra con su etiqueta ("Académico"), no con el
+// valor que guarda la base ("academico").
+function textoCelda(clave: string, valor: unknown): unknown {
+  const opciones = props.config.campos.find((c) => c.clave === clave)?.opciones;
+  return opciones?.find((o) => o.valor === valor)?.etiqueta ?? valor;
+}
+
 // docs/permisos-roles.md: "Datos maestros" es E para Dirección y
 // Administrador, V para Coordinación. El backend es quien de verdad lo
 // exige (PermisoPorArea) — esto solo evita mostrarle a Coordinación
 // botones que van a terminar en 403.
-const auth = useAuthStore();
-const puedeEditar = computed(() => auth.usuario?.role_name !== "Coordinación");
+const permisos = usePermisos();
+const puedeEditar = computed(() => permisos.puedeEditar("datos_maestros"));
 
 const registros = ref<Registro[]>([]);
 const cargando = ref(true);
@@ -135,7 +142,7 @@ onMounted(cargar);
       <DataTable :columnas="config.columnas" :filas="filasVisibles">
         <template v-for="columna in config.columnas" :key="columna.clave" #[`celda-${columna.clave}`]="{ fila }">
           <template v-if="typeof fila[columna.clave] === 'boolean'">{{ fila[columna.clave] ? "Sí" : "No" }}</template>
-          <template v-else>{{ fila[columna.clave] }}</template>
+          <template v-else>{{ textoCelda(columna.clave, fila[columna.clave]) }}</template>
         </template>
         <template v-if="puedeEditar" #acciones="{ fila }">
           <span v-if="(fila as Registro).is_active === false" class="catalogo-simple__etiqueta-inactivo">

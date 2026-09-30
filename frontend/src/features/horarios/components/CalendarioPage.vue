@@ -4,6 +4,7 @@ import { computed, onMounted, reactive, ref } from "vue";
 import { assignmentsApi } from "@/features/asignaciones/api/asignacionesApi";
 import { useAuthStore } from "@/features/auth/stores/authStore";
 import { AppButton, AppModal, CargandoBloque, DataTable, EmptyState, ErrorBanner, FormSelect, PageHeader } from "@/shared/components";
+import { usePermisos } from "@/shared/permisos";
 import { avisar } from "@/shared/composables/useAvisos";
 import { confirmar } from "@/shared/composables/useConfirmar";
 import type { CalendarEvent, TeacherAssignment } from "@/shared/types/models";
@@ -15,6 +16,10 @@ const TIPO_ASIGNACION_DOCENTE = "asignacion_docente";
 
 const auth = useAuthStore();
 const esDireccion = computed(() => auth.usuario?.role_name === "Dirección");
+// Publicar es "editar" en Horarios y calendario (Dirección y docentes);
+// Coordinación y Administrador consultan.
+const permisos = usePermisos();
+const puedePublicar = computed(() => permisos.puedeEditar("horarios_calendario"));
 
 const opcionesTipo = computed(() =>
   esDireccion.value
@@ -155,7 +160,7 @@ onMounted(cargar);
   <section class="calendario-page">
     <PageHeader titulo="Calendario">
       <template #acciones>
-        <AppButton @click="abrirNuevo" :deshabilitado="cargando">Publicar evento</AppButton>
+        <AppButton v-if="puedePublicar" @click="abrirNuevo" :deshabilitado="cargando">Publicar evento</AppButton>
       </template>
     </PageHeader>
 

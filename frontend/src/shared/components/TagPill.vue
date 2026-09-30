@@ -1,7 +1,7 @@
 <script setup lang="ts">
 withDefaults(
   defineProps<{
-    variante?: "taller" | "aviso" | "hoy" | "alerta";
+    variante?: "taller" | "aviso" | "hoy" | "alerta" | "neutro";
   }>(),
   { variante: "hoy" },
 );
@@ -37,6 +37,11 @@ withDefaults(
 .tag-pill--hoy {
   background: var(--color-etiqueta-hoy-fondo);
   color: var(--color-etiqueta-hoy-texto);
+}
+
+.tag-pill--neutro {
+  background: var(--color-hover);
+  color: var(--color-tinta-suave);
 }
 
 .tag-pill--alerta {

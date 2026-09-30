@@ -1,8 +1,10 @@
 export { default as AdminShell } from "./AdminShell.vue";
 export { default as AppButton } from "./AppButton.vue";
 export { default as AppModal } from "./AppModal.vue";
+export { default as AppPanel } from "./AppPanel.vue";
 export { default as AvisosHost } from "./AvisosHost.vue";
 export { default as BottomTabBar } from "./BottomTabBar.vue";
+export { default as CampoArchivo } from "./CampoArchivo.vue";
 export { default as CargandoBloque } from "./CargandoBloque.vue";
 export { default as ConfirmHost } from "./ConfirmHost.vue";
 export { default as DataTable } from "./DataTable.vue";

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from "vue";
 
-import { useAuthStore } from "@/features/auth/stores/authStore";
 import { cursosApi, seccionesApi } from "@/features/catalogo/api/catalogoApi";
 import { AppButton, AppModal, CargandoBloque, DataTable, EmptyState, ErrorBanner, FormSelect, PageHeader } from "@/shared/components";
+import { usePermisos } from "@/shared/permisos";
 import { avisar } from "@/shared/composables/useAvisos";
 import { confirmar } from "@/shared/composables/useConfirmar";
 import type { components } from "@/shared/types/api";
@@ -18,8 +18,8 @@ const ROLES_POR_TIPO_CURSO: Record<string, string[]> = {
   taller: ["Tallerista"],
 };
 
-const auth = useAuthStore();
-const puedeEditar = computed(() => auth.usuario?.role_name === "Dirección");
+const permisos = usePermisos();
+const puedeEditar = computed(() => permisos.puedeEditar("horarios_calendario"));
 
 const asignaciones = ref<TeacherAssignment[]>([]);
 const secciones = ref<Section[]>([]);

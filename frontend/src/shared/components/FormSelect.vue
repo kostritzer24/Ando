@@ -24,7 +24,9 @@ defineEmits<{ "update:modelValue": [string] }>();
       :aria-invalid="Boolean(mensajeError)"
       @change="$emit('update:modelValue', ($event.target as HTMLSelectElement).value)"
     >
-      <option value="" disabled>{{ placeholder }}</option>
+      <!-- Si una opción real ya usa el valor vacío ("Todos los roles"), el
+           marcador sobra y además le ganaba al mostrarse. -->
+      <option v-if="!opciones.some((o) => o.valor === '')" value="" disabled>{{ placeholder }}</option>
       <option v-for="opcion in opciones" :key="opcion.valor" :value="opcion.valor">
         {{ opcion.etiqueta }}
       </option>

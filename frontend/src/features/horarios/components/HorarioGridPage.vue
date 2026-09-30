@@ -1,16 +1,23 @@
 <script setup lang="ts">
+import { X } from "lucide-vue-next";
 import { computed, onMounted, reactive, ref } from "vue";
 
 import { assignmentsApi, listarUsuariosPorRoles } from "@/features/asignaciones/api/asignacionesApi";
 import { AppButton, AppModal, CargandoBloque, ErrorBanner, FormSelect, PageHeader } from "@/shared/components";
 import { avisar } from "@/shared/composables/useAvisos";
 import { confirmar } from "@/shared/composables/useConfirmar";
+import { usePermisos } from "@/shared/permisos";
 import type { components } from "@/shared/types/api";
 import type { ScheduleBlock, TeacherAssignment } from "@/shared/types/models";
 
 import { DIAS, PERIODOS, scheduleBlocksApi } from "../api/horariosApi";
 
 type Usuario = components["schemas"]["User"];
+
+// Armar el horario es "editar" en Horarios (Dirección); Coordinación y
+// Administrador ven la grilla sin los botones.
+const permisos = usePermisos();
+const puedeEditar = computed(() => permisos.puedeEditar("horarios_calendario"));
 
 const cargando = ref(true);
 const error = ref("");
@@ -146,7 +153,7 @@ onMounted(cargar);
 
 <template>
   <section class="horario-grid">
-    <PageHeader titulo="Horario" />
+    <PageHeader titulo="Horario" descripcion="Elegí a la persona para ver o armar su semana de clases." />
 
     <ErrorBanner v-if="error" :mensaje="error" etiqueta-accion="Reintentar" @accion="cargar" />
     <CargandoBloque v-else-if="cargando" />
@@ -159,7 +166,10 @@ onMounted(cargar);
         v-model="docenteElegido"
       />
 
-      <table v-if="docenteElegido" class="horario-grid__tabla">
+      <!-- Seis columnas no caben en un teléfono: la grilla se desliza de
+           lado dentro de su marco, sin mover el resto de la página. -->
+      <div v-if="docenteElegido" class="horario-grid__marco">
+      <table class="horario-grid__tabla">
         <thead>
           <tr>
             <th></th>
@@ -174,15 +184,17 @@ onMounted(cargar);
                 <div class="horario-grid__celda horario-grid__celda--ocupada">
                   {{ etiquetaBloque(bloqueEn(dia.valor, periodo.numero)!) }}
                   <button
+                    v-if="puedeEditar"
                     type="button"
                     class="horario-grid__quitar"
                     aria-label="Quitar"
                     @click="quitarBloque(bloqueEn(dia.valor, periodo.numero)!)"
                   >
-                    ✕
+                    <X aria-hidden="true" />
                   </button>
                 </div>
               </template>
+              <span v-else-if="!puedeEditar" class="horario-grid__libre">Libre</span>
               <button
                 v-else
                 type="button"
@@ -195,6 +207,7 @@ onMounted(cargar);
           </tr>
         </tbody>
       </table>
+      </div>
     </template>
 
     <AppModal v-if="modalAbierto" titulo="Agregar clase" @cerrar="modalAbierto = false">
@@ -215,25 +228,58 @@ onMounted(cargar);
 </template>
 
 <style scoped>
+.horario-grid__marco {
+  overflow-x: auto;
+  background: var(--color-papel);
+  border: 1px solid var(--color-linea);
+  border-radius: var(--radio-lg);
+}
 
 .horario-grid__tabla {
   border-collapse: collapse;
   width: 100%;
-  margin-top: var(--espacio-xl);
+  min-width: 40rem;
+  table-layout: fixed;
 }
 
 .horario-grid__tabla th,
 .horario-grid__tabla td {
-  border: 1px solid var(--color-linea);
+  border-bottom: 1px solid var(--color-linea);
+  border-right: 1px solid var(--color-linea);
   padding: var(--espacio-xs);
   text-align: center;
+  vertical-align: middle;
   font-size: var(--texto-sm);
+}
+
+.horario-grid__tabla tr > :last-child {
+  border-right: none;
+}
+
+.horario-grid__tabla tbody tr:last-child > * {
+  border-bottom: none;
+}
+
+.horario-grid__tabla thead th {
+  padding: var(--espacio-sm) var(--espacio-xs);
+  font-weight: 600;
+  color: var(--color-tinta-suave);
+}
+
+.horario-grid__tabla th:first-child {
+  width: 6.5rem;
 }
 
 .horario-grid__hora {
   white-space: nowrap;
   color: var(--color-tinta-suave);
   font-weight: 600;
+  line-height: 1.3;
+}
+
+.horario-grid__hora small {
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
 }
 
 .horario-grid__celda {
@@ -241,30 +287,59 @@ onMounted(cargar);
   width: 100%;
   border: none;
   border-radius: var(--radio-sm);
-  cursor: pointer;
   font-family: var(--fuente-cuerpo);
+  font-size: var(--texto-sm);
 }
 
 .horario-grid__celda--vacia {
   background: var(--color-fondo);
   color: var(--color-tinta-suave);
+  font-size: var(--texto-md);
+  cursor: pointer;
+}
+
+.horario-grid__celda--vacia:hover {
+  background: var(--color-accion-suave);
+  color: var(--color-accion);
 }
 
 .horario-grid__celda--ocupada {
-  background: var(--color-etiqueta-hoy-fondo);
-  color: var(--color-etiqueta-hoy-texto);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--espacio-xs);
-  padding: 0.2rem 0.4rem;
+  gap: var(--espacio-2xs);
+  padding: var(--espacio-xs) var(--espacio-xs) var(--espacio-xs) var(--espacio-sm);
+  background: var(--color-etiqueta-hoy-fondo);
+  color: var(--color-etiqueta-hoy-texto);
+  text-align: left;
+  line-height: 1.3;
+}
+
+.horario-grid__libre {
+  color: var(--color-linea-fuerte);
+  font-size: var(--texto-xs);
 }
 
 .horario-grid__quitar {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
   background: none;
   border: none;
-  cursor: pointer;
+  border-radius: var(--radio-sm);
   color: inherit;
+  cursor: pointer;
+}
+
+.horario-grid__quitar:hover {
+  background: rgb(255 255 255 / 60%);
+}
+
+.horario-grid__quitar svg {
+  width: 1rem;
+  height: 1rem;
 }
 
 .horario-grid__formulario {

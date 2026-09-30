@@ -57,6 +57,10 @@ test("docente captura una nota, solicita una corrección y Dirección la aprueba
   await expect(opcionNueva).toBeAttached();
   const etiquetaActividad = await opcionNueva.innerText();
   await page.getByLabel("Actividad").selectOption({ label: etiquetaActividad });
+  // Elegir la actividad recarga la lista: se espera a que termine antes de
+  // escribir, o el punteo cae en un campo que se reemplaza enseguida.
+  await page.waitForLoadState("networkidle");
+  await expect(page.locator(".cargando-bloque")).toHaveCount(0);
 
   const primeraFila = page.locator(".capturar-notas__fila").first();
   // El navegador solo dispara "change" en un <input type="number"> al

@@ -2,7 +2,7 @@
 import { computed, onMounted, ref, watch } from "vue";
 
 import { assignmentsApi } from "@/features/asignaciones/api/asignacionesApi";
-import { AppButton, CargandoBloque, ErrorBanner, FormSelect, PageHeader } from "@/shared/components";
+import { AppButton, AppPanel, CampoArchivo, CargandoBloque, ErrorBanner, FormSelect, PageHeader } from "@/shared/components";
 import type { TeacherAssignment } from "@/shared/types/models";
 
 import {
@@ -74,8 +74,8 @@ async function descargar(): Promise<void> {
   }
 }
 
-function alElegirArchivo(evento: Event): void {
-  archivoElegido.value = (evento.target as HTMLInputElement).files?.[0] ?? null;
+function alElegirArchivo(archivo: File | null): void {
+  archivoElegido.value = archivo;
   vistaPrevia.value = null;
   resultado.value = null;
 }
@@ -132,30 +132,36 @@ onMounted(async () => {
     <CargandoBloque v-else-if="cargando" />
 
     <template v-else>
-      <div class="plantilla-notas__filtros">
-        <FormSelect
-          id="assignment"
-          etiqueta="Curso y sección"
-          :opciones="opcionesAsignacion"
-          v-model="asignacionElegida"
-        />
-        <FormSelect id="unit" etiqueta="Unidad" :opciones="unidadesDisponibles" v-model="unidadElegida" />
-      </div>
+      <div class="plantilla-notas__pasos">
+        <AppPanel titulo="1. Descargá la plantilla" descripcion="Trae la lista de la sección con las actividades de la unidad.">
+          <div class="plantilla-notas__campos">
+            <div class="plantilla-notas__filtros">
+              <FormSelect
+                id="assignment"
+                etiqueta="Curso y sección"
+                :opciones="opcionesAsignacion"
+                v-model="asignacionElegida"
+              />
+              <FormSelect id="unit" etiqueta="Unidad" :opciones="unidadesDisponibles" v-model="unidadElegida" />
+            </div>
+            <AppButton variante="secundario" :deshabilitado="!unidadElegida" @click="descargar">
+              Descargar plantilla
+            </AppButton>
+          </div>
+        </AppPanel>
 
-      <AppButton variante="secundario" :deshabilitado="!unidadElegida" @click="descargar">
-        Descargar plantilla
-      </AppButton>
-
-      <div class="plantilla-notas__subida">
-        <label for="file">Subir plantilla ya llena</label>
-        <input id="file" type="file" accept=".xlsx" @change="alElegirArchivo" />
-        <AppButton :deshabilitado="!archivoElegido || previsualizando" @click="previsualizar">
-          {{ previsualizando ? "Revisando…" : "Ver antes de guardar" }}
-        </AppButton>
+        <AppPanel titulo="2. Subí la plantilla llena" descripcion="Primero la revisás; nada se guarda hasta que confirmes.">
+          <div class="plantilla-notas__campos">
+            <CampoArchivo id="file" etiqueta="Archivo de Excel (.xlsx)" accept=".xlsx" @elegir="alElegirArchivo" />
+            <AppButton :deshabilitado="!archivoElegido || previsualizando" @click="previsualizar">
+              {{ previsualizando ? "Revisando…" : "Ver antes de guardar" }}
+            </AppButton>
+          </div>
+        </AppPanel>
       </div>
 
       <div v-if="vistaPrevia && !vistaPrevia.errores" class="plantilla-notas__vista-previa">
-        <p>{{ vistaPrevia.filas }} filas leídas:</p>
+        <p class="plantilla-notas__vista-titulo">{{ vistaPrevia.filas }} filas leídas, sin errores:</p>
         <ul>
           <li>{{ vistaPrevia.resumen.crear }} notas nuevas</li>
           <li>{{ vistaPrevia.resumen.modificacion }} van a generar una solicitud de corrección (RN-07)</li>
@@ -166,8 +172,8 @@ onMounted(async () => {
         </AppButton>
       </div>
 
-      <div v-if="vistaPrevia?.errores?.length" class="plantilla-notas__errores">
-        <p>La plantilla tiene errores — no se guardó ningún registro todavía:</p>
+      <div v-if="vistaPrevia?.errores?.length" class="plantilla-notas__errores" role="alert">
+        <p>La plantilla tiene errores y no se guardó ningún registro. Corregí estas filas y volvé a subirla:</p>
         <ul>
           <li v-for="(err, indice) in vistaPrevia.errores" :key="indice">{{ err }}</li>
         </ul>
@@ -190,41 +196,79 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-
-.plantilla-notas__filtros {
-  display: flex;
-  gap: var(--espacio-xl);
-  margin-bottom: var(--espacio-lg);
-  flex-wrap: wrap;
+.plantilla-notas__pasos {
+  display: grid;
+  gap: var(--espacio-lg);
+  align-items: start;
 }
 
-.plantilla-notas__subida {
-  margin-top: var(--espacio-xl);
-  padding-top: var(--espacio-xl);
-  border-top: 1px solid var(--color-linea);
+.plantilla-notas__campos {
   display: flex;
   flex-direction: column;
-  gap: var(--espacio-md);
   align-items: flex-start;
+  gap: var(--espacio-lg);
+}
+
+.plantilla-notas__campos > :not(button) {
+  align-self: stretch;
+}
+
+.plantilla-notas__filtros {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  gap: var(--espacio-md);
 }
 
 .plantilla-notas__vista-previa {
-  margin-top: var(--espacio-lg);
-  background: var(--color-fondo);
-  border-radius: var(--radio-md);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--espacio-md);
   padding: var(--espacio-lg);
+  background: var(--color-accion-suave);
+  border-left: 4px solid var(--color-accion);
+  border-radius: var(--radio-md);
+}
+
+.plantilla-notas__vista-previa p,
+.plantilla-notas__vista-previa ul {
+  margin: 0;
+}
+
+.plantilla-notas__vista-previa ul {
+  padding-left: var(--espacio-xl);
+}
+
+.plantilla-notas__vista-titulo {
+  font-weight: 600;
 }
 
 .plantilla-notas__exito {
-  color: var(--color-etiqueta-taller-texto);
-  margin-top: var(--espacio-lg);
+  color: var(--color-exito);
+  font-weight: 600;
 }
 
 .plantilla-notas__errores {
-  margin-top: var(--espacio-lg);
+  padding: var(--espacio-lg);
   background: var(--color-etiqueta-alerta-fondo);
   color: var(--color-etiqueta-alerta-texto);
+  border-left: 4px solid var(--color-peligro);
   border-radius: var(--radio-md);
-  padding: var(--espacio-lg);
+}
+
+.plantilla-notas__errores p {
+  margin: 0 0 var(--espacio-sm);
+  font-weight: 600;
+}
+
+.plantilla-notas__errores ul {
+  margin: 0;
+  padding-left: var(--espacio-xl);
+}
+
+@media (min-width: 64rem) {
+  .plantilla-notas__pasos {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 </style>

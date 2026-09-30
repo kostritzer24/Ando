@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from "vue";
 
-import { useAuthStore } from "@/features/auth/stores/authStore";
-import { AppButton, AppModal, CargandoBloque, DataTable, ErrorBanner, FormField, FormSelect, PageHeader } from "@/shared/components";
+import { AppButton, AppModal, CargandoBloque, DataTable, ErrorBanner, FormField, FormSelect, PageHeader, TagPill } from "@/shared/components";
+import { usePermisos } from "@/shared/permisos";
 import type { GradingUnit, SchoolCycle } from "@/shared/types/models";
 
 import { ciclosApi, unidadesApi } from "../api/catalogoApi";
 
-const auth = useAuthStore();
-const puedeEditar = computed(() => auth.usuario?.role_name !== "Coordinación");
+const permisos = usePermisos();
+const puedeEditar = computed(() => permisos.puedeEditar("datos_maestros"));
 
 const ciclos = ref<SchoolCycle[]>([]);
 const cargando = ref(true);
@@ -138,6 +138,11 @@ onMounted(cargarCiclos);
       ]"
       :filas="ciclos"
     >
+      <template #celda-status="{ fila }">
+        <TagPill :variante="fila.status === 'activo' ? 'taller' : fila.status === 'planificado' ? 'hoy' : 'neutro'">
+          {{ OPCIONES_ESTADO.find((e) => e.valor === fila.status)?.etiqueta ?? fila.status }}
+        </TagPill>
+      </template>
       <template #acciones="{ fila }">
         <button type="button" class="ciclos-page__accion" @click="verUnidades(fila as SchoolCycle)">
           Ver unidades

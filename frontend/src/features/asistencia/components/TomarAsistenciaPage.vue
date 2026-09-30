@@ -2,10 +2,10 @@
 import { computed, onMounted, ref, watch } from "vue";
 
 import { assignmentsApi } from "@/features/asignaciones/api/asignacionesApi";
-import { useAuthStore } from "@/features/auth/stores/authStore";
 import { seccionesApi } from "@/features/catalogo/api/catalogoApi";
 import { enrollmentsApi, studentsApi } from "@/features/estudiantes/api/estudiantesApi";
 import { CargandoBloque, ErrorBanner, FormSelect, PageHeader } from "@/shared/components";
+import { usePermisos } from "@/shared/permisos";
 import type { Attendance, Enrollment, Section, Student, TeacherAssignment } from "@/shared/types/models";
 
 import { attendanceApi, registrarAsistencia } from "../api/asistenciaApi";
@@ -31,8 +31,13 @@ const asistenciasDelDia = ref<Attendance[]>([]);
 const cargandoRoster = ref(false);
 const guardandoPorEstudiante = ref<Record<string, boolean>>({});
 
-const auth = useAuthStore();
-const esDireccion = computed(() => auth.usuario?.role_name === "Dirección");
+// Quien alcanza Datos maestros (Dirección, Coordinación, Administrador)
+// ve todas las secciones; un docente, solo las de sus asignaciones.
+// Marcar es "editar" en Asistencia: Coordinación y Administrador solo
+// consultan lo que ya se registró.
+const permisos = usePermisos();
+const veTodasLasSecciones = computed(() => permisos.puedeVer("datos_maestros"));
+const soloLectura = computed(() => !permisos.puedeEditar("asistencia"));
 
 // `/sections/` vive detrás del área "datos_maestros", a la que un
 // docente no llega (docs/permisos-roles.md) — para el resto de roles,
@@ -43,7 +48,7 @@ const esDireccion = computed(() => auth.usuario?.role_name === "Dirección");
 // operativo, y no tiene asignaciones propias — a ella sí se le muestran
 // todas las secciones.
 const opcionesSeccion = computed(() => {
-  if (esDireccion.value) {
+  if (veTodasLasSecciones.value) {
     return secciones.value.map((s) => ({
       valor: s.public_id,
       etiqueta: `${s.grade} ${s.letter}`.trim() + (s.type === "taller" ? " (taller)" : ""),
@@ -83,7 +88,7 @@ async function cargarBase(): Promise<void> {
     ]);
     asignaciones.value = asignacionesResp.results;
     estudiantes.value = estudiantesResp.results;
-    if (esDireccion.value) {
+    if (veTodasLasSecciones.value) {
       secciones.value = (await seccionesApi.listar()).results;
     }
     seccionElegida.value = opcionesSeccion.value[0]?.valor ?? "";
@@ -170,7 +175,10 @@ onMounted(async () => {
 
 <template>
   <section class="tomar-asistencia">
-    <PageHeader titulo="Tomar asistencia" />
+    <PageHeader
+      :titulo="soloLectura ? 'Asistencia' : 'Tomar asistencia'"
+      :descripcion="soloLectura ? 'Consulta de la asistencia registrada por sección y día.' : undefined"
+    />
 
     <ErrorBanner v-if="error" :mensaje="error" etiqueta-accion="Reintentar" @accion="cargarRoster" />
     <CargandoBloque v-else-if="cargando" />
@@ -206,13 +214,14 @@ onMounted(async () => {
               :class="{
                 'tomar-asistencia__boton--activo': asistenciaDe(inscripcion)?.status === estado.valor,
               }"
-              :disabled="guardandoPorEstudiante[inscripcion.public_id]"
+              :disabled="soloLectura || guardandoPorEstudiante[inscripcion.public_id]"
+              :aria-pressed="asistenciaDe(inscripcion)?.status === estado.valor"
               @click="marcar(inscripcion, estado.valor)"
             >
               {{ estado.etiqueta }}
             </button>
           </span>
-          <span v-if="!asistenciaDe(inscripcion)" class="tomar-asistencia__hora">
+          <span v-if="!soloLectura && !asistenciaDe(inscripcion)" class="tomar-asistencia__hora">
             <label :for="`hora-${inscripcion.public_id}`">o la hora de llegada</label>
             <input
               :id="`hora-${inscripcion.public_id}`"
@@ -223,7 +232,7 @@ onMounted(async () => {
           </span>
         </li>
       </ul>
-      <p class="tomar-asistencia__nota">
+      <p v-if="!soloLectura" class="tomar-asistencia__nota">
         Cada estado se guarda apenas lo elegís — podés cerrar esta pantalla y volver más tarde
         para completar el resto. También podés registrar la hora de llegada en vez del estado: el
         sistema decide si cuenta como tarde (RN-11).
@@ -233,13 +242,14 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-
+/* Mobile-first: pasar lista se hace con el teléfono en la mano, parado
+   frente al grupo. Cada estudiante es un bloque con su nombre y los
+   cuatro estados a lo ancho (áreas táctiles grandes); desde 48rem el
+   nombre va a la izquierda y los estados a la derecha. */
 .tomar-asistencia__filtros {
-  display: flex;
-  gap: var(--espacio-xl);
-  align-items: flex-end;
-  margin-bottom: var(--espacio-xl);
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--espacio-md);
 }
 
 .tomar-asistencia__fecha {
@@ -248,12 +258,18 @@ onMounted(async () => {
   gap: var(--espacio-xs);
 }
 
+.tomar-asistencia__fecha label {
+  font-size: var(--texto-sm);
+  font-weight: 600;
+}
+
 .tomar-asistencia__fecha input {
+  width: 100%;
   min-height: var(--area-tactil-minima);
   padding: 0 0.75rem;
-  border: 1px solid var(--color-linea);
+  border: 1px solid var(--color-borde-campo);
   border-radius: var(--radio-md);
-  font-family: var(--fuente-cuerpo);
+  background: var(--color-papel);
   font-size: var(--texto-base);
 }
 
@@ -265,16 +281,19 @@ onMounted(async () => {
   list-style: none;
   padding: 0;
   margin: 0;
+  background: var(--color-papel);
+  border: 1px solid var(--color-linea);
+  border-radius: var(--radio-lg);
 }
 
 .tomar-asistencia__fila {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--espacio-lg);
-  padding: var(--espacio-md) 0;
-  border-bottom: 1px solid var(--color-linea);
-  flex-wrap: wrap;
+  display: grid;
+  gap: var(--espacio-sm);
+  padding: var(--espacio-md) var(--espacio-lg);
+}
+
+.tomar-asistencia__fila + .tomar-asistencia__fila {
+  border-top: 1px solid var(--color-linea);
 }
 
 .tomar-asistencia__nombre {
@@ -282,49 +301,89 @@ onMounted(async () => {
 }
 
 .tomar-asistencia__botones {
-  display: flex;
-  gap: var(--espacio-xs);
-}
-
-.tomar-asistencia__hora {
-  display: flex;
-  align-items: center;
-  gap: var(--espacio-xs);
-  font-size: var(--texto-xs);
-  color: var(--color-tinta-suave);
-}
-
-.tomar-asistencia__hora input {
-  min-height: var(--area-tactil-minima);
-  padding: 0 0.5rem;
-  border: 1px solid var(--color-linea);
-  border-radius: var(--radio-sm);
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border: 1px solid var(--color-borde-campo);
+  border-radius: var(--radio-md);
+  overflow: hidden;
 }
 
 .tomar-asistencia__boton {
   min-height: var(--area-tactil-minima);
-  padding: 0 0.7rem;
-  border: 1px solid var(--color-linea);
-  border-radius: var(--radio-sm);
+  padding: 0 var(--espacio-2xs);
+  border: none;
   background: var(--color-papel);
   font-size: var(--texto-sm);
+  font-weight: 500;
   cursor: pointer;
+}
+
+.tomar-asistencia__boton + .tomar-asistencia__boton {
+  border-left: 1px solid var(--color-borde-campo);
+}
+
+.tomar-asistencia__boton:hover:not(:disabled) {
+  background: var(--color-accion-suave);
+}
+
+.tomar-asistencia__boton:focus-visible {
+  outline-offset: -3px;
 }
 
 .tomar-asistencia__boton--activo {
   background: var(--color-accion);
   color: var(--color-papel);
-  border-color: var(--color-accion);
+  font-weight: 700;
 }
 
 .tomar-asistencia__boton:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+  cursor: default;
+}
+
+/* En consulta, lo no elegido se apaga y lo registrado se sigue leyendo. */
+.tomar-asistencia__boton:disabled:not(.tomar-asistencia__boton--activo) {
+  color: var(--color-tinta-suave);
+  background: var(--color-fondo);
+}
+
+.tomar-asistencia__hora {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-sm);
+  font-size: var(--texto-sm);
+  color: var(--color-tinta-suave);
+}
+
+.tomar-asistencia__hora input {
+  min-height: 2.5rem;
+  padding: 0 0.5rem;
+  border: 1px solid var(--color-borde-campo);
+  border-radius: var(--radio-sm);
+  background: var(--color-papel);
 }
 
 .tomar-asistencia__nota {
   color: var(--color-tinta-suave);
   font-size: var(--texto-sm);
-  margin-top: var(--espacio-lg);
+  max-width: 60ch;
+}
+
+@media (min-width: 40rem) {
+  .tomar-asistencia__filtros {
+    grid-template-columns: repeat(2, minmax(0, 16rem));
+  }
+}
+
+@media (min-width: 48rem) {
+  .tomar-asistencia__fila {
+    grid-template-columns: minmax(0, 1fr) 26rem;
+    align-items: center;
+    column-gap: var(--espacio-xl);
+  }
+
+  .tomar-asistencia__hora {
+    grid-column: 2;
+    justify-content: flex-end;
+  }
 }
 </style>

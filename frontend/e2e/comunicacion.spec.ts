@@ -102,7 +102,7 @@ test("reportes de conducta: el maestro guía registra uno con artículos marcado
   await page.getByLabel("Medidas inmediatas tomadas").fill("Se conversó con el estudiante.");
   await page.getByText(`${primerArticulo.code} — ${primerArticulo.description}`).click();
   await page.getByLabel("Compromisos establecidos").fill("Pedir permiso antes de salir.");
-  await page.getByRole("button", { name: "Guardar", exact: true }).click();
+  await page.getByRole("button", { name: "Guardar reporte" }).click();
 
   await expect(page.getByRole("heading", { name: "Registrar reporte de conducta" })).not.toBeVisible();
   const fila = page.locator("tr", { hasText: "2026-03-10" });

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from "vue";
 
-import { useAuthStore } from "@/features/auth/stores/authStore";
 import { AppButton, AppModal, CargandoBloque, DataTable, EmptyState, ErrorBanner, FormField, PageHeader } from "@/shared/components";
+import { usePermisos } from "@/shared/permisos";
 import type { Guardian, GuardianStudentLinkRead, Student } from "@/shared/types/models";
 
 import {
@@ -14,8 +14,8 @@ import {
   vincularEstudiante,
 } from "../api/estudiantesApi";
 
-const auth = useAuthStore();
-const puedeEditar = computed(() => auth.usuario?.role_name === "Dirección");
+const permisos = usePermisos();
+const puedeEditar = computed(() => permisos.puedeEditar("estudiantes_encargados"));
 
 const encargados = ref<Guardian[]>([]);
 const estudiantes = ref<Student[]>([]);

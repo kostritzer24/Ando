@@ -28,12 +28,12 @@ test("Dirección crea, edita y da de baja un curso desde el catálogo", async ({
 
   const fila = page.locator("tr", { hasText: nombreCurso });
   await expect(fila).toBeVisible();
-  await expect(fila).toContainText("academico");
+  await expect(fila).toContainText("Académico");
 
   await fila.getByRole("button", { name: "Editar" }).click();
   await page.getByLabel("Tipo").selectOption("taller");
   await page.getByRole("button", { name: "Guardar" }).click();
-  await expect(fila).toContainText("taller");
+  await expect(fila).toContainText("Taller");
 
   // HU-02: nada se borra de verdad — "dar de baja" solo pone is_active en
   // false, el registro se queda en la lista (para poder reactivarlo), así

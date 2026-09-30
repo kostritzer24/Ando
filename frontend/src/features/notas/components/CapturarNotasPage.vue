@@ -268,10 +268,11 @@ onMounted(async () => {
 <style scoped>
 
 .capturar-notas__filtros {
-  display: flex;
-  gap: var(--espacio-xl);
-  margin-bottom: var(--espacio-xl);
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+  gap: var(--espacio-md) var(--espacio-lg);
+  align-items: end;
+  max-width: 52rem;
 }
 
 .capturar-notas__vacio {

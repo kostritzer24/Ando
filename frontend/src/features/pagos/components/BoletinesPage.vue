@@ -5,9 +5,15 @@ import { computed, onMounted, ref, watch } from "vue";
 import { seccionesApi, unidadesApi } from "@/features/catalogo/api/catalogoApi";
 import { enrollmentsApi, studentsApi } from "@/features/estudiantes/api/estudiantesApi";
 import { AppButton, CargandoBloque, DataTable, EmptyState, ErrorBanner, FormSelect, PageHeader, TagPill } from "@/shared/components";
+import { usePermisos } from "@/shared/permisos";
 import type { Enrollment, GradingUnit, ReportCard, Section, Student } from "@/shared/types/models";
 
 import { aprobarBoletin, generarBoletines, publicarBoletin, reportCardsApi } from "../api/pagosApi";
+
+// Generar, aprobar y publicar es "editar" en Notas (Dirección);
+// Coordinación y Administrador los consultan.
+const permisos = usePermisos();
+const puedeGestionar = computed(() => permisos.puedeEditar("notas"));
 
 const ETIQUETA_ESTADO: Record<string, string> = {
   borrador: "Borrador",
@@ -177,19 +183,21 @@ onMounted(async () => {
         <FormSelect id="unit" etiqueta="Unidad" :opciones="opcionesUnidad" v-model="unidadElegida" />
       </div>
 
-      <p v-if="cargandoUnidades || cargandoBoletines">Cargando…</p>
+      <CargandoBloque v-if="cargandoUnidades || cargandoBoletines" />
 
       <template v-else-if="unidadElegida">
-        <AppButton variante="secundario" :deshabilitado="generando" @click="generar">
-          {{ generando ? "Generando…" : "Generar boletines" }}
-        </AppButton>
+        <div v-if="puedeGestionar" class="boletines-page__barra">
+          <AppButton variante="secundario" :deshabilitado="generando" @click="generar">
+            {{ generando ? "Generando…" : "Generar boletines" }}
+          </AppButton>
+        </div>
 
         <ErrorBanner v-if="errorAccion" :mensaje="errorAccion" />
 
         <EmptyState
           v-if="boletines.length === 0"
           titulo="No hay boletines"
-          descripcion="Generá los boletines de esta sección y unidad para empezar."
+          :descripcion="puedeGestionar ? 'Generá los boletines de esta sección y unidad para empezar.' : 'Todavía no se generaron los boletines de esta sección y unidad.'"
         />
 
         <DataTable
@@ -206,7 +214,7 @@ onMounted(async () => {
               {{ ETIQUETA_ESTADO[(fila as unknown as ReportCard).status] }}
             </TagPill>
           </template>
-          <template #acciones="{ fila }">
+          <template v-if="puedeGestionar" #acciones="{ fila }">
             <button
               v-if="(fila as unknown as ReportCard).status === 'borrador'"
               type="button"
@@ -235,10 +243,11 @@ onMounted(async () => {
 <style scoped>
 
 .boletines-page__filtros {
-  display: flex;
-  gap: var(--espacio-xl);
-  margin-bottom: var(--espacio-lg);
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+  gap: var(--espacio-md) var(--espacio-lg);
+  align-items: end;
+  max-width: 52rem;
 }
 
 .boletines-page__tabla {

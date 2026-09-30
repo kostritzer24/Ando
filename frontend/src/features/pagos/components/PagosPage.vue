@@ -3,6 +3,7 @@ import { computed, onMounted, reactive, ref, watch } from "vue";
 
 import { enrollmentsApi, studentsApi } from "@/features/estudiantes/api/estudiantesApi";
 import { AppButton, CargandoBloque, DataTable, ErrorBanner, FormField, FormSelect, PageHeader } from "@/shared/components";
+import { usePermisos } from "@/shared/permisos";
 import type { Enrollment, Payment, Student } from "@/shared/types/models";
 
 import {
@@ -18,6 +19,11 @@ const MESES = [
   "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
   "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
 ];
+
+// Registrar pagos y emitir constancias es "editar" en Pagos (Dirección y
+// Encargado de pagos); Coordinación y Administrador consultan.
+const permisos = usePermisos();
+const puedeRegistrar = computed(() => permisos.puedeEditar("pagos_solvencia"));
 
 const cargando = ref(true);
 const error = ref("");
@@ -158,95 +164,125 @@ onMounted(async () => {
 
 <template>
   <section class="pagos-page">
-    <PageHeader titulo="Pagos y solvencia" />
+    <PageHeader titulo="Pagos y solvencia" descripcion="Estado de pagos de cada estudiante y constancias de solvencia.">
+      <template #acciones>
+        <AppButton variante="secundario" :deshabilitado="cargando || descargandoReporte" @click="descargarReporteInsolventes">
+          {{ descargandoReporte ? "Generando…" : "Reporte de estudiantes insolventes" }}
+        </AppButton>
+      </template>
+    </PageHeader>
 
     <ErrorBanner v-if="error" :mensaje="error" etiqueta-accion="Reintentar" @accion="cargar" />
     <CargandoBloque v-else-if="cargando" />
 
     <template v-else>
-      <AppButton variante="secundario" :deshabilitado="descargandoReporte" @click="descargarReporteInsolventes">
-        {{ descargandoReporte ? "Generando…" : "Reporte de estudiantes insolventes" }}
-      </AppButton>
+      <div class="pagos-page__selector">
+        <FormSelect
+          id="inscripcion"
+          etiqueta="Estudiante"
+          :opciones="opcionesInscripcion"
+          v-model="inscripcionElegida"
+        />
+      </div>
 
-      <FormSelect
-        id="inscripcion"
-        etiqueta="Estudiante"
-        :opciones="opcionesInscripcion"
-        v-model="inscripcionElegida"
-      />
-
-      <CargandoBloque v-if="cargandoDetalle" />
+      <CargandoBloque v-if="cargandoDetalle" :filas="3" />
 
       <template v-else-if="inscripcionElegida && solvencia">
         <div
           class="pagos-page__solvencia"
-          :class="{ 'pagos-page__solvencia--al-dia': solvencia.solvente, 'pagos-page__solvencia--pendiente': !solvencia.solvente }"
+          :class="solvencia.solvente ? 'pagos-page__solvencia--al-dia' : 'pagos-page__solvencia--pendiente'"
         >
-          <p v-if="solvencia.tiene_beca"><strong>Solvente por beca.</strong></p>
-          <p v-else-if="solvencia.solvente"><strong>Al día con sus pagos.</strong></p>
-          <p v-else><strong>No está solvente.</strong></p>
-          <p v-if="!solvencia.tiene_beca && solvencia.meses_pendientes.length > 0">
-            Meses pendientes:
-            {{ solvencia.meses_pendientes.map(([anio, mes]) => `${nombreMes(mes)} ${anio}`).join(", ") }}
-          </p>
-
-          <ErrorBanner v-if="errorEmision" :mensaje="errorEmision" />
+          <div class="pagos-page__solvencia-texto">
+            <p v-if="solvencia.tiene_beca" class="pagos-page__solvencia-titulo">Solvente por beca.</p>
+            <p v-else-if="solvencia.solvente" class="pagos-page__solvencia-titulo">Al día con sus pagos.</p>
+            <p v-else class="pagos-page__solvencia-titulo">No está solvente.</p>
+            <p v-if="!solvencia.tiene_beca && solvencia.meses_pendientes.length > 0">
+              Meses pendientes:
+              {{ solvencia.meses_pendientes.map(([anio, mes]) => `${nombreMes(mes)} ${anio}`).join(", ") }}
+            </p>
+          </div>
           <AppButton
+            v-if="puedeRegistrar"
             variante="secundario"
             :deshabilitado="!solvencia.solvente || emitiendo"
             @click="emitirConstancia"
           >
             {{ emitiendo ? "Generando…" : "Emitir constancia de solvencia" }}
           </AppButton>
+          <ErrorBanner v-if="errorEmision" :mensaje="errorEmision" class="pagos-page__error-emision" />
         </div>
 
-        <h2>Registrar pago</h2>
-        <ErrorBanner v-if="errorPago" :mensaje="errorPago" />
-        <form class="pagos-page__formulario" @submit.prevent="registrarPago">
-          <FormSelect id="period_month" etiqueta="Mes" :opciones="opcionesMes" v-model="formulario.period_month" />
-          <FormField id="period_year" etiqueta="Año" tipo="number" v-model="formulario.period_year" />
-          <FormField id="amount" etiqueta="Monto (Q)" tipo="number" step="0.01" v-model="formulario.amount" />
-          <FormField id="payment_date" etiqueta="Fecha de pago" tipo="date" v-model="formulario.payment_date" />
-          <FormField id="receipt_number" etiqueta="Número de recibo" v-model="formulario.receipt_number" />
-          <AppButton tipo="submit" :deshabilitado="guardando">
-            {{ guardando ? "Guardando…" : "Registrar pago" }}
-          </AppButton>
-        </form>
+        <div class="pagos-page__paneles" :class="{ 'pagos-page__paneles--uno': !puedeRegistrar }">
+          <section v-if="puedeRegistrar" class="pagos-page__panel" aria-labelledby="titulo-registrar">
+            <h2 id="titulo-registrar">Registrar pago</h2>
+            <form class="pagos-page__formulario" @submit.prevent="registrarPago">
+              <ErrorBanner v-if="errorPago" :mensaje="errorPago" />
+              <div class="pagos-page__dos-columnas">
+                <FormSelect id="period_month" etiqueta="Mes" :opciones="opcionesMes" v-model="formulario.period_month" />
+                <FormField id="period_year" etiqueta="Año" tipo="number" v-model="formulario.period_year" />
+              </div>
+              <div class="pagos-page__dos-columnas">
+                <FormField id="amount" etiqueta="Monto (Q)" tipo="number" step="0.01" inputmode="decimal" v-model="formulario.amount" />
+                <FormField id="payment_date" etiqueta="Fecha de pago" tipo="date" v-model="formulario.payment_date" />
+              </div>
+              <FormField id="receipt_number" etiqueta="Número de recibo" v-model="formulario.receipt_number" />
+              <AppButton tipo="submit" bloque :deshabilitado="guardando">
+                {{ guardando ? "Guardando…" : "Registrar pago" }}
+              </AppButton>
+            </form>
+          </section>
 
-        <h2>Pagos registrados</h2>
-        <p v-if="pagos.length === 0" class="pagos-page__vacio">Todavía no hay pagos registrados.</p>
-        <DataTable
-          v-else
-          :columnas="[
-            { clave: 'mes', etiqueta: 'Mes' },
-            { clave: 'period_year', etiqueta: 'Año' },
-            { clave: 'amount', etiqueta: 'Monto' },
-            { clave: 'payment_date', etiqueta: 'Fecha de pago' },
-            { clave: 'receipt_number', etiqueta: 'Recibo' },
-          ]"
-          :filas="pagos.map((p) => ({ ...p, mes: nombreMes(p.period_month) }))"
-        />
+          <section class="pagos-page__panel pagos-page__panel--lista" aria-labelledby="titulo-registrados">
+            <h2 id="titulo-registrados">Pagos registrados</h2>
+            <p v-if="pagos.length === 0" class="pagos-page__vacio">Todavía no hay pagos registrados.</p>
+            <DataTable
+              v-else
+              :columnas="[
+                { clave: 'mes', etiqueta: 'Mes' },
+                { clave: 'period_year', etiqueta: 'Año' },
+                { clave: 'amount', etiqueta: 'Monto' },
+                { clave: 'payment_date', etiqueta: 'Fecha de pago' },
+                { clave: 'receipt_number', etiqueta: 'Recibo' },
+              ]"
+              :filas="pagos.map((p) => ({ ...p, mes: nombreMes(p.period_month) }))"
+              :por-pagina="12"
+            />
+          </section>
+        </div>
       </template>
     </template>
   </section>
 </template>
 
 <style scoped>
-
-.pagos-page h2 {
-  font-family: var(--fuente-titulo);
-  font-size: var(--texto-base);
-  margin: var(--espacio-xl) 0 var(--espacio-md);
+.pagos-page__selector {
+  max-width: 28rem;
 }
 
 .pagos-page__solvencia {
-  margin-top: var(--espacio-lg);
-  padding: var(--espacio-lg);
-  border-radius: var(--radio-md);
   display: flex;
   flex-direction: column;
-  gap: var(--espacio-sm);
   align-items: flex-start;
+  gap: var(--espacio-md);
+  padding: var(--espacio-lg);
+  border-radius: var(--radio-lg);
+  border-left: 4px solid currentColor;
+}
+
+.pagos-page__solvencia p {
+  margin: 0;
+}
+
+.pagos-page__solvencia-titulo {
+  font-family: var(--fuente-titulo);
+  font-size: var(--texto-md);
+  font-weight: 700;
+}
+
+.pagos-page__solvencia-texto {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-2xs);
 }
 
 .pagos-page__solvencia--al-dia {
@@ -259,14 +295,67 @@ onMounted(async () => {
   color: var(--color-etiqueta-alerta-texto);
 }
 
+.pagos-page__error-emision {
+  margin: 0;
+  width: 100%;
+}
+
+.pagos-page__paneles {
+  display: grid;
+  gap: var(--espacio-xl);
+  align-items: start;
+}
+
+.pagos-page__panel {
+  min-width: 0;
+}
+
+.pagos-page__panel h2 {
+  font-size: var(--texto-md);
+  margin-bottom: var(--espacio-md);
+}
+
+.pagos-page__panel:not(.pagos-page__panel--lista) {
+  padding: var(--espacio-lg);
+  background: var(--color-papel);
+  border: 1px solid var(--color-linea);
+  border-radius: var(--radio-lg);
+}
+
 .pagos-page__formulario {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: var(--espacio-lg);
-  align-items: flex-end;
+}
+
+.pagos-page__dos-columnas {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--espacio-md);
 }
 
 .pagos-page__vacio {
+  margin: 0;
   color: var(--color-tinta-suave);
+}
+
+@media (min-width: 40rem) {
+  .pagos-page__solvencia {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    padding: var(--espacio-lg) var(--espacio-xl);
+  }
+}
+
+@media (min-width: 64rem) {
+  .pagos-page__paneles {
+    grid-template-columns: 22rem minmax(0, 1fr);
+  }
+
+  .pagos-page__paneles--uno {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 </style>

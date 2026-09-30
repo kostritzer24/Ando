@@ -41,3 +41,21 @@ describe("FormSelect", () => {
     expect(wrapper.find("select").attributes("aria-invalid")).toBe("true");
   });
 });
+
+describe("FormSelect con opción vacía propia", () => {
+  it("no agrega el marcador cuando una opción real ya usa el valor vacío", () => {
+    const wrapper = mount(FormSelect, {
+      props: {
+        id: "rol",
+        etiqueta: "Rol",
+        modelValue: "",
+        opciones: [
+          { valor: "", etiqueta: "Todos los roles" },
+          { valor: "a", etiqueta: "Docente" },
+        ],
+      },
+    });
+    const opciones = wrapper.findAll("option").map((o) => o.text());
+    expect(opciones).toEqual(["Todos los roles", "Docente"]);
+  });
+});

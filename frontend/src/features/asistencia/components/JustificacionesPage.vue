@@ -4,7 +4,8 @@ import { computed, onMounted, reactive, ref } from "vue";
 import { useAuthStore } from "@/features/auth/stores/authStore";
 import { tiposJustificacionApi } from "@/features/catalogo/api/catalogoApi";
 import { enrollmentsApi, studentsApi } from "@/features/estudiantes/api/estudiantesApi";
-import { AppButton, AppModal, CargandoBloque, DataTable, EmptyState, ErrorBanner, FormSelect, PageHeader } from "@/shared/components";
+import { AppButton, AppModal, CampoArchivo, CargandoBloque, DataTable, EmptyState, ErrorBanner, FormSelect, PageHeader } from "@/shared/components";
+import { usePermisos } from "@/shared/permisos";
 import type { Attendance, Enrollment, Justification, JustificationType, Student } from "@/shared/types/models";
 
 import {
@@ -17,6 +18,10 @@ import {
 
 const auth = useAuthStore();
 const puedeResolver = computed(() => auth.usuario?.role_name === "Dirección");
+// Registrar es "editar" en Asistencia (Dirección y docentes de la
+// sección); Coordinación y Administrador solo consultan.
+const permisos = usePermisos();
+const puedeRegistrar = computed(() => permisos.puedeEditar("asistencia"));
 
 const cargando = ref(true);
 const error = ref("");
@@ -90,8 +95,8 @@ function abrirNueva(): void {
   modalAbierto.value = true;
 }
 
-function alElegirArchivo(evento: Event): void {
-  archivoElegido.value = (evento.target as HTMLInputElement).files?.[0] ?? null;
+function alElegirArchivo(archivo: File | null): void {
+  archivoElegido.value = archivo;
 }
 
 async function guardar(): Promise<void> {
@@ -135,7 +140,7 @@ onMounted(cargar);
   <section class="justificaciones-page">
     <PageHeader titulo="Justificaciones">
       <template #acciones>
-        <AppButton @click="abrirNueva" :deshabilitado="cargando">Registrar justificación</AppButton>
+        <AppButton v-if="puedeRegistrar" @click="abrirNueva" :deshabilitado="cargando">Registrar justificación</AppButton>
       </template>
     </PageHeader>
 
@@ -202,10 +207,13 @@ onMounted(cargar);
           <label for="reason_detail">Motivo</label>
           <textarea id="reason_detail" rows="3" v-model="formulario.reason_detail" />
         </div>
-        <div class="justificaciones-page__campo">
-          <label for="supporting_document">Documento de respaldo (opcional)</label>
-          <input id="supporting_document" type="file" @change="alElegirArchivo" />
-        </div>
+        <CampoArchivo
+          id="supporting_document"
+          etiqueta="Documento de respaldo (opcional)"
+          pista="Constancia médica u otro comprobante, en PDF o imagen."
+          accept=".pdf,.jpg,.jpeg,.png"
+          @elegir="alElegirArchivo"
+        />
         <AppButton tipo="submit" :deshabilitado="guardando || opcionesAsistencia.length === 0">
           {{ guardando ? "Guardando…" : "Guardar" }}
         </AppButton>
