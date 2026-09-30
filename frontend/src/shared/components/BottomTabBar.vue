@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import type { Component } from "vue";
+
 defineProps<{
-  items: { valor: string; etiqueta: string }[];
+  items: { valor: string; etiqueta: string; icono?: Component }[];
   modelValue: string;
 }>();
 
@@ -18,6 +20,7 @@ defineEmits<{ "update:modelValue": [string] }>();
       :aria-current="item.valor === modelValue ? 'page' : undefined"
       @click="$emit('update:modelValue', item.valor)"
     >
+      <component :is="item.icono" v-if="item.icono" class="bottom-tab-bar__icono" aria-hidden="true" />
       <slot :name="item.valor" />
       {{ item.etiqueta }}
     </button>
@@ -25,8 +28,14 @@ defineEmits<{ "update:modelValue": [string] }>();
 </template>
 
 <style scoped>
+/* Fija abajo: en el teléfono es la navegación principal, tiene que estar
+   al alcance del pulgar aunque la pantalla sea larga. */
 .bottom-tab-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: var(--capa-barra);
   display: flex;
+  background: var(--color-papel);
   border-top: 1px solid var(--color-linea);
   padding-bottom: env(safe-area-inset-bottom, 0);
 }
@@ -42,13 +51,20 @@ defineEmits<{ "update:modelValue": [string] }>();
   background: none;
   border: none;
   font-family: var(--fuente-cuerpo);
-  font-size: var(--texto-2xs);
+  font-size: var(--texto-xs);
+  font-weight: 500;
   color: var(--color-tinta-suave);
   cursor: pointer;
 }
 
+.bottom-tab-bar__icono {
+  width: 1.35rem;
+  height: 1.35rem;
+}
+
 .bottom-tab-bar__item--activo {
   color: var(--color-accion);
+  font-weight: 700;
 }
 
 .bottom-tab-bar__item:focus-visible {

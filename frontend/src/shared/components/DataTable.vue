@@ -286,6 +286,12 @@ function claveDe(fila: F, indice: number): string | number {
   color: var(--color-tinta-suave);
 }
 
+/* Una etiqueta sin valor debajo ("Letra" en una sección sin letra) solo
+   hace ruido en el bloque; en la tabla de escritorio la celda se queda. */
+.data-table__tabla td:empty {
+  display: none;
+}
+
 .data-table__tabla td:first-child {
   grid-column: 1 / -1;
   font-size: var(--texto-base);
@@ -411,7 +417,8 @@ function claveDe(fila: F, indice: number): string | number {
   }
 
   .data-table__tabla td,
-  .data-table__tabla td:first-child {
+  .data-table__tabla td:first-child,
+  .data-table__tabla td:empty {
     display: table-cell;
     padding: var(--espacio-md) var(--espacio-lg);
     border-bottom: 1px solid var(--color-linea);

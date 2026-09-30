@@ -5,6 +5,7 @@ import { useRouter } from "vue-router";
 import { AppButton, ErrorBanner, FormField } from "@/shared/components";
 
 import { cambiarContrasena } from "../api/authApi";
+import PantallaAcceso from "./PantallaAcceso.vue";
 
 const router = useRouter();
 
@@ -29,12 +30,10 @@ async function enviar(): Promise<void> {
 </script>
 
 <template>
-  <main class="change-password-page">
-    <h1 class="change-password-page__titulo">Cambiá tu contraseña</h1>
-    <p class="change-password-page__subtitulo">
-      Es tu primer ingreso. Elegí una contraseña nueva antes de seguir.
-    </p>
-
+  <PantallaAcceso
+    titulo="Cambiá tu contraseña"
+    subtitulo="Es tu primer ingreso. Elegí una contraseña nueva antes de seguir."
+  >
     <ErrorBanner v-if="mensajeError" :mensaje="mensajeError" />
 
     <form class="change-password-page__formulario" @submit.prevent="enviar">
@@ -53,35 +52,14 @@ async function enviar(): Promise<void> {
         pista="Al menos 10 caracteres, y que no sea una contraseña común."
         autocomplete="new-password"
       />
-      <AppButton tipo="submit" :deshabilitado="enviando">
+      <AppButton tipo="submit" bloque :deshabilitado="enviando">
         {{ enviando ? "Guardando…" : "Guardar" }}
       </AppButton>
     </form>
-  </main>
+  </PantallaAcceso>
 </template>
 
 <style scoped>
-.change-password-page {
-  max-width: 24rem;
-  margin: 0 auto;
-  padding: 3rem 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: var(--espacio-xl);
-}
-
-.change-password-page__titulo {
-  font-family: var(--fuente-titulo);
-  font-weight: 800;
-  font-size: 1.6rem;
-  margin: 0;
-}
-
-.change-password-page__subtitulo {
-  margin: 0;
-  color: var(--color-tinta-suave);
-}
-
 .change-password-page__formulario {
   display: flex;
   flex-direction: column;

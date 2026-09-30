@@ -87,3 +87,12 @@ describe("DataTable — búsqueda, orden y paginación", () => {
     expect(wrapper.find("tbody tr").text()).toContain("ES030");
   });
 });
+
+describe("DataTable — celdas vacías", () => {
+  it("deja la celda sin contenido (el CSS la oculta en el teléfono)", () => {
+    const wrapper = mount(DataTable, {
+      props: { columnas: [{ clave: "nombre", etiqueta: "Nombre" }, { clave: "letra", etiqueta: "Letra" }], filas: [{ nombre: "Segundo básico", letra: "" }] },
+    });
+    expect(wrapper.findAll("td")[1].element.textContent).toBe("");
+  });
+});

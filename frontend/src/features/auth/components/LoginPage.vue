@@ -6,6 +6,7 @@ import { DESTINO_POR_ROL } from "@/app/router";
 import { AppButton, ErrorBanner, FormField } from "@/shared/components";
 
 import { useAuthStore } from "../stores/authStore";
+import PantallaAcceso from "./PantallaAcceso.vue";
 
 const auth = useAuthStore();
 const router = useRouter();
@@ -34,19 +35,11 @@ async function enviar(): Promise<void> {
 </script>
 
 <template>
-  <main class="login-page">
-    <h1 class="login-page__titulo">Ingresar</h1>
-    <p class="login-page__subtitulo">Entrá con el usuario y la contraseña que te dio el centro.</p>
-
-    <ErrorBanner v-if="mensajeError" :mensaje="mensajeError" class="login-page__error" />
+  <PantallaAcceso titulo="Ingresar" subtitulo="Entrá con el usuario y la contraseña que te dio el centro.">
+    <ErrorBanner v-if="mensajeError" :mensaje="mensajeError" />
 
     <form class="login-page__formulario" @submit.prevent="enviar">
-      <FormField
-        id="username"
-        etiqueta="Usuario"
-        v-model="username"
-        autocomplete="username"
-      />
+      <FormField id="username" etiqueta="Usuario" v-model="username" autocomplete="username" autocapitalize="none" spellcheck="false" />
       <FormField
         id="password"
         etiqueta="Contraseña"
@@ -54,35 +47,14 @@ async function enviar(): Promise<void> {
         v-model="password"
         autocomplete="current-password"
       />
-      <AppButton tipo="submit" :deshabilitado="enviando">
+      <AppButton tipo="submit" bloque :deshabilitado="enviando">
         {{ enviando ? "Entrando…" : "Entrar" }}
       </AppButton>
     </form>
-  </main>
+  </PantallaAcceso>
 </template>
 
 <style scoped>
-.login-page {
-  max-width: 24rem;
-  margin: 0 auto;
-  padding: 3rem 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: var(--espacio-xl);
-}
-
-.login-page__titulo {
-  font-family: var(--fuente-titulo);
-  font-weight: 800;
-  font-size: 1.6rem;
-  margin: 0;
-}
-
-.login-page__subtitulo {
-  margin: 0;
-  color: var(--color-tinta-suave);
-}
-
 .login-page__formulario {
   display: flex;
   flex-direction: column;
