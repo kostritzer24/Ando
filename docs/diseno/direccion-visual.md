@@ -109,3 +109,36 @@ Radios de 3–8px en toda la interfaz, casi rectos. Sin sombra en ningún compon
 ## Próximo paso
 
 Con estas dos direcciones documentadas, el punto de control de la Fase 2 es que el equipo elija una (o pida ajustes puntuales sobre una de las dos) antes de construir la biblioteca de componentes base en la Fase 3. Ninguna pantalla de producción se construye todavía con ninguna de las dos paletas — eso es, literalmente, lo que dice la sección 15.1: *"Hasta que haya una elegida, construyes los componentes base."*
+
+---
+
+## Ampliación mobile-first (rama `fase-14-ui-ux`)
+
+La Propuesta B se mantiene. Lo que cambió es que la escala pensada para la maqueta del teléfono se quedaba corta para los portales administrativo y operativo, y varios valores no cumplían AA. Todo vive en `frontend/src/design/tokens.css`.
+
+### Ajustes a los tokens
+
+| Token | Antes | Ahora | Por qué |
+|---|---|---|---|
+| `--texto-base` | 0.88rem (14px) | 1rem (16px) | Por debajo de 16px, iOS hace zoom automático al enfocar un campo. |
+| `--texto-titulo` | no existía (los h1 usaban `--texto-md`, 1.05rem) | 1.5rem en el teléfono, 1.75rem desde 64rem | El título de pantalla medía casi lo mismo que el cuerpo: no había jerarquía. |
+| `--color-borde-campo` | los campos usaban `--color-linea` (1.37:1) | `#858f99` (3.29:1) | WCAG 2.1, criterio 1.4.11: el contorno de un control necesita 3:1. |
+| Espaciado | máximo 1.1rem | se agregan 1.5, 2 y 3rem | En escritorio todo quedaba pegado. |
+| Color de estado | solo pares de etiqueta | `--color-peligro`, `--color-exito`, hover | El botón destructivo y los errores de campo necesitaban un rojo de texto propio. |
+| Sombra | ninguna | `--sombra-flotante`, una sola | Solo para lo que flota encima (menú en el teléfono, diálogo, aviso). Nunca en contenido. |
+
+Puntos de quiebre (no pueden ser variables CSS dentro de `@media`, se escriben a mano): **40rem** (tableta: formularios y cabeceras en fila) y **64rem** (escritorio: aparece la barra lateral fija). La tabla pasa a filas de tabla desde **48rem**.
+
+### Patrones nuevos (`frontend/src/shared/`)
+
+- **`PageHeader`**: la única forma de encabezar una pantalla. Título, una línea de contexto, la acción principal (a ancho completo en el teléfono) y un enlace para volver en las pantallas de detalle.
+- **`DataTable`**: en el teléfono cada fila es un bloque (primera columna como título, el resto como etiqueta/valor), desde 48rem es tabla. Búsqueda sin tildes, orden por columna y paginación en el cliente.
+- **`AdminShell`**: menú agrupado por tarea, en el teléfono como panel que se abre encima y en escritorio como barra lateral fija.
+- **`confirmar()` + `ConfirmHost`**: reemplaza a `window.confirm`. El botón lleva el verbo de la acción ("Dar de baja", "Quitar clase") y va en rojo cuando es destructivo.
+- **`avisar()` + `AvisosHost`**: confirma en voz baja que algo se guardó. Los errores que exigen una acción siguen en `ErrorBanner`.
+- **`CargandoBloque`**: silueta de carga en vez del texto suelto "Cargando…".
+- Íconos con `lucide-vue-next`, siempre acompañados de texto, nunca emoji.
+
+### Lo que no cambió
+
+Sin modo oscuro, sin degradados decorativos, sin tarjetas con sombra por cada fila, sin flechas al final de enlaces. El logo completo aparece solo en el login; en el resto, solo la marca del hexágono.
