@@ -4,7 +4,7 @@ from django.utils.dateformat import format as formatear_fecha
 from drf_spectacular.utils import extend_schema
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.exceptions import AuthenticationFailed, ValidationError
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
@@ -12,10 +12,12 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from apps.accounts.domain.gestion_usuarios import CambioNoPermitido
 from apps.accounts.models import Role, User
 from apps.accounts.services import (
     CredencialesInvalidas,
     UsuarioBloqueado,
+    actualizar_usuario,
     cambiar_contrasena,
     crear_usuario,
     iniciar_sesion,
@@ -27,6 +29,7 @@ from apps.core.permissions import PermisoPorArea
 from .serializers import (
     ChangePasswordSerializer,
     LoginSerializer,
+    MeSerializer,
     ResetPasswordSerializer,
     RoleSerializer,
     UserCreateSerializer,
@@ -77,7 +80,7 @@ class LoginView(APIView):
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "login"
 
-    @extend_schema(request=LoginSerializer, responses=UserSerializer)
+    @extend_schema(request=LoginSerializer, responses=MeSerializer)
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -92,7 +95,7 @@ class LoginView(APIView):
             ) from exc
 
         response = Response(
-            {"access": str(refresh.access_token), "user": UserSerializer(user).data}
+            {"access": str(refresh.access_token), "user": MeSerializer(user).data}
         )
         _set_refresh_cookie(response, str(refresh))
         return response
@@ -175,20 +178,24 @@ class MeView(RegistraAccesoMixin, APIView):
 
     permission_classes = [permissions.IsAuthenticated]
 
-    @extend_schema(responses=UserSerializer)
+    @extend_schema(responses=MeSerializer)
     def get(self, request):
-        return Response(UserSerializer(request.user).data)
+        return Response(MeSerializer(request.user).data)
 
 
 class UserViewSet(RegistraAccesoMixin, viewsets.ModelViewSet):
     """RF-01: crear usuarios y asignarles un rol. Solo Dirección y
     Administrador (docs/permisos-roles.md)."""
 
-    queryset = User.objects.select_related("role").all()
+    queryset = User.objects.select_related("role").order_by("username")
     serializer_class = UserSerializer
     permission_classes = [PermisoPorArea]
     area = "usuarios_roles"
     lookup_field = "public_id"
+    # Sin DELETE ni PUT: una cuenta nunca se borra (queda en la bitácora de
+    # todo lo que hizo), se desactiva con PATCH `is_active`. Antes el
+    # ModelViewSet completo dejaba borrarla de verdad.
+    http_method_names = ["get", "post", "patch", "head", "options"]
 
     def get_serializer_class(self):
         if self.action == "create":
@@ -207,6 +214,18 @@ class UserViewSet(RegistraAccesoMixin, viewsets.ModelViewSet):
         )
         return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
 
+    def partial_update(self, request, *args, **kwargs):
+        user = self.get_object()
+        serializer = UserSerializer(user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        try:
+            user = actualizar_usuario(
+                actualizado_por=request.user, user=user, **serializer.validated_data
+            )
+        except CambioNoPermitido as exc:
+            raise ValidationError({"detail": str(exc)}) from exc
+        return Response(UserSerializer(user).data)
+
     @action(detail=True, methods=["post"], url_path="reset-password")
     def reset_password(self, request, public_id=None):
         """POST /users/{public_id}/reset-password/ — restablecimiento
@@ -222,8 +241,11 @@ class UserViewSet(RegistraAccesoMixin, viewsets.ModelViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class RoleViewSet(RegistraAccesoMixin, viewsets.ModelViewSet):
-    """GET /roles/ — RNF-03. Solo Dirección y Administrador."""
+class RoleViewSet(RegistraAccesoMixin, viewsets.ReadOnlyModelViewSet):
+    """GET /roles/ — RNF-03. Solo Dirección y Administrador. De solo
+    lectura: los permisos de cada rol son la matriz de
+    docs/permisos-roles.md, sembrada por `seed_fase3`; cambiarlos desde la
+    API (o borrar un rol con usuarios) la dejaría desalineada en silencio."""
 
     queryset = Role.objects.all()
     serializer_class = RoleSerializer
