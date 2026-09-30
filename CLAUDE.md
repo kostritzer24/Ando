@@ -42,7 +42,9 @@ npx playwright test e2e/<file>.spec.ts --workers=1   # one spec file at a time �
 npm run types:generate                  # regenerates src/shared/types/api.ts against the live local backend — never hand-edit that file
 ```
 
-**Playwright gotcha:** run one spec file at a time (`--workers=1`), not the whole `e2e/` suite — chaining specs trips the login rate limit (RNF-05: 10 attempts/min per IP, not relaxed in dev), producing false failures (redirect back to `/ingresar`) that look like bugs but aren't. If several specs fail with that exact symptom right after a burst of logins, re-run them in isolation before assuming a regression.
+**Playwright gotcha:** run one spec file at a time (`--workers=1`), not the whole `e2e/` suite — chaining specs trips the login rate limit (RNF-05: 10 attempts/min per IP, not relaxed in dev), producing false failures (the test stays on `/ingresar`, whose error now reads "Demasiados intentos seguidos" — before the fix in `fase-14-ui-ux` it misleadingly said "Usuario o contraseña incorrectos") that look like bugs but aren't. If several specs fail with that exact symptom right after a burst of logins, re-run them in isolation before assuming a regression.
+
+**The specs also depend on each other's data** (they share the one seeded db, nothing is cleaned up), so on a freshly reset db they only all pass in a compatible order: `reportes` before `expedientes-asignaciones` (it counts exactly the 5 seeded enrollments, and expedientes enrolls more), `horarios`/`notas`/`pagos-documentos-boletines` before `portal-publico` (its setup books Monday period 1 and creates grades/report cards those specs expect free), and `portal-publico` before `comunicacion` (the RN-16 test locks `familia.demo` for 24h). Order that passes: iniciar-sesion, sesion-persistente, reportes, catalogo-cursos, catalogo-ciclos-secciones, horarios, asistencia, notas, pagos-documentos-boletines, expedientes-asignaciones, portal-publico, comunicacion — with ~65 s between files for the login rate limit. Re-running a spec on a db it already touched can fail for the same reason (e.g. `Encargado De Prueba` created twice).
 
 ## Architecture
 
