@@ -25,6 +25,8 @@ python -m pytest --cov=apps.<app>.domain --cov=apps.<app>.services --cov-report=
 
 **macOS-only gotcha:** any command touching PDF generation (`apps.documents`, `grading` boletín, `communication` reporte de conducta, `apps.reports`) needs `export DYLD_LIBRARY_PATH=/opt/homebrew/lib` in the same shell first — WeasyPrint needs Homebrew's Pango/Cairo, and Anaconda's Python ships its own conflicting `libcairo`/`libharfbuzz` that wins without this. Use `DYLD_LIBRARY_PATH` (priority), not `DYLD_FALLBACK_LIBRARY_PATH` — the fallback only fixes `import weasyprint`, not actual rendering (segfaults mid-PDF instead).
 
+**Windows gotcha:** WeasyPrint needs native GTK/Pango DLLs that `pip` does not install. On the current dev machine the only copy is the one bundled with SWI-Prolog, and it only loads when its folder is registered explicitly: `WEASYPRINT_DLL_DIRECTORIES='C:\Program Files\swipl\bin'` in the same shell before any `manage.py` command (without it, Django fails at startup importing `weasyprint`, `OSError: cannot load library ... libgobject-2.0-0.dll`). The venv lives in `.venv\Scripts\`, not `.venv/bin/`.
+
 ### Frontend (Vue 3 + Vite) — run from `frontend/`
 
 ```bash
@@ -99,7 +101,9 @@ Three portals share one router, gated by `meta.roles` and a `beforeEach` guard r
 
 ### Git workflow
 
-One branch per phase, each branching from the *previous phase's* branch, not from `main` (`fase-01-plan-maestro` → `fase-02-...` → … ). `main` is deliberately frozen (end of Fase 3) pending a full review — nothing has been merged into it.
+Phases 1–13 were built as a chain of branches, each from the previous phase's branch (`fase-01-plan-maestro` → `fase-02-...` → … → `fase-13-endurecimiento`), and `main` stayed frozen until the end of Fase 13, when it was fast-forwarded to `fase-13-endurecimiento`.
+
+From then on: every new branch starts from an up-to-date `main` and goes back into it through a pull request. Claude creates branches and commits; the user runs `git push` (SSH key with a passphrase) — never push on the user's behalf.
 
 ## Testing conventions
 
