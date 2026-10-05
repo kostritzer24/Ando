@@ -1,111 +1,140 @@
 <!--
-Boletín de unidad (RF-09/RF-34). Tipografía sans-serif del sistema, mismo
-criterio que `apps/documents/templates/documents/_base_documento.html`
-(WeasyPrint sin acceso garantizado a internet). No lleva QR ni espacio de
-firma/sello: RN-15 aplica a los documentos emitidos (constancias, cartas),
-no al boletín, que no es un `IssuedDocument`.
+Cuadro de notas (RF-09/RF-34), formato institucional: encabezado del
+centro, datos del alumno, una fila por curso con Unidad 1 a 4, Promedio
+Final y A/R, fila "Promedio de Unidad" y línea para la firma del maestro
+guía. Reproduce la hoja "Plantilla" de formatos_institucionales
+("QUINTO BACH - copia.xlsm") en el mismo orden y con los mismos rótulos.
+RN-15: la línea de firma queda en blanco, para firma a mano; el boletín no
+lleva QR ni firma digital. Tipografía sans-serif del sistema (WeasyPrint
+sin acceso garantizado a internet), igual que
+`apps/documents/templates/documents/_base_documento.html`.
 -->
 <!DOCTYPE html>
 <html lang="es-GT">
 <head>
 <meta charset="utf-8">
 <style>
-  @page {
-    size: letter;
-    margin: 2.2cm 2cm;
-  }
+  @page { size: letter; margin: 2cm 2cm; }
   body {
     font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
     color: #1a1a1a;
-    font-size: 11.5pt;
-    line-height: 1.5;
+    font-size: 10.5pt;
+    line-height: 1.35;
   }
-  .membrete {
-    border-bottom: 2pt solid #1C6EA4;
-    padding-bottom: 0.4cm;
-    margin-bottom: 1cm;
-  }
-  .membrete .nombre {
+  .encabezado { text-align: center; margin-bottom: 0.7cm; }
+  .encabezado .centro { font-weight: 800; font-size: 13pt; color: #1C6EA4; }
+  .encabezado .nivel { font-size: 11pt; margin-top: 0.1cm; }
+  .encabezado .titulo {
     font-weight: 800;
-    font-size: 13pt;
-    color: #1C6EA4;
-  }
-  h1 {
     font-size: 14pt;
-    font-weight: 800;
+    letter-spacing: 0.08em;
+    margin-top: 0.35cm;
+  }
+  .encabezado .ciclo { font-size: 10.5pt; margin-top: 0.1cm; }
+  .datos { width: 100%; border-collapse: collapse; margin-bottom: 0.5cm; }
+  .datos td { padding: 0.12cm 0; border: none; }
+  .datos .etiqueta { font-weight: 700; white-space: nowrap; width: 1%; padding-right: 0.25cm; }
+  .datos .valor { border-bottom: 0.5pt solid #1a1a1a; }
+  .datos .espacio { width: 0.6cm; }
+  table.notas { width: 100%; border-collapse: collapse; }
+  table.notas th, table.notas td {
+    border: 0.75pt solid #1a1a1a;
+    padding: 0.14cm 0.2cm;
     text-align: center;
-    margin: 0.6cm 0 0.3cm;
   }
-  .datos {
-    text-align: center;
-    color: #444;
-    font-size: 10pt;
-    margin-bottom: 1cm;
+  table.notas thead th { background: #e8f1f8; font-weight: 700; white-space: nowrap; }
+  table.notas col.unidad { width: 1.9cm; }
+  table.notas col.final { width: 2.2cm; }
+  table.notas col.estado { width: 1.4cm; }
+  table.notas td.curso { text-align: left; }
+  table.notas td.aprobado { font-weight: 700; }
+  table.notas td.reprobado { font-weight: 700; color: #B3261E; }
+  table.notas tr.promedio td { background: #f3f3f3; font-weight: 700; }
+  .firma { margin-top: 2.6cm; text-align: center; }
+  .firma .linea {
+    width: 7cm;
+    margin: 0 auto;
+    border-top: 1pt solid #1a1a1a;
+    padding-top: 0.15cm;
+    font-weight: 700;
   }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-  th, td {
-    text-align: left;
-    padding: 0.3cm 0.4cm;
-    border-bottom: 0.5pt solid #ccc;
-  }
-  th {
-    color: #555;
-    font-size: 9.5pt;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-  }
-  td.nota {
-    text-align: right;
-    font-variant-numeric: tabular-nums;
-  }
-  td.estado {
-    text-align: right;
-  }
-  .aprobado { color: #1C6EA4; }
-  .reprobado { color: #B3261E; font-weight: 700; }
-  .pie {
-    margin-top: 1.5cm;
-    font-size: 8.5pt;
-    color: #666;
-  }
+  .firma .nombre { font-size: 9.5pt; color: #444; }
+  .pie { margin-top: 1.2cm; font-size: 8.5pt; color: #666; text-align: center; }
 </style>
 </head>
 <body>
-  <div class="membrete">
-    <div class="nombre">El Patojismo — Centro Socioeducativo Lic. Magno Rudy Romero Arévalo</div>
+  <div class="encabezado">
+    <div class="centro">Centro Socioeducativo "Lic. Magno Rudy Romero Arévalo"</div>
+    {% if nivel %}<div class="nivel">{{ nivel }}</div>{% endif %}
+    <div class="titulo">CUADRO DE NOTAS</div>
+    <div class="ciclo">Ciclo Escolar {{ ciclo_anio }}</div>
   </div>
 
-  <h1>Boletín de calificaciones — Unidad {{ unidad_numero }}</h1>
-  <div class="datos">
-    {{ estudiante_nombre }} ({{ estudiante_codigo }}) — {{ grado_seccion }} — ciclo {{ ciclo_anio }}
-  </div>
+  <table class="datos">
+    <tr>
+      <td class="etiqueta">Nombre del Alumno(a):</td>
+      <td class="valor" colspan="4">{{ estudiante_nombre }} ({{ estudiante_codigo }})</td>
+    </tr>
+    <tr>
+      <td class="etiqueta">Grado:</td>
+      <td class="valor">{{ grado }}</td>
+      <td class="espacio"></td>
+      <td class="etiqueta">Sección:</td>
+      <td class="valor">{{ seccion }}</td>
+    </tr>
+  </table>
 
-  <table>
+  <table class="notas">
+    <colgroup>
+      <col>
+      <col class="unidad"><col class="unidad"><col class="unidad"><col class="unidad">
+      <col class="final"><col class="estado">
+    </colgroup>
     <thead>
       <tr>
-        <th>Curso</th>
-        <th>Nota</th>
-        <th>Estado</th>
+        <th rowspan="2" style="text-align:left;">Materia</th>
+        <th colspan="4">Nota Promoción</th>
+        <th rowspan="2">Promedio Final</th>
+        <th rowspan="2">A/R</th>
+      </tr>
+      <tr>
+        {% for numero in numeros_unidad %}<th>Unidad {{ numero }}</th>{% endfor %}
       </tr>
     </thead>
     <tbody>
       {% for curso in cursos %}
       <tr>
-        <td>{{ curso.nombre }}</td>
-        <td class="nota">{{ curso.nota }}</td>
-        <td class="estado {% if curso.aprobado %}aprobado{% else %}reprobado{% endif %}">
-          {% if curso.aprobado %}Aprobado{% else %}Reprobado{% endif %}
-        </td>
+        <td class="curso">{{ curso.nombre }}</td>
+        {% for nota in curso.unidades %}
+        <td>{% if nota is not None %}{{ nota|floatformat:"-2" }}{% endif %}</td>
+        {% endfor %}
+        <td>{% if curso.promedio is not None %}{{ curso.promedio }}{% endif %}</td>
+        {% if curso.aprobado is None %}
+        <td></td>
+        {% elif curso.aprobado %}
+        <td class="aprobado">A</td>
+        {% else %}
+        <td class="reprobado">R</td>
+        {% endif %}
       </tr>
       {% endfor %}
+      <tr class="promedio">
+        <td class="curso">Promedio de Unidad</td>
+        {% for promedio in promedios %}
+        <td>{% if promedio is not None %}{{ promedio }}{% endif %}</td>
+        {% endfor %}
+        <td></td>
+      </tr>
     </tbody>
   </table>
 
+  <div class="firma">
+    <div class="linea">Firma Maestro Guía</div>
+    {% if maestro_guia %}<div class="nombre">{{ maestro_guia }}</div>{% endif %}
+  </div>
+
   <div class="pie">
-    Boletín publicado el {{ publicado_el }}. Este documento no lleva firma ni sello digital.
+    Boletín de la Unidad {{ unidad_numero }}, publicado el {{ publicado_el }}.
   </div>
 </body>
 </html>

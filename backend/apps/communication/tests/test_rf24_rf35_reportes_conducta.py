@@ -1,3 +1,5 @@
+from datetime import date
+
 import pytest
 from rest_framework.test import APIClient
 
@@ -171,3 +173,43 @@ def test_rf24_descarga_el_pdf_del_reporte():
     assert respuesta.status_code == 200
     assert respuesta["Content-Type"] == "application/pdf"
     assert respuesta.content[:4] == b"%PDF"
+
+
+def test_rf24_el_formato_lista_todo_el_catalogo_y_marca_solo_lo_registrado():
+    from apps.communication.models import ConductReportArticle
+    from apps.communication.services.conduct_report import contenido_reporte
+
+    capitulo = "CAPÍTULO IV: RESPONSABILIDAD ACADÉMICA"
+    for codigo, descripcion in (
+        ("Art. 11", "Uso indebido del tiempo de clase"),
+        ("Art. 9", "Puntualidad o asistencia"),
+        ("Art. 10", "Copia o plagio"),
+    ):
+        ConductRuleArticle.objects.create(chapter=capitulo, code=codigo, description=descripcion)
+    seccion = SectionFactory()
+    reporte = ConductReport.objects.create(
+        enrollment=EnrollmentFactory(section=seccion, cycle=seccion.cycle),
+        guide_teacher=_guia_de(seccion),
+        report_date=date(2026, 3, 10),
+        severity="leve",
+        incident_description="...",
+        immediate_actions="...",
+        sanction_type="llamado_verbal",
+        commitments="Llegar a tiempo",
+    )
+    ConductReportArticle.objects.create(
+        conduct_report=reporte, article=ConductRuleArticle.objects.get(code="Art. 10")
+    )
+
+    contenido = contenido_reporte(reporte)
+
+    articulos = [a for col in contenido["columnas_normas"] for c in col for a in c["articulos"]]
+    # El orden del formato impreso es 9, 10, 11 — no el alfabético ("Art. 10" < "Art. 9").
+    assert [a["codigo"] for a in articulos] == ["Art. 9", "Art. 10", "Art. 11"]
+    assert [a["marcado"] for a in articulos] == [False, True, False]
+    assert [g["marcada"] for g in contenido["gravedades"]] == [True, False, False]
+    assert [s["texto"] for s in contenido["columnas_sanciones"][0] if s["marcada"]] == [
+        "Llamado de atención verbal"
+    ]
+    # El formato deja tres renglones de compromisos; los que faltan quedan en blanco.
+    assert len(contenido["compromisos"]) == 3

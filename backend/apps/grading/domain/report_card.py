@@ -4,6 +4,10 @@ RN-10 y que la inscripción esté solvente (RN-09). Las cadenas de estado
 las pasa quien llama (`grading/services/report_card.py`), no se importa
 el modelo acá para mantener el dominio sin depender de Django."""
 
+from decimal import Decimal
+
+from .scoring import aprueba_curso, calcular_nota_final
+
 
 class TransicionDeBoletinInvalida(Exception):
     pass
@@ -27,3 +31,45 @@ def validar_publicacion(
         raise TransicionDeBoletinInvalida(
             "El estudiante no está solvente; no se puede publicar el boletín (RN-09)."
         )
+
+
+NUMERO_DE_UNIDADES = 4
+
+
+def nivel_del_grado(grado: str) -> str:
+    """Subtítulo del cuadro de notas institucional ("Ciclo Diversificado" en
+    el formato de Quinto Bachillerato). Si el grado no es reconocible no se
+    inventa un nivel: el membrete simplemente lo omite."""
+    minuscula = grado.lower()
+    if "bachillerato" in minuscula or "diversificado" in minuscula:
+        return "Ciclo Diversificado"
+    if "básico" in minuscula or "basico" in minuscula:
+        return "Ciclo Básico"
+    return ""
+
+
+def armar_fila_cuadro(notas_por_unidad: dict[int, Decimal]) -> dict:
+    """Una fila del cuadro de notas (formato institucional: Unidad 1 a 4,
+    Promedio Final y A/R). Una unidad sin nota queda en blanco y no entra
+    al promedio — como el `AVERAGE` de la hoja de cálculo del centro. El
+    promedio y la aprobación salen de `scoring.py` (RN-02/RN-03)."""
+    unidades = [notas_por_unidad.get(numero) for numero in range(1, NUMERO_DE_UNIDADES + 1)]
+    con_nota = [nota for nota in unidades if nota is not None]
+    promedio = calcular_nota_final(con_nota) if con_nota else None
+    return {
+        "unidades": unidades,
+        "promedio": promedio,
+        "aprobado": None if promedio is None else aprueba_curso(promedio),
+    }
+
+
+def promedio_de_unidades(filas: list[dict]) -> list[int | None]:
+    """Fila "Promedio de Unidad" del cuadro: el promedio de todos los cursos
+    en cada columna, más el general en la última posición."""
+    columnas = []
+    for indice in range(NUMERO_DE_UNIDADES):
+        notas = [fila["unidades"][indice] for fila in filas if fila["unidades"][indice] is not None]
+        columnas.append(calcular_nota_final(notas) if notas else None)
+    promedios = [fila["promedio"] for fila in filas if fila["promedio"] is not None]
+    columnas.append(calcular_nota_final([Decimal(p) for p in promedios]) if promedios else None)
+    return columnas

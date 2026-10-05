@@ -1,96 +1,171 @@
 <!--
-Reporte de conducta (RF-24), formato real del centro — ver
-docs/adr/0006-formato-reporte-conducta.md. Cuatro líneas de firma en
-blanco (maestro guía, miembro de dirección, estudiante, encargado):
-RN-15, ninguna se genera digital.
+Reporte de incidencia (RF-24), formato institucional — réplica de
+formatos_institucionales/reporte.docx.pdf: mismos bloques, mismo orden
+y mismos rótulos (tipo de falta, normas por capítulo en dos columnas,
+descripción, sanción, compromisos, firmas y acuse de recibo). El
+documento original es un formulario para llenar a mano, así que aquí cada
+opción se imprime con su casilla y la que corresponde a este reporte sale
+marcada; ver docs/adr/0006-formato-reporte-conducta.md.
+RN-15: las cuatro firmas (maestro guía, dirección, estudiante, encargado)
+quedan en blanco para firmar a mano — ninguna se genera digital.
 -->
 <!DOCTYPE html>
 <html lang="es-GT">
 <head>
 <meta charset="utf-8">
 <style>
-  @page { size: letter; margin: 2.2cm 2cm; }
+  @page { size: letter; margin: 1cm 1.8cm; }
   body {
     font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
-    color: #1a1a1a;
-    font-size: 10.5pt;
-    line-height: 1.5;
-  }
-  .membrete {
-    border-bottom: 2pt solid #1C6EA4;
-    padding-bottom: 0.4cm;
-    margin-bottom: 0.8cm;
-  }
-  .membrete .nombre { font-weight: 800; font-size: 12pt; color: #1C6EA4; }
-  h1 { font-size: 13pt; font-weight: 800; text-align: center; margin: 0 0 0.8cm; }
-  .datos { text-align: center; color: #444; font-size: 9.5pt; margin-bottom: 0.8cm; }
-  h2 {
-    font-size: 9.5pt;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-    color: #555;
-    margin: 0.8cm 0 0.2cm;
-    border-bottom: 0.5pt solid #ccc;
-    padding-bottom: 0.15cm;
-  }
-  p { margin: 0.2cm 0; }
-  ul { margin: 0.2cm 0; padding-left: 1.1cm; }
-  .firmas { margin-top: 1.8cm; display: flex; flex-wrap: wrap; gap: 1cm 1.5cm; }
-  .firmas .linea {
-    flex: 1 1 40%;
-    border-top: 1pt solid #1a1a1a;
-    text-align: center;
-    padding-top: 0.2cm;
+    color: #111;
     font-size: 9pt;
-    color: #444;
+    line-height: 1.25;
   }
+  h1 { font-size: 11pt; font-weight: 800; margin: 0 0 0.25cm; }
+  h2 { font-size: 10.5pt; font-weight: 800; margin: 0.15cm 0 0.05cm; }
+  h3 { font-size: 8pt; font-weight: 800; margin: 0.12cm 0 0.04cm; }
+  hr { border: none; border-top: 0.6pt solid #888; margin: 0.15cm 0; }
+  .etiqueta { font-weight: 800; }
+  table.encabezado { width: 100%; border-collapse: collapse; }
+  table.encabezado td { padding: 0 0.25cm 0 0; vertical-align: bottom; white-space: nowrap; }
+  table.encabezado td.dato { border-bottom: 0.75pt solid #111; font-weight: 800; width: 100%; }
+  table.encabezado td.dato.corto { width: 3.2cm; }
+  ul { list-style: none; margin: 0.05cm 0 0 0.5cm; padding: 0; }
+  li { margin: 0.03cm 0; }
+  .caja {
+    display: inline-block;
+    width: 0.3cm;
+    height: 0.3cm;
+    border: 0.75pt solid #111;
+    margin-right: 0.18cm;
+    vertical-align: -0.04cm;
+    text-align: center;
+    font-size: 8pt;
+    line-height: 0.3cm;
+    font-weight: 800;
+  }
+  .normas { width: 100%; border-collapse: collapse; }
+  .normas td { width: 50%; vertical-align: top; padding-right: 0.4cm; font-size: 8pt; }
+  .normas li { margin: 0.01cm 0; }
+  .campo-lineas {
+    min-height: 1.3cm;
+    line-height: 0.65cm;
+    background-image: repeating-linear-gradient(
+      to bottom, transparent 0, transparent 0.62cm, #888 0.62cm, #888 0.65cm
+    );
+    white-space: pre-wrap;
+  }
+  .campo-lineas.corto { min-height: 0.65cm; }
+  .dos-columnas { width: 100%; border-collapse: collapse; }
+  .dos-columnas td { width: 50%; vertical-align: top; padding-right: 0.4cm; }
+  .rellenado { font-weight: 800; text-decoration: underline; }
+  ol { margin: 0.05cm 0 0 0.9cm; padding: 0; }
+  ol li { margin: 0.02cm 0; }
+  .acuse { margin: 0.05cm 0 0.1cm; }
+  .firma-linea { display: inline-block; border-bottom: 0.75pt solid #111; width: 3.6cm; }
+  .firma-linea.larga { width: 7.5cm; }
+  .bloque-firma { margin: 0.15cm 0; }
 </style>
 </head>
 <body>
-  <div class="membrete">
-    <div class="nombre">El Patojismo — Centro Socioeducativo Lic. Magno Rudy Romero Arévalo</div>
-  </div>
+  <h1>REPORTE DE INCIDENCIA</h1>
+  <hr>
+  <table class="encabezado">
+    <tr>
+      <td class="etiqueta">Nombre completo:</td>
+      <td class="dato">{{ estudiante_nombre }}</td>
+      <td class="etiqueta">Grado:</td>
+      <td class="dato corto">{{ grado_seccion }}</td>
+      <td class="etiqueta">Fecha del reporte:</td>
+      <td class="dato corto">{{ fecha }}</td>
+    </tr>
+  </table>
+  <hr>
 
-  <h1>Reporte de incidencia de conducta</h1>
-  <div class="datos">
-    {{ estudiante_nombre }} — {{ grado_seccion }} — {{ reporte.report_date }}
-  </div>
-
-  <h2>Tipo de falta</h2>
-  <p>{{ reporte.get_severity_display }}</p>
-
-  <h2>Artículos del código de convivencia incumplidos</h2>
-  {% if articulos %}
+  <div class="etiqueta">Tipo de falta cometida:</div>
   <ul>
-    {% for item in articulos %}
-    <li>{{ item.article.code }} — {{ item.article.description }}</li>
+    {% for falta in gravedades %}
+    <li><span class="caja">{% if falta.marcada %}X{% endif %}</span><b>{{ falta.nombre }}</b> ({{ falta.detalle }})</li>
     {% endfor %}
   </ul>
-  {% else %}
-  <p>Ninguno marcado del catálogo.</p>
-  {% endif %}
-  {% if reporte.other_violation_detail %}
-  <p><strong>Otra falta no especificada:</strong> {{ reporte.other_violation_detail }}</p>
-  {% endif %}
 
-  <h2>Hechos ocurridos</h2>
-  <p>{{ reporte.incident_description }}</p>
+  <div class="etiqueta" style="margin-top:0.2cm;">Norma(s) incumplida(s):</div>
+  <table class="normas">
+    <tr>
+      {% for columna in columnas_normas %}
+      <td>
+        {% for capitulo in columna %}
+        <h3>{{ capitulo.nombre }}</h3>
+        <ul>
+          {% for articulo in capitulo.articulos %}
+          <li><span class="caja">{% if articulo.marcado %}X{% endif %}</span><b>{{ articulo.codigo }}:</b> {{ articulo.descripcion }}</li>
+          {% endfor %}
+        </ul>
+        {% endfor %}
+      </td>
+      {% endfor %}
+    </tr>
+  </table>
 
-  <h2>Medidas inmediatas tomadas</h2>
-  <p>{{ reporte.immediate_actions }}</p>
+  <h2 style="font-size:9pt;margin-left:0.5cm;">OTRA FALTA NO ESPECIFICADA:</h2>
+  <ul>
+    <li><span class="caja">{% if reporte.other_violation_detail %}X{% endif %}</span><span class="rellenado">{{ reporte.other_violation_detail|default:"_____________" }}</span></li>
+  </ul>
+  <hr>
 
-  <h2>Sanción</h2>
-  <p>{{ reporte.get_sanction_type_display }}</p>
-  {% if reporte.sanction_detail %}<p>{{ reporte.sanction_detail }}</p>{% endif %}
+  <h2>DESCRIPCIÓN DEL INCIDENTE</h2>
+  <div class="etiqueta">Hechos ocurridos:</div>
+  <div class="campo-lineas">{{ reporte.incident_description }}</div>
+  <div class="etiqueta" style="margin-top:0.2cm;">Medidas inmediatas tomadas:</div>
+  <div class="campo-lineas corto">{{ reporte.immediate_actions }}</div>
+  <hr>
 
-  <h2>Compromisos establecidos</h2>
-  <p>{{ reporte.commitments }}</p>
+  <h2>SANCIÓN APLICADA</h2>
+  <div class="etiqueta">Medida formativa/sanción:</div>
+  <table class="dos-columnas">
+    <tr>
+      {% for columna in columnas_sanciones %}
+      <td>
+        <ul>
+          {% for sancion in columna %}
+          <li>
+            <span class="caja">{% if sancion.marcada %}X{% endif %}</span>{{ sancion.texto }}
+            {% if sancion.detalle %}<span class="rellenado">{{ sancion.detalle }}</span>{% elif sancion.blanco %}{{ sancion.blanco }}{% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+      </td>
+      {% endfor %}
+    </tr>
+  </table>
 
-  <div class="firmas">
-    <div class="linea">Maestro guía</div>
-    <div class="linea">Miembro de dirección</div>
-    <div class="linea">Estudiante</div>
-    <div class="linea">Encargado</div>
+  <div class="etiqueta" style="margin-top:0.2cm;">Compromisos establecidos:</div>
+  <ol>
+    {% for compromiso in compromisos %}
+    <li><span class="rellenado">{{ compromiso }}</span></li>
+    {% endfor %}
+  </ol>
+  <hr>
+
+  <h2>FIRMAS Y ACUSE DE RECIBO</h2>
+  <div class="bloque-firma">
+    <span class="etiqueta">Maestro Guía:</span> <span class="firma-linea larga"></span>
+    &nbsp; Firma: <span class="firma-linea"></span>
+  </div>
+  <div class="bloque-firma">
+    <span class="etiqueta">Miembro de Dirección:</span> <span class="firma-linea larga"></span>
+    &nbsp; Firma: <span class="firma-linea"></span>
+  </div>
+  <div class="etiqueta">Por el estudiante:</div>
+  <div class="acuse">He leído y comprendo este reporte. Reconozco haber infringido las normas del Código de Convivencia.</div>
+  <div>Firma: <span class="firma-linea"></span></div>
+  <div class="etiqueta" style="margin-top:0.2cm;">Por el encargado/familiar:</div>
+  <div class="acuse">He sido informado sobre el incidente y las medidas tomadas.</div>
+  <div class="bloque-firma"><span class="etiqueta">Encargado/Familiar:</span> <span class="firma-linea" style="width:11cm;"></span></div>
+  <div>
+    Firma: <span class="firma-linea"></span>
+    &nbsp; Fecha: <span class="firma-linea"></span>
+    &nbsp; Teléfono: <span class="firma-linea"></span>
   </div>
 </body>
 </html>

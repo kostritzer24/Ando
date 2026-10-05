@@ -4,8 +4,14 @@ from apps.payments.services.solvency import calcular_solvencia
 from apps.scheduling.models import TeacherAssignment
 from apps.students.models import Enrollment
 
-from ..domain.report_card import validar_aprobacion, validar_publicacion
-from ..domain.scoring import NOTA_MINIMA_APROBACION
+from ..domain.report_card import (
+    NUMERO_DE_UNIDADES,
+    armar_fila_cuadro,
+    nivel_del_grado,
+    promedio_de_unidades,
+    validar_aprobacion,
+    validar_publicacion,
+)
 from ..models import ReportCard
 from .grade import nota_de_unidad
 
@@ -58,8 +64,20 @@ def contenido_boletin(boletin: ReportCard) -> dict:
     `ReportCard`): se arma al momento de descargarlo, curso por curso, a
     partir de las mismas asignaciones docentes de la sección — ninguna
     calificación se duplica ni se recalcula distinto de como ya la ve el
-    docente en `nota_de_unidad` (RF-18)."""
+    docente en `nota_de_unidad` (RF-18).
+
+    El formato es el "Cuadro de notas" institucional: una fila por curso
+    con las cuatro unidades, promedio final y A/R. Solo aparecen las
+    unidades con boletín publicado para esta inscripción (más la unidad
+    que se descarga) — una unidad en borrador o aprobada no se adelanta a
+    la familia (RN-09/RN-10)."""
     inscripcion = boletin.enrollment
+    unidades_visibles = {boletin.unit.number: boletin.unit}
+    for publicado in ReportCard.objects.filter(
+        enrollment=inscripcion, status=ReportCard.ESTADO_PUBLICADO, is_active=True
+    ).select_related("unit"):
+        unidades_visibles[publicado.unit.number] = publicado.unit
+
     asignaciones = (
         TeacherAssignment.objects.filter(
             section=inscripcion.section, cycle=inscripcion.cycle, is_active=True
@@ -69,20 +87,27 @@ def contenido_boletin(boletin: ReportCard) -> dict:
     )
     cursos = []
     for asignacion in asignaciones:
-        nota = nota_de_unidad(enrollment=inscripcion, unit=boletin.unit, assignment=asignacion)
-        cursos.append(
-            {
-                "nombre": asignacion.course.name,
-                "nota": nota,
-                "aprobado": nota >= NOTA_MINIMA_APROBACION,
-            }
-        )
+        notas = {
+            numero: nota_de_unidad(enrollment=inscripcion, unit=unidad, assignment=asignacion)
+            for numero, unidad in unidades_visibles.items()
+            if numero <= NUMERO_DE_UNIDADES
+        }
+        cursos.append({"nombre": asignacion.course.name, **armar_fila_cuadro(notas)})
+
+    maestro_guia = inscripcion.section.homeroom_teacher
     return {
         "estudiante_nombre": inscripcion.student.nombre_completo(),
         "estudiante_codigo": inscripcion.student.internal_code,
-        "grado_seccion": str(inscripcion.section),
+        "grado": inscripcion.section.grade,
+        "seccion": inscripcion.section.letter,
+        "nivel": nivel_del_grado(inscripcion.section.grade),
         "ciclo_anio": inscripcion.cycle.year,
         "unidad_numero": boletin.unit.number,
+        "numeros_unidad": range(1, NUMERO_DE_UNIDADES + 1),
         "cursos": cursos,
+        "promedios": promedio_de_unidades(cursos),
+        "maestro_guia": f"{maestro_guia.first_name} {maestro_guia.last_name}".strip()
+        if maestro_guia
+        else "",
         "publicado_el": boletin.published_at.strftime("%d/%m/%Y") if boletin.published_at else "",
     }
