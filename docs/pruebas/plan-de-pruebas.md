@@ -6,10 +6,10 @@ Fuente de verdad de lo que "debe pasar": `docs/PROMPT_MAESTRO.md` (RF, RN, RNF, 
 
 | Set | Persona | Módulos | Portales |
 |---|---|---|---|
-| **A** | | Acceso y sesión, matriz de permisos, usuarios, bitácora, catálogos/ciclos/secciones, reportes institucionales, verificación QR | Todos (transversal) |
-| **B** | | Estudiantes, encargados, asignaciones, horarios, calendario, asistencia, justificaciones, plantilla de talleres | Administrativo + Operativo |
-| **C** | | Notas (unidad, captura, plantilla, modificaciones) y boletines | Operativo + Administrativo |
-| **D** | | Pagos, solvencia, documentos, avisos, reportes de conducta, buzón, portal de familia completo | Administrativo + Operativo + Portal |
+| **A** | Francisco Samayoa | Acceso y sesión, matriz de permisos, usuarios, bitácora, catálogos/ciclos/secciones, reportes institucionales, verificación QR | Todos (transversal) |
+| **B** | Nataly Gabriela | Estudiantes, encargados, asignaciones, horarios, calendario, asistencia, justificaciones, plantilla de talleres | Administrativo + Operativo |
+| **C** | Oscar Geovany| Notas (unidad, captura, plantilla, modificaciones) y boletines | Operativo + Administrativo |
+| **D** | Milton Meren | Pagos, solvencia, documentos, avisos, reportes de conducta, buzón, portal de familia completo | Administrativo + Operativo + Portal |
 
 ## Severidad
 
