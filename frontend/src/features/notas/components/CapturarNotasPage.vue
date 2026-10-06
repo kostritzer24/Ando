@@ -2,13 +2,15 @@
 import { computed, onMounted, reactive, ref, watch } from "vue";
 
 import { assignmentsApi } from "@/features/asignaciones/api/asignacionesApi";
-import { enrollmentsApi, studentsApi } from "@/features/estudiantes/api/estudiantesApi";
+import { enrollmentsApi } from "@/features/estudiantes/api/estudiantesApi";
 import { AppButton, AppModal, CargandoBloque, ErrorBanner, FormField, FormSelect, PageHeader } from "@/shared/components";
 import { avisar } from "@/shared/composables/useAvisos";
-import type { Activity, Enrollment, Grade, Student, TeacherAssignment } from "@/shared/types/models";
+import type { Activity, Enrollment, Grade, GradingUnit, TeacherAssignment } from "@/shared/types/models";
 
 import {
   activitiesApi,
+  corregirNota,
+  enPlazoDeEntrega,
   gradesApi,
   motivoDelRechazo,
   registrarPunteo,
@@ -19,11 +21,10 @@ import {
 const cargando = ref(true);
 const error = ref("");
 const asignaciones = ref<TeacherAssignment[]>([]);
-const estudiantes = ref<Student[]>([]);
 
 const asignacionElegida = ref("");
 const unidadElegida = ref("");
-const unidadesDisponibles = ref<{ valor: string; etiqueta: string }[]>([]);
+const unidades = ref<GradingUnit[]>([]);
 const actividades = ref<Activity[]>([]);
 const actividadElegida = ref("");
 
@@ -41,32 +42,36 @@ const opcionesAsignacion = computed(() =>
     etiqueta: `${a.course_name} — ${a.section_grade} ${a.section_letter}`.trim(),
   })),
 );
+const unidadesDisponibles = computed(() =>
+  unidades.value.map((u) => ({ valor: u.public_id, etiqueta: `Unidad ${u.number}` })),
+);
 const opcionesActividad = computed(() =>
   actividades.value.map((a) => ({ valor: a.public_id, etiqueta: `${a.name} (${a.max_score} pts)` })),
 );
 
 const actividadElegidaObj = computed(() => actividades.value.find((a) => a.public_id === actividadElegida.value));
+const unidadElegidaObj = computed(() => unidades.value.find((u) => u.public_id === unidadElegida.value));
+// RN-05: hasta la fecha de entrega el docente corrige directo; después, solo
+// por solicitud a Dirección.
+const enPlazo = computed(() => enPlazoDeEntrega(unidadElegidaObj.value));
+const fechaEntrega = computed(() =>
+  unidadElegidaObj.value
+    ? new Date(`${unidadElegidaObj.value.grades_due_date}T00:00`).toLocaleDateString("es-GT", {
+        day: "numeric",
+        month: "long",
+      })
+    : "",
+);
 
-function nombreEstudiante(studentPublicId: string): string {
-  const est = estudiantes.value.find((e) => e.public_id === studentPublicId);
-  return est ? `${est.first_name} ${est.last_name}` : "—";
-}
 function notaDe(inscripcion: Enrollment): Grade | undefined {
-  return notas.value.find(
-    (n) => n.enrollment === inscripcion.public_id && n.activity === actividadElegida.value,
-  );
+  return notas.value.find((n) => n.enrollment === inscripcion.public_id);
 }
 
 async function cargarBase(): Promise<void> {
   cargando.value = true;
   error.value = "";
   try {
-    const [asignacionesResp, estudiantesResp] = await Promise.all([
-      assignmentsApi.listar(),
-      studentsApi.listar(),
-    ]);
-    asignaciones.value = asignacionesResp.results;
-    estudiantes.value = estudiantesResp.results;
+    asignaciones.value = (await assignmentsApi.listar()).results;
     asignacionElegida.value = opcionesAsignacion.value[0]?.valor ?? "";
   } catch {
     error.value = "No se pudo cargar la información inicial. Probá de nuevo.";
@@ -80,11 +85,10 @@ async function cargarUnidadesYActividades(): Promise<void> {
   actividades.value = [];
   actividadElegida.value = "";
   if (!asignacion) {
-    unidadesDisponibles.value = [];
+    unidades.value = [];
     return;
   }
-  const unidades = (await unidadesDeCiclo(asignacion.cycle).listar()).results;
-  unidadesDisponibles.value = unidades.map((u) => ({ valor: u.public_id, etiqueta: `Unidad ${u.number}` }));
+  unidades.value = (await unidadesDeCiclo(asignacion.cycle).listar()).results;
   unidadElegida.value = unidadesDisponibles.value[0]?.valor ?? "";
 }
 
@@ -93,18 +97,14 @@ async function cargarActividadesDeLaUnidad(): Promise<void> {
     actividades.value = [];
     return;
   }
-  const todas = (await activitiesApi.listar()).results;
-  actividades.value = todas.filter(
-    (a) =>
-      a.assignment === asignacionElegida.value &&
-      a.unit === unidadElegida.value &&
-      a.is_active !== false,
-  );
+  const respuesta = await activitiesApi.listar({ assignment: asignacionElegida.value, unit: unidadElegida.value });
+  actividades.value = respuesta.results.filter((a) => a.is_active !== false);
   actividadElegida.value = opcionesActividad.value[0]?.valor ?? "";
 }
 
 async function cargarRoster(): Promise<void> {
   const asignacion = asignaciones.value.find((a) => a.public_id === asignacionElegida.value);
+  errorGuardado.value = "";
   if (!asignacion || !actividadElegida.value) {
     inscripciones.value = [];
     return;
@@ -112,13 +112,14 @@ async function cargarRoster(): Promise<void> {
   cargandoRoster.value = true;
   error.value = "";
   try {
+    // Solo la sección y la actividad elegidas, no todas las notas del docente.
     const [inscripcionesResp, notasResp] = await Promise.all([
-      enrollmentsApi.listar(),
-      gradesApi.listar(),
+      enrollmentsApi.listar({ section: asignacion.section }),
+      gradesApi.listar({ activity: actividadElegida.value }),
     ]);
-    inscripciones.value = inscripcionesResp.results.filter(
-      (i) => i.section === asignacion.section && i.is_active !== false,
-    );
+    inscripciones.value = inscripcionesResp.results
+      .filter((i) => i.is_active !== false && i.cycle === asignacion.cycle)
+      .sort((a, b) => a.student_name.localeCompare(b.student_name, "es"));
     notas.value = notasResp.results;
   } catch {
     error.value = "No se pudo cargar la lista de estudiantes. Probá de nuevo.";
@@ -132,12 +133,19 @@ async function guardarNota(inscripcion: Enrollment, valor: string): Promise<void
   guardandoPorEstudiante.value[inscripcion.public_id] = true;
   errorGuardado.value = "";
   try {
-    const creada = await registrarPunteo({
-      enrollment: inscripcion.public_id,
-      activity: actividadElegida.value,
-      raw_score: valor,
-    });
-    notas.value.push(creada);
+    const existente = notaDe(inscripcion);
+    if (existente) {
+      const corregida = await corregirNota(existente.public_id, valor);
+      notas.value = notas.value.map((n) => (n.public_id === corregida.public_id ? corregida : n));
+      avisar(`Nota de ${inscripcion.student_name} corregida.`);
+    } else {
+      const creada = await registrarPunteo({
+        enrollment: inscripcion.public_id,
+        activity: actividadElegida.value,
+        raw_score: valor,
+      });
+      notas.value.push(creada);
+    }
   } catch (e) {
     errorGuardado.value = motivoDelRechazo(e, "No se pudo guardar el punteo. Revisá el valor e intentá de nuevo.");
   } finally {
@@ -213,6 +221,16 @@ onMounted(async () => {
         />
       </div>
 
+      <p v-if="actividadElegida && fechaEntrega" class="capturar-notas__plazo">
+        <template v-if="enPlazo">
+          Podés corregir una nota ya guardada hasta el {{ fechaEntrega }}, fecha de entrega de notas.
+        </template>
+        <template v-else>
+          La entrega de notas de esta unidad cerró el {{ fechaEntrega }}: para cambiar una nota,
+          solicitá una corrección a Dirección.
+        </template>
+      </p>
+
       <ErrorBanner v-if="errorGuardado" :mensaje="errorGuardado" />
 
       <CargandoBloque v-if="cargandoRoster" />
@@ -225,9 +243,11 @@ onMounted(async () => {
 
       <ul v-else class="capturar-notas__lista">
         <li v-for="inscripcion in inscripciones" :key="inscripcion.public_id" class="capturar-notas__fila">
-          <span class="capturar-notas__nombre">{{ nombreEstudiante(inscripcion.student) }}</span>
+          <label :for="`nota-${inscripcion.public_id}`" class="capturar-notas__nombre">
+            {{ inscripcion.student_name }}
+          </label>
 
-          <template v-if="notaDe(inscripcion)">
+          <template v-if="notaDe(inscripcion) && !enPlazo">
             <span class="capturar-notas__nota-vigente">
               {{ notaDe(inscripcion)?.current_score }} / {{ actividadElegidaObj?.max_score }}
             </span>
@@ -241,8 +261,14 @@ onMounted(async () => {
           </template>
           <template v-else>
             <input
+              :id="`nota-${inscripcion.public_id}`"
+              :key="notaDe(inscripcion)?.current_score ?? 'nueva'"
               type="number"
+              inputmode="decimal"
               step="0.01"
+              min="0"
+              :max="actividadElegidaObj?.max_score"
+              :value="notaDe(inscripcion)?.current_score ?? ''"
               class="capturar-notas__input"
               :disabled="guardandoPorEstudiante[inscripcion.public_id]"
               @change="guardarNota(inscripcion, ($event.target as HTMLInputElement).value)"
@@ -290,6 +316,12 @@ onMounted(async () => {
   gap: var(--espacio-md) var(--espacio-lg);
   align-items: end;
   max-width: 52rem;
+}
+
+.capturar-notas__plazo {
+  color: var(--color-tinta-suave);
+  font-size: var(--texto-sm);
+  margin: var(--espacio-md) 0 0;
 }
 
 .capturar-notas__vacio {

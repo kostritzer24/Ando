@@ -26,6 +26,7 @@ const formatoFecha = new Intl.DateTimeFormat("es-GT", { dateStyle: "medium", tim
 const ENTIDADES: Record<string, string> = {
   "accounts.User": "Usuario",
   "attendance.Attendance": "Asistencia",
+  "attendance.Justification": "Justificación",
   "grading.Grade": "Nota",
   "grading.Activity": "Actividad",
   "grading.GradeChangeRequest": "Solicitud de corrección",
@@ -55,6 +56,10 @@ const CAMPOS: Record<string, string> = {
   original_score: "nota vigente",
   requested_score: "nota propuesta",
   reason: "motivo",
+  resolution_note: "respuesta de Dirección",
+  resolution: "resolución",
+  date: "fecha",
+  unidad: "unidad",
   source: "origen",
   name: "nombre",
   activity_type: "tipo",

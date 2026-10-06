@@ -105,12 +105,18 @@ class EnrollmentSerializer(serializers.ModelSerializer):
     section_grade = serializers.CharField(source="section.grade", read_only=True)
     section_letter = serializers.CharField(source="section.letter", read_only=True)
     section_type = serializers.CharField(source="section.type", read_only=True)
+    # Para listar una sección (capturar notas) sin descargar además todos
+    # los estudiantes del centro solo para poner nombres.
+    student_name = serializers.CharField(source="student.nombre_completo", read_only=True)
+    student_code = serializers.CharField(source="student.internal_code", read_only=True)
 
     class Meta:
         model = Enrollment
         fields = [
             "public_id",
             "student",
+            "student_name",
+            "student_code",
             "section",
             "section_grade",
             "section_letter",

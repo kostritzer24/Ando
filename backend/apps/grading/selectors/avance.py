@@ -11,6 +11,7 @@ from decimal import Decimal
 from apps.catalog.models import Course
 from apps.scheduling.models import TeacherAssignment
 
+from ..domain.report_card import formatear_nota
 from ..domain.unit_design import MAXIMO_PUNTOS_POR_UNIDAD
 from ..models import Activity, Grade
 
@@ -29,8 +30,10 @@ def asignaciones_que_califican(*, secciones, ciclos):
 
 
 def pendientes_por_inscripcion(*, inscripciones, unit) -> dict[int, list[dict]]:
-    """`{enrollment_id: [{"curso", "faltan", "diseno_completo"}, ...]}`, solo
-    con los cursos incompletos; una inscripción sin pendientes no aparece."""
+    """`{enrollment_id: [{"curso", "faltan", "diseno_completo", "detalle"}, ...]}`,
+    solo con los cursos incompletos; una inscripción sin pendientes no
+    aparece. Una sección sin ningún curso que califique también es un
+    pendiente: su boletín saldría vacío."""
     inscripciones = list(inscripciones)
     if not inscripciones:
         return {}
@@ -70,8 +73,33 @@ def pendientes_por_inscripcion(*, inscripciones, unit) -> dict[int, list[dict]]:
                         "curso": asignacion.course.name,
                         "faltan": faltan,
                         "diseno_completo": diseno_completo,
+                        "detalle": _detalle(faltan=faltan, suma=suma),
                     }
                 )
+        if not any(
+            (a.section_id, a.cycle_id) == (inscripcion.section_id, inscripcion.cycle_id)
+            for a in asignaciones
+        ):
+            cursos.append(
+                {
+                    "curso": "",
+                    "faltan": 0,
+                    "diseno_completo": False,
+                    "detalle": "La sección no tiene cursos asignados; el boletín saldría vacío.",
+                }
+            )
         if cursos:
             pendientes[inscripcion.id] = cursos
     return pendientes
+
+
+def _detalle(*, faltan: int, suma: Decimal) -> str:
+    partes = []
+    if faltan:
+        partes.append(f"falta{'n' if faltan > 1 else ''} {faltan} nota{'s' if faltan > 1 else ''}")
+    if suma != MAXIMO_PUNTOS_POR_UNIDAD:
+        partes.append(
+            f"la unidad suma {formatear_nota(suma)} de "
+            f"{formatear_nota(MAXIMO_PUNTOS_POR_UNIDAD)} puntos"
+        )
+    return ", ".join(partes)

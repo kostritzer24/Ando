@@ -256,7 +256,7 @@ def test_rf09_el_listado_muestra_los_cursos_con_notas_pendientes():
     por_inscripcion = {str(b["enrollment"]): b["pendientes"] for b in respuesta.data["results"]}
     assert por_inscripcion[str(completo.public_id)] == []
     assert por_inscripcion[str(incompleto.public_id)] == [
-        {"curso": "Lenguaje", "faltan": 1, "diseno_completo": True}
+        {"curso": "Lenguaje", "faltan": 1, "diseno_completo": True, "detalle": "falta 1 nota"}
     ]
     assert actividad.max_score == 100
 
@@ -331,3 +331,38 @@ def test_un_filtro_no_amplia_el_alcance_acceso_no_autorizado(ruta):
 
 
 pytestmark = pytest.mark.django_db
+
+
+def test_rf09_una_seccion_sin_cursos_asignados_queda_marcada_como_pendiente():
+    ciclo, seccion, (unidad,) = _seccion_con_unidades()
+    EnrollmentFactory(section=seccion, cycle=ciclo)
+    client = APIClient()
+    client.force_authenticate(user=_direccion())
+    _generar(client, seccion, unidad)
+
+    respuesta = client.get(
+        f"/api/v1/report-cards/?section={seccion.public_id}&unit={unidad.public_id}"
+    )
+
+    (pendiente,) = respuesta.data["results"][0]["pendientes"]
+    assert "no tiene cursos asignados" in pendiente["detalle"]
+
+
+def test_rf09_el_detalle_dice_cuantos_puntos_suma_una_unidad_a_medio_disenar():
+    ciclo, seccion, (unidad,) = _seccion_con_unidades()
+    inscripcion = EnrollmentFactory(section=seccion, cycle=ciclo)
+    asignacion = TeacherAssignmentFactory(
+        section=seccion, cycle=ciclo, course=CourseFactory(name="Física")
+    )
+    ActivityFactory(assignment=asignacion, unit=unidad, max_score=60)
+    client = APIClient()
+    client.force_authenticate(user=_direccion())
+    _generar(client, seccion, unidad)
+
+    respuesta = client.get(
+        f"/api/v1/report-cards/?section={seccion.public_id}&unit={unidad.public_id}"
+    )
+
+    (pendiente,) = respuesta.data["results"][0]["pendientes"]
+    assert pendiente["detalle"] == "falta 1 nota, la unidad suma 60 de 100 puntos"
+    assert inscripcion.section == seccion

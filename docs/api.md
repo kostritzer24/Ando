@@ -47,7 +47,7 @@ Roles: DIR, ADMIN (E); COORD (V); el resto sin acceso, según matriz — **con c
 | GET, POST | `/guardians/{id}/link-student/` | Consultar / vincular encargado con estudiante (`GuardianStudentLink`) | RF-04 | DIR (E) |
 | DELETE | `/guardians/{id}/link-student/{student_id}/` | Retirar vínculo (baja lógica) | RF-04 | DIR (E) |
 | GET | `/me/students/` | Estudiantes vinculados al encargado autenticado, para el selector | HU-27 | FAM (V, propio) |
-| GET, POST | `/enrollments/` | Inscripciones por ciclo/sección | RF-03 | DIR (E) |
+| GET, POST | `/enrollments/?section=` | Inscripciones por ciclo/sección; cada una trae `student_name` y `student_code`. El filtro `section` (public_id) se aplica dentro del alcance del usuario | RF-03 | DIR (E) |
 
 ## `scheduling` — Asignaciones, horarios y calendario
 
@@ -75,20 +75,24 @@ Roles: DIR, ADMIN (E); COORD (V); el resto sin acceso, según matriz — **con c
 
 | Método | Ruta | Propósito | RF / RN | Roles |
 |---|---|---|---|---|
-| GET, POST | `/activities/` | Definir actividades evaluativas de una unidad | RF-17, RN-01/02/04 | DOC, GUÍA (E, propio) |
+| GET, POST | `/activities/?assignment=&unit=` | Definir actividades evaluativas de una unidad. Filtros opcionales por `public_id`, siempre dentro del alcance del usuario | RF-17, RN-01/02/04 | DOC, GUÍA (E, propio) |
 | PATCH, DELETE | `/activities/{id}/` | Editar nombre, tipo, punteo máximo o fecha (la asignación y la unidad no se mueven; el tope de 100 se revalida; con notas ya registradas el máximo no cambia). DELETE es baja lógica y solo si no tiene notas | RF-17, RN-01/02 | DOC, GUÍA (E, propio) |
-| GET, POST | `/grades/` | Registrar punteo real de una actividad (el estudiante tiene que estar inscrito en la sección de la actividad). Sin PUT, PATCH ni DELETE: una nota solo cambia por `/grade-change-requests/` | RF-18, RN-05 | DOC, GUÍA (E, propio) |
+| GET, POST | `/grades/?activity=&assignment=&unit=&enrollment=` | Registrar punteo real de una actividad (el estudiante tiene que estar inscrito en la sección de la actividad). Sin PUT, PATCH ni DELETE | RF-18, RN-05 | DOC, GUÍA (E, propio) |
+| POST | `/grades/{id}/correct/` | `{score}`: corregir la nota vigente sin autorización, solo hasta la fecha de entrega de notas de la unidad (`grades_due_date`, inclusive) y sin solicitud pendiente. Después, solo por `/grade-change-requests/`. El punteo real no cambia; queda en bitácora | RN-05, RN-10 | DOC, GUÍA (E, propio) |
 | GET | `/grades/template/{assignment_id}/{unit_id}/` | Generar plantilla de calificaciones. Lleva una hoja oculta (`_plantilla`) con la asignación, la unidad y las actividades en orden de columna; código, nombre y encabezados quedan bloqueados | RF-19, HU-19 | DOC, GUÍA (E, propio) |
 | POST | `/grades/template/preview/` | Vista previa fila por fila antes de guardar (HU-19/20). Rechaza un archivo que no sea la plantilla del sistema, de otro curso o unidad, desactualizado, con columnas cambiadas, con un código repetido o de más de 2 MB | RF-20 | DOC, GUÍA |
-| POST | `/grades/template/upload/` | Confirmar carga de la plantilla ya validada. Todo o nada: si una celda falla no se guarda ninguna | RF-20, RN-07 | DOC, GUÍA |
+| POST | `/grades/template/upload/` | Confirmar carga de la plantilla ya validada. Todo o nada: si una celda falla no se guarda ninguna. Una celda que cambia una nota existente se corrige directo dentro del plazo de entrega y se vuelve solicitud de modificación después (`creados`, `correcciones`, `solicitudes_de_modificacion`) | RF-20, RN-07 | DOC, GUÍA |
 | GET | `/grades/missing-points/{enrollment_id}/` | Puntos faltantes para aprobar, por curso | RF-30, HU-30 | FAM (V, propio); DOC/GUÍA (V, propio) |
-| GET, POST | `/grade-change-requests/` | Solicitar corrección de una nota. `original_score` es la nota vigente al pedirla; una sola solicitud pendiente por nota | RF-23 | DOC, GUÍA (E) |
+| GET, POST | `/grade-change-requests/?status=` | Solicitar corrección de una nota. `original_score` es la nota vigente al pedirla; una sola solicitud pendiente por nota. Cada solicitud trae estudiante, curso, unidad, actividad, nota vigente y la respuesta de Dirección (`resolution_note`) | RF-23 | DOC, GUÍA (E) |
 | POST | `/grade-change-requests/{id}/approve/` | Autorizar modificación (solo si sigue pendiente) | RF-10, RN-05 | solo DIR |
-| POST | `/grade-change-requests/{id}/reject/` | Rechazar modificación | RF-10 | solo DIR |
+| POST | `/grade-change-requests/{id}/reject/` | Rechazar modificación: `{motivo}` obligatorio (el docente lo ve); en `approve/` es opcional | RF-10 | solo DIR |
 | POST | `/report-cards/generate/` | Generar boletín de una sección/unidad | RF-09 | DIR (E) |
-| POST | `/report-cards/{id}/approve/` | Aprobar boletín | RF-09 | DIR (E) |
+| GET | `/report-cards/?section=&unit=` | Bandeja de boletines; cada uno trae `student_name` y `pendientes` (cursos con notas faltantes o con la unidad sin completar 100 puntos) | RF-09 | DIR (E), COORD/ADMIN (V); FAM solo publicados propios |
+| POST | `/report-cards/{id}/approve/` | Aprobar boletín: congela su contenido (`contenido`), que es lo que se publica y descarga | RF-09 | DIR (E) |
+| POST | `/report-cards/approve-batch/` | `{section, unit}`: aprobar todos los borradores | RF-09 | DIR (E) |
+| POST | `/report-cards/publish-batch/` | `{section, unit}`: publicar los aprobados que cumplen RN-09/RN-10; devuelve `publicados` y `no_publicados` con el motivo de cada uno | RF-09, RN-09, RN-10 | DIR (E) |
 | POST | `/report-cards/{id}/publish/` | Publicar boletín (sujeto a RN-09/RN-10) | RF-09 | DIR (E) |
-| GET | `/report-cards/{id}/download/` | Descargar boletín, enlace firmado de corta duración | RF-34 | FAM (V, propio, solo si habilitado) |
+| GET | `/report-cards/{id}/download/` | Descargar el PDF del boletín publicado: la nota de cada unidad hasta la del boletín y, en la cuarta, la nota final con el resultado (RN-02/RN-03) | RF-34 | FAM (V, propio, solo si habilitado) |
 
 ## `payments` — Pagos, solvencia y constancias
 

@@ -85,3 +85,27 @@ export async function publicarBoletin(publicId: string): Promise<ReportCard> {
   const { data } = await http.post<ReportCard>(`/report-cards/${publicId}/publish/`);
   return data;
 }
+
+export async function aprobarBoletinesEnLote(payload: {
+  section: string;
+  unit: string;
+}): Promise<{ aprobados: number }> {
+  const { data } = await http.post<{ aprobados: number }>("/report-cards/approve-batch/", payload);
+  return data;
+}
+
+export interface ResultadoPublicacionEnLote {
+  publicados: number;
+  no_publicados: { estudiante: string; motivo: string }[];
+}
+
+export async function publicarBoletinesEnLote(payload: {
+  section: string;
+  unit: string;
+}): Promise<ResultadoPublicacionEnLote> {
+  const { data } = await http.post<ResultadoPublicacionEnLote>(
+    "/report-cards/publish-batch/",
+    payload,
+  );
+  return data;
+}

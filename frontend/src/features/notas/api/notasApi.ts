@@ -34,10 +34,29 @@ export async function solicitarModificacion(payload: {
 export async function resolverModificacion(
   publicId: string,
   aprobar: boolean,
+  motivo = "",
 ): Promise<GradeChangeRequest> {
   const ruta = aprobar ? "approve" : "reject";
-  const { data } = await http.post<GradeChangeRequest>(`/grade-change-requests/${publicId}/${ruta}/`);
+  const { data } = await http.post<GradeChangeRequest>(`/grade-change-requests/${publicId}/${ruta}/`, {
+    motivo,
+  });
   return data;
+}
+
+/** RN-05 dentro del plazo de entrega de la unidad: corrige la nota sin
+ * pasar por Dirección (después del plazo, el backend responde 400 y hay
+ * que pedir una corrección). */
+export async function corregirNota(publicId: string, score: string): Promise<Grade> {
+  const { data } = await http.post<Grade>(`/grades/${publicId}/correct/`, { score });
+  return data;
+}
+
+/** Hasta el día de entrega de notas inclusive (mismo corte que el backend,
+ * `puede_corregirse_sin_autorizacion`). */
+export function enPlazoDeEntrega(unidad: GradingUnit | undefined, hoy = new Date()): boolean {
+  if (!unidad?.grades_due_date) return false;
+  const hoyIso = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, "0")}-${String(hoy.getDate()).padStart(2, "0")}`;
+  return hoyIso <= unidad.grades_due_date;
 }
 
 /** El motivo que da el backend en un 400 ("ya hay una solicitud pendiente",
@@ -74,7 +93,7 @@ export async function descargarPlantillaNotas(
 
 export interface ResumenVistaPrevia {
   filas: number;
-  resumen: { crear: number; modificacion: number; sin_cambio: number };
+  resumen: { crear: number; correccion?: number; modificacion: number; sin_cambio: number };
   errores?: string[];
 }
 
@@ -115,6 +134,7 @@ export async function previsualizarPlantillaNotas(payload: {
 
 export interface ResultadoSubidaNotas {
   creados?: number;
+  correcciones?: number;
   solicitudes_de_modificacion?: number;
   errores?: string[];
 }

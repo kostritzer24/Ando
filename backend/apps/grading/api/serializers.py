@@ -185,6 +185,7 @@ class ReportCardSerializer(serializers.ModelSerializer):
                     "curso": {"type": "string"},
                     "faltan": {"type": "integer"},
                     "diseno_completo": {"type": "boolean"},
+                    "detalle": {"type": "string"},
                 },
             },
         }
