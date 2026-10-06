@@ -40,6 +40,19 @@ export async function resolverModificacion(
   return data;
 }
 
+/** El motivo que da el backend en un 400 ("ya hay una solicitud pendiente",
+ * "debe estar entre 0 y 10"), que le dice a la persona qué corregir; si no
+ * viene uno legible, `porOmision`. DRF lo manda como lista plana, como
+ * `{campo: [mensaje]}` o como `{detail}`. */
+export function motivoDelRechazo(error: unknown, porOmision: string): string {
+  if (!isAxiosError(error) || error.response?.status !== 400) return porOmision;
+  let cuerpo: unknown = error.response.data;
+  while (cuerpo && typeof cuerpo === "object") {
+    cuerpo = Array.isArray(cuerpo) ? cuerpo[0] : Object.values(cuerpo)[0];
+  }
+  return typeof cuerpo === "string" && cuerpo ? cuerpo : porOmision;
+}
+
 function nombreDeArchivo(headers: Record<string, unknown>, porOmision: string): string {
   const disposicion = String(headers["content-disposition"] ?? "");
   const coincidencia = /filename="?([^"]+)"?/.exec(disposicion);

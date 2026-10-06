@@ -3,10 +3,18 @@ import { computed, onMounted, ref } from "vue";
 
 import { enrollmentsApi, studentsApi } from "@/features/estudiantes/api/estudiantesApi";
 import { CargandoBloque, DataTable, EmptyState, ErrorBanner, PageHeader } from "@/shared/components";
+import { avisar } from "@/shared/composables/useAvisos";
+import { confirmar } from "@/shared/composables/useConfirmar";
 import { usePermisos } from "@/shared/permisos";
 import type { Activity, Enrollment, Grade, GradeChangeRequest, Student } from "@/shared/types/models";
 
-import { activitiesApi, gradeChangeRequestsApi, gradesApi, resolverModificacion } from "../api/notasApi";
+import {
+  activitiesApi,
+  gradeChangeRequestsApi,
+  gradesApi,
+  motivoDelRechazo,
+  resolverModificacion,
+} from "../api/notasApi";
 
 const permisos = usePermisos();
 const puedeResolver = computed(() => permisos.puedeEditar("modificacion_notas"));
@@ -52,9 +60,33 @@ async function cargar(): Promise<void> {
   }
 }
 
+const errorAccion = ref("");
+const idEnAccion = ref("");
+
 async function resolver(solicitud: GradeChangeRequest, aprobar: boolean): Promise<void> {
-  await resolverModificacion(solicitud.public_id, aprobar);
-  await cargar();
+  const decidido = await confirmar({
+    titulo: aprobar ? "Aprobar la corrección" : "Rechazar la corrección",
+    mensaje: aprobar
+      ? `La nota vigente pasa de ${solicitud.original_score} a ${solicitud.requested_score}. El punteo real se conserva.`
+      : `La nota se queda en ${solicitud.original_score}.`,
+    etiquetaConfirmar: aprobar ? "Aprobar" : "Rechazar",
+    peligro: !aprobar,
+  });
+  if (!decidido) return;
+  idEnAccion.value = solicitud.public_id;
+  errorAccion.value = "";
+  try {
+    await resolverModificacion(solicitud.public_id, aprobar);
+    avisar(aprobar ? "Corrección aprobada." : "Corrección rechazada.");
+    await cargar();
+  } catch (e) {
+    // Otra persona pudo resolverla mientras tanto: se recarga para ver
+    // el estado real en vez de dejar los botones de una solicitud cerrada.
+    errorAccion.value = motivoDelRechazo(e, "No se pudo resolver la solicitud. Probá de nuevo.");
+    await cargar();
+  } finally {
+    idEnAccion.value = "";
+  }
 }
 
 onMounted(cargar);
@@ -64,6 +96,7 @@ onMounted(cargar);
   <section class="modificaciones-page">
     <PageHeader :titulo='puedeResolver ? "Solicitudes de modificación" : "Mis solicitudes de modificación"' />
 
+    <ErrorBanner v-if="errorAccion" :mensaje="errorAccion" />
     <ErrorBanner v-if="error" :mensaje="error" etiqueta-accion="Reintentar" @accion="cargar" />
     <CargandoBloque v-else-if="cargando" />
     <EmptyState
@@ -87,6 +120,7 @@ onMounted(cargar);
           <button
             type="button"
             class="modificaciones-page__accion"
+            :disabled="idEnAccion === (fila as unknown as GradeChangeRequest).public_id"
             @click="resolver(fila as unknown as GradeChangeRequest, true)"
           >
             Aprobar
@@ -94,6 +128,7 @@ onMounted(cargar);
           <button
             type="button"
             class="modificaciones-page__accion"
+            :disabled="idEnAccion === (fila as unknown as GradeChangeRequest).public_id"
             @click="resolver(fila as unknown as GradeChangeRequest, false)"
           >
             Rechazar

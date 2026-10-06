@@ -27,6 +27,9 @@ const ENTIDADES: Record<string, string> = {
   "accounts.User": "Usuario",
   "attendance.Attendance": "Asistencia",
   "grading.Grade": "Nota",
+  "grading.Activity": "Actividad",
+  "grading.GradeChangeRequest": "Solicitud de corrección",
+  "grading.ReportCard": "Boletín",
   Payment: "Pago",
 };
 const ACCIONES: Record<string, string> = { crear: "Creó", actualizar: "Cambió", eliminar: "Dio de baja" };
@@ -49,6 +52,14 @@ const CAMPOS: Record<string, string> = {
   score: "nota",
   current_score: "nota",
   raw_score: "nota",
+  original_score: "nota vigente",
+  requested_score: "nota propuesta",
+  reason: "motivo",
+  source: "origen",
+  name: "nombre",
+  activity_type: "tipo",
+  max_score: "punteo máximo",
+  due_date: "fecha de entrega",
   check_in_time: "hora de llegada",
 };
 

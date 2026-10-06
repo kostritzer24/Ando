@@ -76,13 +76,14 @@ Roles: DIR, ADMIN (E); COORD (V); el resto sin acceso, según matriz — **con c
 | Método | Ruta | Propósito | RF / RN | Roles |
 |---|---|---|---|---|
 | GET, POST | `/activities/` | Definir actividades evaluativas de una unidad | RF-17, RN-01/02/04 | DOC, GUÍA (E, propio) |
-| POST | `/grades/` | Registrar punteo real de una actividad | RF-18 | DOC, GUÍA (E, propio) |
-| GET | `/grades/template/{assignment_id}/{unit_id}/` | Generar plantilla de calificaciones | RF-19 | DOC, GUÍA (E, propio) |
-| POST | `/grades/template/preview/` | Vista previa fila por fila antes de guardar (HU-19/20) | RF-20 | DOC, GUÍA |
-| POST | `/grades/template/upload/` | Confirmar carga de la plantilla ya validada | RF-20, RN-07 | DOC, GUÍA |
+| PATCH, DELETE | `/activities/{id}/` | Editar nombre, tipo, punteo máximo o fecha (la asignación y la unidad no se mueven; el tope de 100 se revalida; con notas ya registradas el máximo no cambia). DELETE es baja lógica y solo si no tiene notas | RF-17, RN-01/02 | DOC, GUÍA (E, propio) |
+| GET, POST | `/grades/` | Registrar punteo real de una actividad (el estudiante tiene que estar inscrito en la sección de la actividad). Sin PUT, PATCH ni DELETE: una nota solo cambia por `/grade-change-requests/` | RF-18, RN-05 | DOC, GUÍA (E, propio) |
+| GET | `/grades/template/{assignment_id}/{unit_id}/` | Generar plantilla de calificaciones. Lleva una hoja oculta (`_plantilla`) con la asignación, la unidad y las actividades en orden de columna; código, nombre y encabezados quedan bloqueados | RF-19, HU-19 | DOC, GUÍA (E, propio) |
+| POST | `/grades/template/preview/` | Vista previa fila por fila antes de guardar (HU-19/20). Rechaza un archivo que no sea la plantilla del sistema, de otro curso o unidad, desactualizado, con columnas cambiadas, con un código repetido o de más de 2 MB | RF-20 | DOC, GUÍA |
+| POST | `/grades/template/upload/` | Confirmar carga de la plantilla ya validada. Todo o nada: si una celda falla no se guarda ninguna | RF-20, RN-07 | DOC, GUÍA |
 | GET | `/grades/missing-points/{enrollment_id}/` | Puntos faltantes para aprobar, por curso | RF-30, HU-30 | FAM (V, propio); DOC/GUÍA (V, propio) |
-| POST | `/grade-change-requests/` | Solicitar corrección de una nota | RF-23 | DOC, GUÍA (E) |
-| POST | `/grade-change-requests/{id}/approve/` | Autorizar modificación | RF-10, RN-05 | solo DIR |
+| GET, POST | `/grade-change-requests/` | Solicitar corrección de una nota. `original_score` es la nota vigente al pedirla; una sola solicitud pendiente por nota | RF-23 | DOC, GUÍA (E) |
+| POST | `/grade-change-requests/{id}/approve/` | Autorizar modificación (solo si sigue pendiente) | RF-10, RN-05 | solo DIR |
 | POST | `/grade-change-requests/{id}/reject/` | Rechazar modificación | RF-10 | solo DIR |
 | POST | `/report-cards/generate/` | Generar boletín de una sección/unidad | RF-09 | DIR (E) |
 | POST | `/report-cards/{id}/approve/` | Aprobar boletín | RF-09 | DIR (E) |

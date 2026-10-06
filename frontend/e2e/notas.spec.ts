@@ -88,6 +88,9 @@ test("docente captura una nota, solicita una corrección y Dirección la aprueba
 
   const fila = page.locator("tr", { hasText: "pendiente" }).first();
   await fila.getByRole("button", { name: "Aprobar" }).click();
+  const confirmacion = page.getByRole("dialog");
+  await expect(confirmacion).toContainText("El punteo real se conserva");
+  await confirmacion.getByRole("button", { name: "Aprobar" }).click();
   await expect(page.locator("tr", { hasText: "pendiente" })).toHaveCount(0);
 });
 

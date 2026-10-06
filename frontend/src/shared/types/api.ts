@@ -31,10 +31,18 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description RF-17. */
+        /**
+         * @description RF-17. Editar y dar de baja pasan por sus servicios: el tope de 100
+         *     puntos se vuelve a validar, una actividad calificada no cambia su
+         *     máximo ni se da de baja, y nada se borra de verdad.
+         */
         get: operations["v1_activities_list"];
         put?: never;
-        /** @description RF-17. */
+        /**
+         * @description RF-17. Editar y dar de baja pasan por sus servicios: el tope de 100
+         *     puntos se vuelve a validar, una actividad calificada no cambia su
+         *     máximo ni se da de baja, y nada se borra de verdad.
+         */
         post: operations["v1_activities_create"];
         delete?: never;
         options?: never;
@@ -49,16 +57,32 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description RF-17. */
+        /**
+         * @description RF-17. Editar y dar de baja pasan por sus servicios: el tope de 100
+         *     puntos se vuelve a validar, una actividad calificada no cambia su
+         *     máximo ni se da de baja, y nada se borra de verdad.
+         */
         get: operations["v1_activities_retrieve"];
-        /** @description RF-17. */
+        /**
+         * @description RF-17. Editar y dar de baja pasan por sus servicios: el tope de 100
+         *     puntos se vuelve a validar, una actividad calificada no cambia su
+         *     máximo ni se da de baja, y nada se borra de verdad.
+         */
         put: operations["v1_activities_update"];
         post?: never;
-        /** @description RF-17. */
+        /**
+         * @description RF-17. Editar y dar de baja pasan por sus servicios: el tope de 100
+         *     puntos se vuelve a validar, una actividad calificada no cambia su
+         *     máximo ni se da de baja, y nada se borra de verdad.
+         */
         delete: operations["v1_activities_destroy"];
         options?: never;
         head?: never;
-        /** @description RF-17. */
+        /**
+         * @description RF-17. Editar y dar de baja pasan por sus servicios: el tope de 100
+         *     puntos se vuelve a validar, una actividad calificada no cambia su
+         *     máximo ni se da de baja, y nada se borra de verdad.
+         */
         patch: operations["v1_activities_partial_update"];
         trace?: never;
     };
@@ -1166,10 +1190,18 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description RF-18. */
+        /**
+         * @description RF-18. Sin editar ni borrar (RN-05): una nota registrada solo cambia
+         *     por una solicitud de modificación que autoriza Dirección. Con PATCH o
+         *     DELETE abiertos, borrar y volver a registrar saltaba esa autorización.
+         */
         get: operations["v1_grades_list"];
         put?: never;
-        /** @description RF-18. */
+        /**
+         * @description RF-18. Sin editar ni borrar (RN-05): una nota registrada solo cambia
+         *     por una solicitud de modificación que autoriza Dirección. Con PATCH o
+         *     DELETE abiertos, borrar y volver a registrar saltaba esa autorización.
+         */
         post: operations["v1_grades_create"];
         delete?: never;
         options?: never;
@@ -1184,17 +1216,18 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description RF-18. */
+        /**
+         * @description RF-18. Sin editar ni borrar (RN-05): una nota registrada solo cambia
+         *     por una solicitud de modificación que autoriza Dirección. Con PATCH o
+         *     DELETE abiertos, borrar y volver a registrar saltaba esa autorización.
+         */
         get: operations["v1_grades_retrieve"];
-        /** @description RF-18. */
-        put: operations["v1_grades_update"];
+        put?: never;
         post?: never;
-        /** @description RF-18. */
-        delete: operations["v1_grades_destroy"];
+        delete?: never;
         options?: never;
         head?: never;
-        /** @description RF-18. */
-        patch: operations["v1_grades_partial_update"];
+        patch?: never;
         trace?: never;
     };
     "/api/v1/grades/template/{assignment_public_id}/{unit_public_id}/": {
@@ -2444,7 +2477,7 @@ export interface components {
              */
             due_date: string;
             /** Activo */
-            is_active?: boolean;
+            readonly is_active: boolean;
         };
         ActivityType: {
             /** Format: uuid */
@@ -2458,6 +2491,26 @@ export interface components {
             counts_as_short_quiz?: boolean;
             /** Activo */
             is_active?: boolean;
+        };
+        /**
+         * @description Editar una actividad: solo nombre, tipo, punteo máximo y fecha. La
+         *     asignación y la unidad no se mueven.
+         */
+        ActivityUpdate: {
+            /** Format: uuid */
+            activity_type: string;
+            /** Nombre */
+            name: string;
+            /**
+             * Punteo máximo
+             * Format: decimal
+             */
+            max_score: string;
+            /**
+             * Fecha de entrega
+             * Format: date
+             */
+            due_date: string;
         };
         Announcement: {
             /** Format: uuid */
@@ -3424,13 +3477,24 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["User"][];
         };
-        PatchedActivity: {
+        PatchedActivityType: {
             /** Format: uuid */
             readonly public_id?: string;
-            /** Format: uuid */
-            assignment?: string;
-            /** Format: uuid */
-            unit?: string;
+            /** Nombre */
+            name?: string;
+            /**
+             * Cuenta como prueba corta
+             * @description RN-04: se usa para exigir el mínimo de 4 pruebas cortas por unidad.
+             */
+            counts_as_short_quiz?: boolean;
+            /** Activo */
+            is_active?: boolean;
+        };
+        /**
+         * @description Editar una actividad: solo nombre, tipo, punteo máximo y fecha. La
+         *     asignación y la unidad no se mueven.
+         */
+        PatchedActivityUpdate: {
             /** Format: uuid */
             activity_type?: string;
             /** Nombre */
@@ -3445,21 +3509,6 @@ export interface components {
              * Format: date
              */
             due_date?: string;
-            /** Activo */
-            is_active?: boolean;
-        };
-        PatchedActivityType: {
-            /** Format: uuid */
-            readonly public_id?: string;
-            /** Nombre */
-            name?: string;
-            /**
-             * Cuenta como prueba corta
-             * @description RN-04: se usa para exigir el mínimo de 4 pruebas cortas por unidad.
-             */
-            counts_as_short_quiz?: boolean;
-            /** Activo */
-            is_active?: boolean;
         };
         PatchedAnnouncement: {
             /** Format: uuid */
@@ -3593,40 +3642,6 @@ export interface components {
              * Format: date
              */
             enrolled_at?: string;
-            /** Activo */
-            is_active?: boolean;
-        };
-        /**
-         * @description RN-06: nunca expone `raw_score` — solo `current_score`, la nota
-         *     vigente que entra en los promedios y la única que ve la familia.
-         *
-         *     Los campos denormalizados (`course_name`, `unit_number`,
-         *     `activity_name`, `max_score`) siguen el mismo criterio que
-         *     `TeacherAssignmentSerializer` (sección "scheduling" del contrato): la
-         *     familia no llega a `/activities/` ni a `/assignments/` (RF-29 la
-         *     necesita agrupada por curso y unidad), así que se exponen acá en vez
-         *     de abrirle esos dos catálogos completos.
-         */
-        PatchedGrade: {
-            /** Format: uuid */
-            readonly public_id?: string;
-            /** Format: uuid */
-            enrollment?: string;
-            /** Format: uuid */
-            activity?: string;
-            /**
-             * Nota vigente
-             * Format: decimal
-             */
-            readonly current_score?: string;
-            /** Origen */
-            readonly source?: components["schemas"]["SourceEnum"];
-            readonly recorded_by?: string;
-            readonly course_name?: string;
-            readonly unit_number?: number;
-            readonly activity_name?: string;
-            /** Format: decimal */
-            readonly max_score?: string;
             /** Activo */
             is_active?: boolean;
         };
@@ -4264,9 +4279,9 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Activity"];
-                "application/x-www-form-urlencoded": components["schemas"]["Activity"];
-                "multipart/form-data": components["schemas"]["Activity"];
+                "application/json": components["schemas"]["ActivityUpdate"];
+                "application/x-www-form-urlencoded": components["schemas"]["ActivityUpdate"];
+                "multipart/form-data": components["schemas"]["ActivityUpdate"];
             };
         };
         responses: {
@@ -4311,9 +4326,9 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": components["schemas"]["PatchedActivity"];
-                "application/x-www-form-urlencoded": components["schemas"]["PatchedActivity"];
-                "multipart/form-data": components["schemas"]["PatchedActivity"];
+                "application/json": components["schemas"]["PatchedActivityUpdate"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedActivityUpdate"];
+                "multipart/form-data": components["schemas"]["PatchedActivityUpdate"];
             };
         };
         responses: {
@@ -6510,80 +6525,6 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Grade"];
-                };
-            };
-        };
-    };
-    v1_grades_update: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                public_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["Grade"];
-                "application/x-www-form-urlencoded": components["schemas"]["Grade"];
-                "multipart/form-data": components["schemas"]["Grade"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Grade"];
-                };
-            };
-        };
-    };
-    v1_grades_destroy: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                public_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No response body */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    v1_grades_partial_update: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                public_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["PatchedGrade"];
-                "application/x-www-form-urlencoded": components["schemas"]["PatchedGrade"];
-                "multipart/form-data": components["schemas"]["PatchedGrade"];
-            };
-        };
         responses: {
             200: {
                 headers: {

@@ -4,9 +4,17 @@ import { computed, onMounted, reactive, ref, watch } from "vue";
 import { assignmentsApi } from "@/features/asignaciones/api/asignacionesApi";
 import { enrollmentsApi, studentsApi } from "@/features/estudiantes/api/estudiantesApi";
 import { AppButton, AppModal, CargandoBloque, ErrorBanner, FormField, FormSelect, PageHeader } from "@/shared/components";
+import { avisar } from "@/shared/composables/useAvisos";
 import type { Activity, Enrollment, Grade, Student, TeacherAssignment } from "@/shared/types/models";
 
-import { activitiesApi, gradesApi, registrarPunteo, solicitarModificacion, unidadesDeCiclo } from "../api/notasApi";
+import {
+  activitiesApi,
+  gradesApi,
+  motivoDelRechazo,
+  registrarPunteo,
+  solicitarModificacion,
+  unidadesDeCiclo,
+} from "../api/notasApi";
 
 const cargando = ref(true);
 const error = ref("");
@@ -23,6 +31,9 @@ const inscripciones = ref<Enrollment[]>([]);
 const notas = ref<Grade[]>([]);
 const cargandoRoster = ref(false);
 const guardandoPorEstudiante = ref<Record<string, boolean>>({});
+// Un punteo rechazado no esconde la lista (como sí lo hace un error de
+// carga): el resto de la sección sigue a la vista y se puede seguir.
+const errorGuardado = ref("");
 
 const opcionesAsignacion = computed(() =>
   asignaciones.value.map((a) => ({
@@ -119,7 +130,7 @@ async function cargarRoster(): Promise<void> {
 async function guardarNota(inscripcion: Enrollment, valor: string): Promise<void> {
   if (!valor) return;
   guardandoPorEstudiante.value[inscripcion.public_id] = true;
-  error.value = "";
+  errorGuardado.value = "";
   try {
     const creada = await registrarPunteo({
       enrollment: inscripcion.public_id,
@@ -127,8 +138,8 @@ async function guardarNota(inscripcion: Enrollment, valor: string): Promise<void
       raw_score: valor,
     });
     notas.value.push(creada);
-  } catch {
-    error.value = "No se pudo guardar el punteo. Revisá el valor e intentá de nuevo.";
+  } catch (e) {
+    errorGuardado.value = motivoDelRechazo(e, "No se pudo guardar el punteo. Revisá el valor e intentá de nuevo.");
   } finally {
     guardandoPorEstudiante.value[inscripcion.public_id] = false;
   }
@@ -137,19 +148,21 @@ async function guardarNota(inscripcion: Enrollment, valor: string): Promise<void
 const modalCorreccionAbierto = ref(false);
 const notaCorrigiendo = ref<Grade | null>(null);
 const guardandoCorreccion = ref(false);
+const errorCorreccion = ref("");
 const formularioCorreccion = reactive({ requested_score: "", reason: "" });
 
 function abrirCorreccion(nota: Grade): void {
   notaCorrigiendo.value = nota;
   formularioCorreccion.requested_score = "";
   formularioCorreccion.reason = "";
+  errorCorreccion.value = "";
   modalCorreccionAbierto.value = true;
 }
 
 async function guardarCorreccion(): Promise<void> {
   if (!notaCorrigiendo.value) return;
   guardandoCorreccion.value = true;
-  error.value = "";
+  errorCorreccion.value = "";
   try {
     await solicitarModificacion({
       grade: notaCorrigiendo.value.public_id,
@@ -157,8 +170,9 @@ async function guardarCorreccion(): Promise<void> {
       reason: formularioCorreccion.reason,
     });
     modalCorreccionAbierto.value = false;
-  } catch {
-    error.value = "No se pudo enviar la solicitud de corrección. Probá de nuevo.";
+    avisar("Solicitud enviada. Dirección tiene que autorizarla.");
+  } catch (e) {
+    errorCorreccion.value = motivoDelRechazo(e, "No se pudo enviar la solicitud de corrección. Probá de nuevo.");
   } finally {
     guardandoCorreccion.value = false;
   }
@@ -198,6 +212,8 @@ onMounted(async () => {
           :placeholder="opcionesActividad.length ? 'Elegí una actividad' : 'No hay actividades en esta unidad'"
         />
       </div>
+
+      <ErrorBanner v-if="errorGuardado" :mensaje="errorGuardado" />
 
       <CargandoBloque v-if="cargandoRoster" />
       <p v-else-if="!actividadElegida" class="capturar-notas__vacio">
@@ -247,6 +263,7 @@ onMounted(async () => {
           El punteo real nunca se sobrescribe (RN-05) — esto crea una solicitud que Dirección
           tiene que autorizar.
         </p>
+        <ErrorBanner v-if="errorCorreccion" :mensaje="errorCorreccion" />
         <FormField
           id="requested_score"
           etiqueta="Nota propuesta"
