@@ -250,3 +250,30 @@ def test_rf34_la_familia_descarga_el_pdf_de_un_boletin_publicado_con_la_nota_por
     assert respuesta.status_code == 200
     assert respuesta["Content-Type"] == "application/pdf"
     assert respuesta.content[:4] == b"%PDF"
+
+
+def test_rnf06_aprobar_y_publicar_un_boletin_queda_en_bitacora():
+    from apps.core.models import AuditLog
+
+    ciclo, seccion, unidad = _seccion_con_ciclo(report_card_enabled_date=date(2020, 1, 1))
+    EnrollmentFactory(section=seccion, cycle=ciclo, scholarship=ScholarshipFactory())
+    direccion = _direccion()
+    client = APIClient()
+    client.force_authenticate(user=direccion)
+    generado = client.post(
+        "/api/v1/report-cards/generate/",
+        {"section": str(seccion.public_id), "unit": str(unidad.public_id)},
+    )
+    boletin_id = generado.data[0]["public_id"]
+
+    client.post(f"/api/v1/report-cards/{boletin_id}/approve/")
+    client.post(f"/api/v1/report-cards/{boletin_id}/publish/")
+
+    transiciones = [
+        (r.old_value["status"], r.new_value["status"], r.user)
+        for r in AuditLog.objects.filter(entity_name="grading.ReportCard").order_by("id")
+    ]
+    assert transiciones == [
+        ("borrador", "aprobado", direccion),
+        ("aprobado", "publicado", direccion),
+    ]

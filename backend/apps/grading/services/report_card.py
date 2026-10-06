@@ -1,5 +1,7 @@
+from django.db import transaction
 from django.utils import timezone
 
+from apps.core.services import registrar_cambio
 from apps.payments.services.solvency import calcular_solvencia
 from apps.scheduling.models import TeacherAssignment
 from apps.students.models import Enrollment
@@ -8,6 +10,19 @@ from ..domain.report_card import validar_aprobacion, validar_publicacion
 from ..domain.scoring import NOTA_MINIMA_APROBACION
 from ..models import ReportCard
 from .grade import nota_de_unidad
+
+ENTIDAD = "grading.ReportCard"
+
+
+def _registrar_transicion(boletin: ReportCard, *, usuario, estado_anterior: str) -> None:
+    registrar_cambio(
+        usuario=usuario,
+        entidad_nombre=ENTIDAD,
+        entidad_id=boletin.id,
+        accion="actualizar",
+        valor_anterior={"status": estado_anterior},
+        valor_nuevo={"status": boletin.status},
+    )
 
 
 def generar_boletines(*, section, unit, generated_by) -> list[ReportCard]:
@@ -27,16 +42,27 @@ def generar_boletines(*, section, unit, generated_by) -> list[ReportCard]:
     return boletines
 
 
+@transaction.atomic
 def aprobar_boletin(boletin: ReportCard, *, approved_by) -> ReportCard:
+    boletin = ReportCard.objects.select_for_update().get(pk=boletin.pk)
+    estado_anterior = boletin.status
     validar_aprobacion(estado_actual=boletin.status, estado_borrador=ReportCard.ESTADO_BORRADOR)
     boletin.status = ReportCard.ESTADO_APROBADO
     boletin.approved_by = approved_by
     boletin.approved_at = timezone.now()
     boletin.save(update_fields=["status", "approved_by", "approved_at", "updated_at"])
+    _registrar_transicion(boletin, usuario=approved_by, estado_anterior=estado_anterior)
     return boletin
 
 
-def publicar_boletin(boletin: ReportCard) -> ReportCard:
+@transaction.atomic
+def publicar_boletin(boletin: ReportCard, *, published_by) -> ReportCard:
+    boletin = (
+        ReportCard.objects.select_for_update()
+        .select_related("unit", "enrollment")
+        .get(pk=boletin.pk)
+    )
+    estado_anterior = boletin.status
     plazo_cumplido = timezone.localdate() >= boletin.unit.report_card_enabled_date
     es_solvente = calcular_solvencia(enrollment=boletin.enrollment, hasta=boletin.unit.end_date)[
         "solvente"
@@ -50,6 +76,7 @@ def publicar_boletin(boletin: ReportCard) -> ReportCard:
     boletin.status = ReportCard.ESTADO_PUBLICADO
     boletin.published_at = timezone.now()
     boletin.save(update_fields=["status", "published_at", "updated_at"])
+    _registrar_transicion(boletin, usuario=published_by, estado_anterior=estado_anterior)
     return boletin
 
 

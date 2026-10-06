@@ -28,7 +28,22 @@ class ActivitySerializer(serializers.ModelSerializer):
             "due_date",
             "is_active",
         ]
-        read_only_fields = ["public_id"]
+        # La baja es DELETE (baja lógica, validada en el servicio), no un
+        # PATCH de is_active que saltaría esas validaciones.
+        read_only_fields = ["public_id", "is_active"]
+
+
+class ActivityUpdateSerializer(serializers.ModelSerializer):
+    """Editar una actividad: solo nombre, tipo, punteo máximo y fecha. La
+    asignación y la unidad no se mueven."""
+
+    activity_type = serializers.SlugRelatedField(
+        slug_field="public_id", queryset=ActivityType.objects.all()
+    )
+
+    class Meta:
+        model = Activity
+        fields = ["activity_type", "name", "max_score", "due_date"]
 
 
 class GradeSerializer(serializers.ModelSerializer):

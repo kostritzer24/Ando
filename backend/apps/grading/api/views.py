@@ -18,11 +18,17 @@ from apps.core.api.mixins import RegistraAccesoMixin, ScopedQuerysetMixin
 from apps.core.permissions import PermisoPorArea
 from apps.scheduling.models import TeacherAssignment
 
+from ..domain.grade_change import SolicitudDeModificacionInvalida
 from ..domain.report_card import TransicionDeBoletinInvalida
 from ..domain.unit_design import DefinicionDeUnidadInvalida
 from ..models import Activity, Grade, GradeChangeRequest, ReportCard
-from ..services.activity import AsignacionNoCalifica, crear_actividad
-from ..services.grade import PunteoFueraDeRango, YaCalificado, registrar_punteo
+from ..services.activity import (
+    AsignacionNoCalifica,
+    actualizar_actividad,
+    crear_actividad,
+    dar_de_baja_actividad,
+)
+from ..services.grade import InscripcionAjena, PunteoFueraDeRango, YaCalificado, registrar_punteo
 from ..services.grade_change_request import resolver_modificacion, solicitar_modificacion
 from ..services.report_card import (
     aprobar_boletin,
@@ -31,6 +37,7 @@ from ..services.report_card import (
     publicar_boletin,
 )
 from ..services.template import (
+    ArchivoIlegible,
     UnidadSinActividades,
     aplicar_plantilla,
     generar_plantilla,
@@ -38,6 +45,7 @@ from ..services.template import (
 )
 from .serializers import (
     ActivitySerializer,
+    ActivityUpdateSerializer,
     GradeChangeRequestSerializer,
     GradeCreateSerializer,
     GradeSerializer,
@@ -71,10 +79,11 @@ def _requiere_asignacion_propia(user, assignment: TeacherAssignment) -> None:
 
 
 class ActivityViewSet(RegistraAccesoMixin, ScopedQuerysetMixin, viewsets.ModelViewSet):
-    """RF-17."""
+    """RF-17. Editar y dar de baja pasan por sus servicios: el tope de 100
+    puntos se vuelve a validar, una actividad calificada no cambia su
+    máximo ni se da de baja, y nada se borra de verdad."""
 
-    queryset = Activity.objects.all()
-    serializer_class = ActivitySerializer
+    queryset = Activity.objects.select_related("assignment", "unit", "activity_type")
     permission_classes = [PermisoPorArea]
     area = "notas"
     lookup_field = "public_id"
@@ -86,19 +95,62 @@ class ActivityViewSet(RegistraAccesoMixin, ScopedQuerysetMixin, viewsets.ModelVi
             return queryset.filter(assignment__teacher=user)
         return queryset.none()
 
+    def get_serializer_class(self):
+        if self.action in {"update", "partial_update"}:
+            return ActivityUpdateSerializer
+        return ActivitySerializer
+
     def perform_create(self, serializer):
         datos = serializer.validated_data
         _requiere_asignacion_propia(self.request.user, datos["assignment"])
         try:
-            serializer.instance = crear_actividad(**datos)
+            serializer.instance = crear_actividad(usuario=self.request.user, **datos)
         except (AsignacionNoCalifica, DefinicionDeUnidadInvalida) as exc:
             raise ValidationError(str(exc)) from exc
 
+    @extend_schema(request=ActivityUpdateSerializer, responses=ActivitySerializer)
+    def update(self, request, *args, **kwargs):
+        actividad = self.get_object()
+        _requiere_asignacion_propia(request.user, actividad.assignment)
+        serializer = ActivityUpdateSerializer(
+            actividad, data=request.data, partial=kwargs.get("partial", False)
+        )
+        serializer.is_valid(raise_exception=True)
+        try:
+            actividad = actualizar_actividad(
+                actividad, cambios=serializer.validated_data, usuario=request.user
+            )
+        except DefinicionDeUnidadInvalida as exc:
+            raise ValidationError(str(exc)) from exc
+        return Response(ActivitySerializer(actividad).data)
 
-class GradeViewSet(RegistraAccesoMixin, ScopedQuerysetMixin, viewsets.ModelViewSet):
-    """RF-18."""
+    @extend_schema(request=ActivityUpdateSerializer, responses=ActivitySerializer)
+    def partial_update(self, request, *args, **kwargs):
+        return super().partial_update(request, *args, **kwargs)
 
-    queryset = Grade.objects.all()
+    def perform_destroy(self, instance):
+        _requiere_asignacion_propia(self.request.user, instance.assignment)
+        try:
+            dar_de_baja_actividad(instance, usuario=self.request.user)
+        except DefinicionDeUnidadInvalida as exc:
+            raise ValidationError(str(exc)) from exc
+
+
+class GradeViewSet(
+    RegistraAccesoMixin,
+    ScopedQuerysetMixin,
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    viewsets.GenericViewSet,
+):
+    """RF-18. Sin editar ni borrar (RN-05): una nota registrada solo cambia
+    por una solicitud de modificación que autoriza Dirección. Con PATCH o
+    DELETE abiertos, borrar y volver a registrar saltaba esa autorización."""
+
+    queryset = Grade.objects.select_related(
+        "enrollment", "activity__assignment__course", "activity__unit", "recorded_by"
+    )
     permission_classes = [PermisoPorArea]
     area = "notas"
     lookup_field = "public_id"
@@ -137,6 +189,8 @@ class GradeViewSet(RegistraAccesoMixin, ScopedQuerysetMixin, viewsets.ModelViewS
             ) from exc
         except PunteoFueraDeRango as exc:
             raise ValidationError({"raw_score": str(exc)}) from exc
+        except InscripcionAjena as exc:
+            raise ValidationError({"enrollment": str(exc)}) from exc
         return Response(GradeSerializer(calificacion).data, status=status.HTTP_201_CREATED)
 
 
@@ -150,7 +204,7 @@ class GradeChangeRequestViewSet(
 ):
     """RF-23 (solicitar) / RF-10 (autorizar o rechazar)."""
 
-    queryset = GradeChangeRequest.objects.all()
+    queryset = GradeChangeRequest.objects.select_related("grade", "requested_by", "authorized_by")
     serializer_class = GradeChangeRequestSerializer
     lookup_field = "public_id"
 
@@ -170,12 +224,16 @@ class GradeChangeRequestViewSet(
         _requiere_asignacion_propia(self.request.user, datos["grade"].activity.assignment)
         try:
             serializer.instance = solicitar_modificacion(requested_by=self.request.user, **datos)
-        except PunteoFueraDeRango as exc:
+        except SolicitudDeModificacionInvalida as exc:
             raise ValidationError({"requested_score": str(exc)}) from exc
 
     def _resolver(self, request, public_id, aprobar):
-        solicitud = self.get_object()
-        resolver_modificacion(solicitud, aprobar=aprobar, authorized_by=request.user)
+        try:
+            solicitud = resolver_modificacion(
+                self.get_object(), aprobar=aprobar, authorized_by=request.user
+            )
+        except SolicitudDeModificacionInvalida as exc:
+            raise ValidationError(str(exc)) from exc
         return Response(GradeChangeRequestSerializer(solicitud).data)
 
     @action(detail=True, methods=["post"], url_path="approve")
@@ -212,6 +270,11 @@ class GradeTemplateDownloadView(RegistraAccesoMixin, APIView):
         return respuesta
 
 
+# Una plantilla real de una sección pesa decenas de KB; el límite evita
+# abrir archivos enormes (o comprimidos para inflarse) en el servidor.
+TAMANO_MAXIMO_PLANTILLA = 2 * 1024 * 1024
+
+
 def _leer_datos_multipart(request):
     assignment_public_id = request.data.get("assignment")
     unit_public_id = request.data.get("unit")
@@ -220,6 +283,8 @@ def _leer_datos_multipart(request):
         raise ValidationError("Hacen falta 'assignment', 'unit' y 'file'.")
     if not archivo.name.lower().endswith(".xlsx"):
         raise ValidationError("El archivo debe ser un .xlsx — no se aceptan macros (.xlsm).")
+    if archivo.size > TAMANO_MAXIMO_PLANTILLA:
+        raise ValidationError("El archivo pesa demasiado para ser una plantilla (máximo 2 MB).")
     assignment = get_object_or_404(TeacherAssignment, public_id=assignment_public_id)
     unit = get_object_or_404(GradingUnit, public_id=unit_public_id)
     return assignment, unit, archivo
@@ -273,7 +338,7 @@ class GradeTemplatePreviewView(RegistraAccesoMixin, APIView):
             filas_validas, errores = validar_y_clasificar_plantilla(
                 assignment=assignment, unit=unit, archivo=archivo
             )
-        except UnidadSinActividades as exc:
+        except (UnidadSinActividades, ArchivoIlegible) as exc:
             raise ValidationError(str(exc)) from exc
 
         if errores:
@@ -313,7 +378,7 @@ class GradeTemplateUploadView(RegistraAccesoMixin, APIView):
             filas_validas, errores = validar_y_clasificar_plantilla(
                 assignment=assignment, unit=unit, archivo=archivo
             )
-        except UnidadSinActividades as exc:
+        except (UnidadSinActividades, ArchivoIlegible) as exc:
             raise ValidationError(str(exc)) from exc
 
         if errores:
@@ -333,7 +398,9 @@ class ReportCardViewSet(
     """RF-09. Generar es una acción de lote sobre una sección/unidad;
     aprobar y publicar actúan sobre un boletín individual."""
 
-    queryset = ReportCard.objects.all()
+    queryset = ReportCard.objects.select_related(
+        "enrollment", "unit", "generated_by", "approved_by"
+    )
     serializer_class = ReportCardSerializer
     area = "notas"
     lookup_field = "public_id"
@@ -370,18 +437,16 @@ class ReportCardViewSet(
 
     @action(detail=True, methods=["post"], url_path="approve")
     def approve(self, request, public_id=None):
-        boletin = self.get_object()
         try:
-            aprobar_boletin(boletin, approved_by=request.user)
+            boletin = aprobar_boletin(self.get_object(), approved_by=request.user)
         except TransicionDeBoletinInvalida as exc:
             raise ValidationError(str(exc)) from exc
         return Response(ReportCardSerializer(boletin).data)
 
     @action(detail=True, methods=["post"], url_path="publish")
     def publish(self, request, public_id=None):
-        boletin = self.get_object()
         try:
-            publicar_boletin(boletin)
+            boletin = publicar_boletin(self.get_object(), published_by=request.user)
         except TransicionDeBoletinInvalida as exc:
             raise ValidationError(str(exc)) from exc
         return Response(ReportCardSerializer(boletin).data)

@@ -1,9 +1,14 @@
 from decimal import Decimal
 
+from django.db import IntegrityError, transaction
+
+from apps.core.services import registrar_cambio
 from apps.students.models import Enrollment
 
 from ..domain.scoring import calcular_nota_unidad
 from ..models import Activity, Grade
+
+ENTIDAD = "grading.Grade"
 
 
 class PunteoFueraDeRango(Exception):
@@ -16,11 +21,29 @@ class YaCalificado(Exception):
     que venga de un formulario o de una plantilla re-cargada."""
 
 
+class InscripcionAjena(Exception):
+    """La inscripción no es de la sección y el ciclo de la actividad. El
+    permiso sobre la asignación no alcanza: sin esta validación un docente
+    podía calificar en su actividad a un estudiante de otra sección."""
+
+
 def _validar_rango(raw_score: Decimal, activity: Activity) -> None:
     if not (Decimal("0") <= raw_score <= activity.max_score):
         raise PunteoFueraDeRango(
             f"El punteo debe estar entre 0 y {activity.max_score} para '{activity.name}'."
         )
+
+
+def _validar_inscripcion(enrollment: Enrollment, activity: Activity) -> None:
+    assignment = activity.assignment
+    if (
+        not enrollment.is_active
+        or enrollment.section_id != assignment.section_id
+        or enrollment.cycle_id != assignment.cycle_id
+    ):
+        raise InscripcionAjena("Ese estudiante no está inscrito en la sección de esta actividad.")
+    if not activity.is_active:
+        raise InscripcionAjena("Esa actividad fue dada de baja.")
 
 
 def registrar_punteo(
@@ -33,17 +56,38 @@ def registrar_punteo(
 ) -> Grade:
     """RF-18. Primera vez que se califica esa actividad para esa
     inscripción — si ya existe, ver `YaCalificado`."""
+    _validar_inscripcion(enrollment, activity)
     _validar_rango(raw_score, activity)
-    if Grade.objects.filter(enrollment=enrollment, activity=activity, is_active=True).exists():
+    if Grade.objects.filter(enrollment=enrollment, activity=activity).exists():
         raise YaCalificado(f"{enrollment} ya tiene una nota para '{activity.name}'.")
-    return Grade.objects.create(
-        enrollment=enrollment,
-        activity=activity,
-        raw_score=raw_score,
-        current_score=raw_score,
-        source=source,
-        recorded_by=recorded_by,
-    )
+    try:
+        # Savepoint propio: si otra petición registró la misma nota entre
+        # la consulta de arriba y este insert, la restricción única lo
+        # frena y se informa como YaCalificado, no como un error 500.
+        with transaction.atomic():
+            calificacion = Grade.objects.create(
+                enrollment=enrollment,
+                activity=activity,
+                raw_score=raw_score,
+                current_score=raw_score,
+                source=source,
+                recorded_by=recorded_by,
+            )
+            registrar_cambio(
+                usuario=recorded_by,
+                entidad_nombre=ENTIDAD,
+                entidad_id=calificacion.id,
+                accion="crear",
+                valor_nuevo={
+                    "enrollment": str(enrollment.public_id),
+                    "activity": str(activity.public_id),
+                    "raw_score": str(raw_score),
+                    "source": source,
+                },
+            )
+    except IntegrityError as exc:
+        raise YaCalificado(f"{enrollment} ya tiene una nota para '{activity.name}'.") from exc
+    return calificacion
 
 
 def nota_de_unidad(*, enrollment: Enrollment, unit, assignment) -> Decimal:
@@ -52,11 +96,13 @@ def nota_de_unidad(*, enrollment: Enrollment, unit, assignment) -> Decimal:
     puntual — parcial si el curso todavía no tiene todas sus actividades
     calificadas. El tope de 100 puntos (RN-01) es por curso, así que hace
     falta filtrar por `assignment`, no solo por unidad: una inscripción
-    tiene actividades de varios cursos a la vez en la misma unidad."""
+    tiene actividades de varios cursos a la vez en la misma unidad. Solo
+    cuentan actividades vigentes, igual que en el tope de 100 puntos."""
     calificaciones = Grade.objects.filter(
         enrollment=enrollment,
         activity__unit=unit,
         activity__assignment=assignment,
+        activity__is_active=True,
         is_active=True,
     ).values_list("current_score", flat=True)
     return calcular_nota_unidad(list(calificaciones))
