@@ -271,7 +271,9 @@ def test_rnf06_aprobar_y_publicar_un_boletin_queda_en_bitacora():
 
     transiciones = [
         (r.old_value["status"], r.new_value["status"], r.user)
-        for r in AuditLog.objects.filter(entity_name="grading.ReportCard").order_by("id")
+        for r in AuditLog.objects.filter(
+            entity_name="grading.ReportCard", action="actualizar"
+        ).order_by("id")
     ]
     assert transiciones == [
         ("borrador", "aprobado", direccion),

@@ -58,7 +58,7 @@ def solicitar_modificacion(
 
 @transaction.atomic
 def resolver_modificacion(
-    solicitud: GradeChangeRequest, *, aprobar: bool, authorized_by
+    solicitud: GradeChangeRequest, *, aprobar: bool, authorized_by, motivo: str = ""
 ) -> GradeChangeRequest:
     """RF-10 / RN-05. Aprobar cambia `Grade.current_score` (la que entra
     en los promedios y ve la familia) — `Grade.raw_score` nunca cambia.
@@ -73,14 +73,17 @@ def resolver_modificacion(
     )
     solicitud.authorized_by = authorized_by
     solicitud.decided_at = timezone.now()
-    solicitud.save(update_fields=["status", "authorized_by", "decided_at", "updated_at"])
+    solicitud.resolution_note = motivo
+    solicitud.save(
+        update_fields=["status", "authorized_by", "decided_at", "resolution_note", "updated_at"]
+    )
     registrar_cambio(
         usuario=authorized_by,
         entidad_nombre=ENTIDAD_SOLICITUD,
         entidad_id=solicitud.id,
         accion="actualizar",
         valor_anterior={"status": GradeChangeRequest.ESTADO_PENDIENTE},
-        valor_nuevo={"status": solicitud.status},
+        valor_nuevo={"status": solicitud.status, "resolution_note": motivo},
     )
 
     if aprobar:

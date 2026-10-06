@@ -213,3 +213,30 @@ def test_solo_direccion_resuelve_justificaciones_acceso_no_autorizado():
     assert respuesta.status_code == 403
     asistencia.refresh_from_db()
     assert asistencia.status == Attendance.ESTADO_AUSENTE
+
+
+@pytest.mark.django_db
+def test_rnf06_aprobar_una_justificacion_deja_el_cambio_de_estado_en_bitacora():
+    from apps.core.models import AuditLog
+
+    rol = RoleFactory(name="Dirección", permissions={"asistencia": "editar"})
+    direccion = UserFactory(role=rol)
+    asistencia = AttendanceFactory(status=Attendance.ESTADO_AUSENTE)
+    tipo = JustificationType.objects.create(name="Cita médica")
+    client = APIClient()
+    client.force_authenticate(user=direccion)
+    creada = client.post(
+        "/api/v1/justifications/",
+        {"attendance": str(asistencia.public_id), "justification_type": str(tipo.public_id)},
+        format="json",
+    )
+
+    client.post(
+        f"/api/v1/justifications/{creada.data['public_id']}/resolve/",
+        {"aprobar": True},
+        format="json",
+    )
+
+    cambio = AuditLog.objects.get(entity_name="attendance.Attendance", action="actualizar")
+    assert cambio.old_value == {"status": Attendance.ESTADO_AUSENTE}
+    assert cambio.new_value == {"status": Attendance.ESTADO_JUSTIFICADO}

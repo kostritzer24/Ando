@@ -178,7 +178,7 @@ def test_rn07_recargar_con_la_misma_nota_no_genera_nada():
     )
 
     assert respuesta.status_code == 201
-    assert respuesta.data == {"creados": 0, "solicitudes_de_modificacion": 0}
+    assert respuesta.data == {"creados": 0, "correcciones": 0, "solicitudes_de_modificacion": 0}
     assert GradeChangeRequest.objects.count() == 0
 
 
@@ -398,3 +398,32 @@ def test_rn07_una_celda_con_correccion_pendiente_no_crea_otra_solicitud():
     assert respuesta.status_code == 400
     assert "pendiente" in respuesta.data["errores"][0]
     assert GradeChangeRequest.objects.count() == 1
+
+
+@pytest.mark.django_db
+def test_rn05_rn07_dentro_del_plazo_recargar_la_plantilla_corrige_directo():
+    docente, asignacion, unidad, actividad, _inscripciones = _docente_con_actividades_y_estudiantes(
+        1
+    )
+    unidad.grades_due_date = "2099-01-01"
+    unidad.save()
+    _cargar(docente, asignacion, unidad, _archivo_xlsx(asignacion, unidad, [("ES001", "Uno", "6")]))
+
+    respuesta = _cargar(
+        docente, asignacion, unidad, _archivo_xlsx(asignacion, unidad, [("ES001", "Uno", "8")])
+    )
+
+    assert respuesta.status_code == 201
+    assert respuesta.data["correcciones"] == 1
+    assert GradeChangeRequest.objects.count() == 0
+    assert Grade.objects.get(activity=actividad).current_score == 8
+
+
+@pytest.mark.django_db
+def test_rf19_el_codigo_queda_como_texto_para_no_perder_ceros():
+    _docente, asignacion, unidad, _actividad, _inscripciones = (
+        _docente_con_actividades_y_estudiantes(1)
+    )
+    libro = load_workbook(io.BytesIO(generar_plantilla(assignment=asignacion, unit=unidad)))
+
+    assert libro["Calificaciones"]["A2"].number_format == "@"

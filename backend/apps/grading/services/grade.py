@@ -1,12 +1,15 @@
 from decimal import Decimal
 
 from django.db import IntegrityError, transaction
+from django.utils import timezone
 
 from apps.core.services import registrar_cambio
 from apps.students.models import Enrollment
 
+from ..domain.grade_change import validar_correccion_directa
 from ..domain.scoring import calcular_nota_unidad
 from ..models import Activity, Grade
+from .grade_change_request import hay_solicitud_pendiente
 
 ENTIDAD = "grading.Grade"
 
@@ -106,3 +109,32 @@ def nota_de_unidad(*, enrollment: Enrollment, unit, assignment) -> Decimal:
         is_active=True,
     ).values_list("current_score", flat=True)
     return calcular_nota_unidad(list(calificaciones))
+
+
+@transaction.atomic
+def corregir_nota_en_plazo(grade: Grade, *, nuevo_punteo: Decimal, usuario) -> Grade:
+    """RN-05 dentro del plazo de entrega (ver `puede_corregirse_sin_
+    autorizacion`): el docente corrige su error de dedo sin pasar por
+    Dirección. Cambia la nota vigente y queda en bitácora; el punteo real
+    (`raw_score`) se conserva como se capturó."""
+    grade = Grade.objects.select_for_update().select_related("activity__unit").get(pk=grade.pk)
+    validar_correccion_directa(
+        punteo_nuevo=nuevo_punteo,
+        nota_vigente=grade.current_score,
+        max_score=grade.activity.max_score,
+        hoy=timezone.localdate(),
+        fecha_entrega_notas=grade.activity.unit.grades_due_date,
+        hay_pendiente=hay_solicitud_pendiente(grade),
+    )
+    anterior = grade.current_score
+    grade.current_score = nuevo_punteo
+    grade.save(update_fields=["current_score", "updated_at"])
+    registrar_cambio(
+        usuario=usuario,
+        entidad_nombre=ENTIDAD,
+        entidad_id=grade.id,
+        accion="actualizar",
+        valor_anterior={"current_score": str(anterior)},
+        valor_nuevo={"current_score": str(nuevo_punteo), "motivo": "corrección dentro del plazo"},
+    )
+    return grade

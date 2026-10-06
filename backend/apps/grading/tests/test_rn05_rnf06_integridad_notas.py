@@ -252,7 +252,11 @@ def test_rn05_una_solicitud_ya_rechazada_no_se_puede_aprobar_despues():
     nota = _nota(docente, inscripcion, a1)
     solicitud = _solicitar(client, nota, "45").data
     client.force_authenticate(user=_direccion())
-    client.post(f"/api/v1/grade-change-requests/{solicitud['public_id']}/reject/")
+    client.post(
+        f"/api/v1/grade-change-requests/{solicitud['public_id']}/reject/",
+        {"motivo": "No corresponde."},
+        format="json",
+    )
 
     respuesta = client.post(f"/api/v1/grade-change-requests/{solicitud['public_id']}/approve/")
 

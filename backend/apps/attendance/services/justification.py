@@ -1,4 +1,7 @@
+from django.db import transaction
 from django.utils import timezone
+
+from apps.core.services import registrar_cambio
 
 from ..models import Attendance, Justification
 
@@ -21,6 +24,7 @@ def crear_justificacion(
     )
 
 
+@transaction.atomic
 def resolver_justificacion(
     justificacion: Justification, *, aprobar: bool, resolved_by
 ) -> Justification:
@@ -33,9 +37,26 @@ def resolver_justificacion(
     justificacion.resolved_at = timezone.now()
     justificacion.save(update_fields=["resolution", "resolved_by", "resolved_at", "updated_at"])
 
+    registrar_cambio(
+        usuario=resolved_by,
+        entidad_nombre="attendance.Justification",
+        entidad_id=justificacion.id,
+        accion="actualizar",
+        valor_nuevo={"resolution": justificacion.resolution},
+    )
+
     if aprobar:
         asistencia = justificacion.attendance
+        estado_anterior = asistencia.status
         asistencia.status = Attendance.ESTADO_JUSTIFICADO
         asistencia.save(update_fields=["status", "updated_at"])
+        registrar_cambio(
+            usuario=resolved_by,
+            entidad_nombre="attendance.Attendance",
+            entidad_id=asistencia.id,
+            accion="actualizar",
+            valor_anterior={"status": estado_anterior},
+            valor_nuevo={"status": asistencia.status},
+        )
 
     return justificacion

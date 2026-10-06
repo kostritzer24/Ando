@@ -58,3 +58,13 @@ def test_rn05_una_actividad_calificada_no_cambia_su_maximo_ni_se_da_de_baja():
         validar_cambio_de_punteo_maximo(tiene_notas=True)
     with pytest.raises(DefinicionDeUnidadInvalida):
         validar_baja_de_actividad(tiene_notas=True)
+
+
+def test_rn05_se_corrige_sin_autorizacion_hasta_el_dia_de_entrega_inclusive():
+    from datetime import date
+
+    from apps.grading.domain.grade_change import puede_corregirse_sin_autorizacion
+
+    entrega = date(2026, 3, 15)
+    assert puede_corregirse_sin_autorizacion(hoy=date(2026, 3, 15), fecha_entrega_notas=entrega)
+    assert not puede_corregirse_sin_autorizacion(hoy=date(2026, 3, 16), fecha_entrega_notas=entrega)

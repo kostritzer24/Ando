@@ -1,3 +1,5 @@
+import uuid
+
 from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
@@ -22,19 +24,28 @@ from ..domain.grade_change import SolicitudDeModificacionInvalida
 from ..domain.report_card import TransicionDeBoletinInvalida
 from ..domain.unit_design import DefinicionDeUnidadInvalida
 from ..models import Activity, Grade, GradeChangeRequest, ReportCard
+from ..selectors.avance import pendientes_por_inscripcion
 from ..services.activity import (
     AsignacionNoCalifica,
     actualizar_actividad,
     crear_actividad,
     dar_de_baja_actividad,
 )
-from ..services.grade import InscripcionAjena, PunteoFueraDeRango, YaCalificado, registrar_punteo
+from ..services.grade import (
+    InscripcionAjena,
+    PunteoFueraDeRango,
+    YaCalificado,
+    corregir_nota_en_plazo,
+    registrar_punteo,
+)
 from ..services.grade_change_request import resolver_modificacion, solicitar_modificacion
 from ..services.report_card import (
     aprobar_boletin,
-    contenido_boletin,
+    aprobar_boletines,
+    contenido_para_descargar,
     generar_boletines,
     publicar_boletin,
+    publicar_boletines,
 )
 from ..services.template import (
     ArchivoIlegible,
@@ -46,11 +57,13 @@ from ..services.template import (
 from .serializers import (
     ActivitySerializer,
     ActivityUpdateSerializer,
+    CorreccionSerializer,
     GradeChangeRequestSerializer,
     GradeCreateSerializer,
     GradeSerializer,
     ReportCardGenerateSerializer,
     ReportCardSerializer,
+    ResolucionSerializer,
 )
 
 _ROLES_SIN_ALCANCE_LIMITADO = {
@@ -71,6 +84,22 @@ class _SoloDireccion(BasePermission):
 
     def has_permission(self, request, view) -> bool:
         return bool(request.user and request.user.role.name == ROL_DIRECCION)
+
+
+def _filtrar(queryset, params, campos: dict[str, str]):
+    """Filtros opcionales por `public_id` en la query string, aplicados
+    después del alcance del usuario (nunca en su lugar). Las pantallas piden
+    solo lo que muestran en vez de descargar todo y filtrar en el navegador."""
+    for parametro, lookup in campos.items():
+        valor = params.get(parametro)
+        if not valor:
+            continue
+        try:
+            uuid.UUID(str(valor))
+        except ValueError as exc:
+            raise ValidationError({parametro: "No es un identificador válido."}) from exc
+        queryset = queryset.filter(**{lookup: valor})
+    return queryset
 
 
 def _requiere_asignacion_propia(user, assignment: TeacherAssignment) -> None:
@@ -94,6 +123,13 @@ class ActivityViewSet(RegistraAccesoMixin, ScopedQuerysetMixin, viewsets.ModelVi
         if user.role.name in _ROLES_DOCENTES_QUE_CALIFICAN:
             return queryset.filter(assignment__teacher=user)
         return queryset.none()
+
+    def get_queryset(self):
+        return _filtrar(
+            super().get_queryset(),
+            self.request.query_params,
+            {"assignment": "assignment__public_id", "unit": "unit__public_id"},
+        )
 
     def get_serializer_class(self):
         if self.action in {"update", "partial_update"}:
@@ -144,9 +180,10 @@ class GradeViewSet(
     mixins.RetrieveModelMixin,
     viewsets.GenericViewSet,
 ):
-    """RF-18. Sin editar ni borrar (RN-05): una nota registrada solo cambia
-    por una solicitud de modificación que autoriza Dirección. Con PATCH o
-    DELETE abiertos, borrar y volver a registrar saltaba esa autorización."""
+    """RF-18. Sin editar ni borrar por PATCH/DELETE (RN-05): con eso
+    abierto, borrar y volver a registrar saltaba la autorización. Una nota
+    cambia solo por `correct/` (dentro del plazo de entrega, con bitácora) o
+    por una solicitud de modificación que autoriza Dirección."""
 
     queryset = Grade.objects.select_related(
         "enrollment", "activity__assignment__course", "activity__unit", "recorded_by"
@@ -155,8 +192,24 @@ class GradeViewSet(
     area = "notas"
     lookup_field = "public_id"
 
+    def get_queryset(self):
+        return _filtrar(
+            super().get_queryset(),
+            self.request.query_params,
+            {
+                "activity": "activity__public_id",
+                "assignment": "activity__assignment__public_id",
+                "unit": "activity__unit__public_id",
+                "enrollment": "enrollment__public_id",
+            },
+        )
+
     def get_serializer_class(self):
-        return GradeCreateSerializer if self.action == "create" else GradeSerializer
+        if self.action == "create":
+            return GradeCreateSerializer
+        if self.action == "correct":
+            return CorreccionSerializer
+        return GradeSerializer
 
     def scope_queryset(self, queryset, user):
         if user.role.name in _ROLES_SIN_ALCANCE_LIMITADO:
@@ -193,6 +246,23 @@ class GradeViewSet(
             raise ValidationError({"enrollment": str(exc)}) from exc
         return Response(GradeSerializer(calificacion).data, status=status.HTTP_201_CREATED)
 
+    @extend_schema(request=CorreccionSerializer, responses=GradeSerializer)
+    @action(detail=True, methods=["post"], url_path="correct")
+    def correct(self, request, public_id=None):
+        """RN-05 dentro del plazo de entrega de notas de la unidad: corregir
+        un error de dedo sin pasar por Dirección (queda en bitácora)."""
+        calificacion = self.get_object()
+        _requiere_asignacion_propia(request.user, calificacion.activity.assignment)
+        serializer = CorreccionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            calificacion = corregir_nota_en_plazo(
+                calificacion, nuevo_punteo=serializer.validated_data["score"], usuario=request.user
+            )
+        except SolicitudDeModificacionInvalida as exc:
+            raise ValidationError({"score": str(exc)}) from exc
+        return Response(GradeSerializer(calificacion).data)
+
 
 class GradeChangeRequestViewSet(
     RegistraAccesoMixin,
@@ -204,7 +274,13 @@ class GradeChangeRequestViewSet(
 ):
     """RF-23 (solicitar) / RF-10 (autorizar o rechazar)."""
 
-    queryset = GradeChangeRequest.objects.select_related("grade", "requested_by", "authorized_by")
+    queryset = GradeChangeRequest.objects.select_related(
+        "grade__enrollment__student",
+        "grade__activity__assignment__course",
+        "grade__activity__unit",
+        "requested_by",
+        "authorized_by",
+    )
     serializer_class = GradeChangeRequestSerializer
     lookup_field = "public_id"
 
@@ -227,21 +303,34 @@ class GradeChangeRequestViewSet(
         except SolicitudDeModificacionInvalida as exc:
             raise ValidationError({"requested_score": str(exc)}) from exc
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        estado = self.request.query_params.get("status")
+        return queryset.filter(status=estado) if estado else queryset
+
     def _resolver(self, request, public_id, aprobar):
+        serializer = ResolucionSerializer(data=request.data, context={"aprobar": aprobar})
+        serializer.is_valid(raise_exception=True)
         try:
-            solicitud = resolver_modificacion(
-                self.get_object(), aprobar=aprobar, authorized_by=request.user
+            resolver_modificacion(
+                self.get_object(),
+                aprobar=aprobar,
+                authorized_by=request.user,
+                motivo=serializer.validated_data.get("motivo", ""),
             )
         except SolicitudDeModificacionInvalida as exc:
             raise ValidationError(str(exc)) from exc
-        return Response(GradeChangeRequestSerializer(solicitud).data)
+        return Response(GradeChangeRequestSerializer(self.get_object()).data)
 
+    @extend_schema(request=ResolucionSerializer, responses=GradeChangeRequestSerializer)
     @action(detail=True, methods=["post"], url_path="approve")
     def approve(self, request, public_id=None):
         return self._resolver(request, public_id, aprobar=True)
 
+    @extend_schema(request=ResolucionSerializer, responses=GradeChangeRequestSerializer)
     @action(detail=True, methods=["post"], url_path="reject")
     def reject(self, request, public_id=None):
+        """Rechazar pide el motivo: el docente lo ve en su bandeja."""
         return self._resolver(request, public_id, aprobar=False)
 
 
@@ -395,18 +484,19 @@ class ReportCardViewSet(
     mixins.RetrieveModelMixin,
     viewsets.GenericViewSet,
 ):
-    """RF-09. Generar es una acción de lote sobre una sección/unidad;
-    aprobar y publicar actúan sobre un boletín individual."""
+    """RF-09. Generar, aprobar y publicar tienen versión de lote por
+    sección/unidad; aprobar y publicar también existen por boletín. El
+    listado trae, por boletín, los cursos con notas pendientes."""
 
     queryset = ReportCard.objects.select_related(
-        "enrollment", "unit", "generated_by", "approved_by"
+        "enrollment__student", "unit", "generated_by", "approved_by"
     )
     serializer_class = ReportCardSerializer
     area = "notas"
     lookup_field = "public_id"
 
     def get_permissions(self):
-        if self.action in {"generate", "approve", "publish"}:
+        if self.action in {"generate", "approve", "publish", "approve_batch", "publish_batch"}:
             return [PermisoPorArea(), _SoloDireccion()]
         return [PermisoPorArea()]
 
@@ -425,6 +515,43 @@ class ReportCardViewSet(
                 status=ReportCard.ESTADO_PUBLICADO,
             ).distinct()
         return queryset.none()
+
+    def get_queryset(self):
+        return _filtrar(
+            super().get_queryset(),
+            self.request.query_params,
+            {"section": "enrollment__section__public_id", "unit": "unit__public_id"},
+        )
+
+    def list(self, request, *args, **kwargs):
+        pagina = self.paginate_queryset(self.filter_queryset(self.get_queryset()))
+        boletines = pagina if pagina is not None else list(self.get_queryset())
+        pendientes = {}
+        for unidad in {b.unit for b in boletines}:
+            pendientes.update(
+                pendientes_por_inscripcion(
+                    inscripciones=[b.enrollment for b in boletines if b.unit == unidad],
+                    unit=unidad,
+                )
+            )
+        serializer = self.get_serializer(boletines, many=True, context={"pendientes": pendientes})
+        if pagina is not None:
+            return self.get_paginated_response(serializer.data)
+        return Response(serializer.data)
+
+    @extend_schema(request=ReportCardGenerateSerializer)
+    @action(detail=False, methods=["post"], url_path="approve-batch")
+    def approve_batch(self, request):
+        serializer = ReportCardGenerateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response(aprobar_boletines(approved_by=request.user, **serializer.validated_data))
+
+    @extend_schema(request=ReportCardGenerateSerializer)
+    @action(detail=False, methods=["post"], url_path="publish-batch")
+    def publish_batch(self, request):
+        serializer = ReportCardGenerateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response(publicar_boletines(published_by=request.user, **serializer.validated_data))
 
     @action(detail=False, methods=["post"], url_path="generate")
     def generate(self, request):
@@ -453,12 +580,12 @@ class ReportCardViewSet(
 
     @action(detail=True, methods=["get"], url_path="download")
     def download(self, request, public_id=None):
-        """RF-34. El boletín no guarda un PDF aparte (ver docstring del
-        modelo): se genera al momento de la descarga, curso por curso."""
+        """RF-34. No se guarda un PDF aparte: se genera al descargar, a
+        partir del contenido congelado al aprobar (ver `ReportCard`)."""
         boletin = self.get_object()
         if boletin.status != ReportCard.ESTADO_PUBLICADO:
             raise ValidationError("Este boletín todavía no está publicado.")
-        html = render_to_string("grading/boletin.html", contenido_boletin(boletin))
+        html = render_to_string("grading/boletin.html", contenido_para_descargar(boletin))
         pdf_bytes = HTML(string=html).write_pdf()
         nombre_archivo = (
             f"boletin_{boletin.enrollment.student.internal_code}_unidad{boletin.unit.number}.pdf"

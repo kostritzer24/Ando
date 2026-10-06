@@ -1,12 +1,14 @@
 """RF-19/RF-20: generar y cargar la plantilla de calificaciones. Cada
-celda ya calificada (RN-05/RN-07: el punteo real nunca se sobreescribe,
-y una plantilla recargada se trata como solicitud de modificación) se
-clasifica como "crear" o "modificacion" antes de guardar nada."""
+celda se clasifica antes de guardar nada: "crear" (sin nota todavía),
+"sin_cambio", "correccion" (otra nota, dentro del plazo de entrega: se
+corrige directo, RN-05) o "modificacion" (otra nota, después del plazo:
+RN-07, se trata como solicitud que autoriza Dirección)."""
 
 import io
 import zipfile
 
 from django.db import transaction
+from django.utils import timezone
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Protection
 from openpyxl.utils import get_column_letter
@@ -14,6 +16,7 @@ from openpyxl.utils.exceptions import InvalidFileException
 
 from apps.students.models import Enrollment
 
+from ..domain.grade_change import puede_corregirse_sin_autorizacion
 from ..domain.template import (
     CeldaPlantillaInvalida,
     PlantillaNoCorresponde,
@@ -23,11 +26,12 @@ from ..domain.template import (
     validar_punteo,
 )
 from ..models import Activity, Grade, GradeChangeRequest
-from .grade import registrar_punteo
+from .grade import corregir_nota_en_plazo, registrar_punteo
 from .grade_change_request import solicitar_modificacion
 
 ACCION_CREAR = "crear"
 ACCION_MODIFICACION = "modificacion"
+ACCION_CORRECCION = "correccion"
 ACCION_SIN_CAMBIO = "sin_cambio"
 
 # Hoja oculta con los identificadores de lo que se descargó: asignación,
@@ -88,6 +92,10 @@ def generar_plantilla(*, assignment, unit) -> bytes:
     # modifican); solo las celdas de punteo se pueden escribir. Sin
     # contraseña: es una guía para quien llena el archivo, la validación
     # real es la del servidor al cargarlo.
+    # El código como texto: un código numérico perdería sus ceros a la
+    # izquierda si Excel lo convierte en número.
+    for (celda,) in hoja.iter_rows(min_row=2, max_col=1):
+        celda.number_format = "@"
     for fila in hoja.iter_rows(min_row=2, min_col=3, max_col=len(encabezados)):
         for celda in fila:
             celda.protection = Protection(locked=False)
@@ -162,6 +170,9 @@ def validar_y_clasificar_plantilla(*, assignment, unit, archivo):
         ).values_list("grade_id", flat=True)
     )
 
+    en_plazo = puede_corregirse_sin_autorizacion(
+        hoy=timezone.localdate(), fecha_entrega_notas=unit.grades_due_date
+    )
     errores = []
     filas_validas = []
     filas_por_codigo: dict[str, int] = {}
@@ -222,7 +233,7 @@ def validar_y_clasificar_plantilla(*, assignment, unit, archivo):
                 fila_tiene_error = True
                 continue
             else:
-                accion = ACCION_MODIFICACION
+                accion = ACCION_CORRECCION if en_plazo else ACCION_MODIFICACION
 
             celdas.append(
                 {
@@ -248,6 +259,7 @@ def aplicar_plantilla(*, filas_validas, recorded_by) -> dict:
     persona registró esa nota entre la vista previa y la carga), no queda
     guardada ninguna."""
     creados = 0
+    correcciones = 0
     solicitudes = 0
     for inscripcion, celdas in filas_validas:
         for celda in celdas:
@@ -260,6 +272,11 @@ def aplicar_plantilla(*, filas_validas, recorded_by) -> dict:
                     source=Grade.ORIGEN_PLANTILLA,
                 )
                 creados += 1
+            elif celda["accion"] == ACCION_CORRECCION:
+                corregir_nota_en_plazo(
+                    celda["grade"], nuevo_punteo=celda["punteo"], usuario=recorded_by
+                )
+                correcciones += 1
             elif celda["accion"] == ACCION_MODIFICACION:
                 solicitar_modificacion(
                     grade=celda["grade"],
@@ -268,4 +285,8 @@ def aplicar_plantilla(*, filas_validas, recorded_by) -> dict:
                     requested_by=recorded_by,
                 )
                 solicitudes += 1
-    return {"creados": creados, "solicitudes_de_modificacion": solicitudes}
+    return {
+        "creados": creados,
+        "correcciones": correcciones,
+        "solicitudes_de_modificacion": solicitudes,
+    }
