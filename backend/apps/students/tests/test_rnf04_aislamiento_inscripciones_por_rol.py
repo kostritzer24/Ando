@@ -62,3 +62,26 @@ def test_docente_solo_ve_las_inscripciones_de_sus_propias_secciones_asignadas():
 
     assert ids == {str(mi_inscripcion.public_id)}
     assert str(inscripcion_ajena.public_id) not in ids
+
+
+@pytest.mark.django_db
+def test_inscripciones_filtradas_por_seccion_traen_el_nombre_y_no_amplian_el_alcance():
+    rol_familia = RoleFactory(
+        name="Padre de familia", permissions={"estudiantes_encargados": "ver"}
+    )
+    usuario_familia = UserFactory(role=rol_familia)
+    encargado = GuardianFactory(user=usuario_familia)
+    mi_hijo = StudentFactory(internal_code="ES010")
+    vincular_encargado_estudiante(guardian=encargado, student=mi_hijo, relationship="Padre")
+    mia = EnrollmentFactory(student=mi_hijo)
+    ajena_misma_seccion = EnrollmentFactory(section=mia.section, cycle=mia.cycle)
+    EnrollmentFactory()  # otra sección
+    client = APIClient()
+    client.force_authenticate(user=usuario_familia)
+
+    respuesta = client.get(f"/api/v1/enrollments/?section={mia.section.public_id}")
+
+    assert [r["public_id"] for r in respuesta.data["results"]] == [str(mia.public_id)]
+    assert respuesta.data["results"][0]["student_code"] == "ES010"
+    assert ajena_misma_seccion.section == mia.section
+    assert client.get("/api/v1/enrollments/?section=x").status_code == 400

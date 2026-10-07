@@ -5,7 +5,10 @@ import { assignmentsApi } from "@/features/asignaciones/api/asignacionesApi";
 import { AppButton, AppModal, CargandoBloque, DataTable, ErrorBanner, FormField, FormSelect, PageHeader } from "@/shared/components";
 import type { Activity, ActivityType, GradingUnit, TeacherAssignment } from "@/shared/types/models";
 
-import { activitiesApi, activityTypesApi, unidadesDeCiclo } from "../api/notasApi";
+import { avisar } from "@/shared/composables/useAvisos";
+import { confirmar } from "@/shared/composables/useConfirmar";
+
+import { activitiesApi, activityTypesApi, motivoDelRechazo, unidadesDeCiclo } from "../api/notasApi";
 
 const cargando = ref(true);
 const error = ref("");
@@ -37,6 +40,10 @@ const puntosUsados = computed(() =>
   actividades.value.reduce((total, act) => total + Number(act.max_score), 0),
 );
 const puntosDisponibles = computed(() => 100 - puntosUsados.value);
+// Al editar, los puntos de la propia actividad vuelven a estar disponibles.
+const puntosParaElFormulario = computed(
+  () => puntosDisponibles.value + (editando.value ? Number(editando.value.max_score) : 0),
+);
 const cantidadPruebasCortas = computed(() => {
   const idsPruebaCorta = new Set(
     tiposActividad.value.filter((t) => t.counts_as_short_quiz).map((t) => t.public_id),
@@ -46,6 +53,8 @@ const cantidadPruebasCortas = computed(() => {
 
 const modalAbierto = ref(false);
 const guardando = ref(false);
+const editando = ref<Activity | null>(null);
+const errorFormulario = ref("");
 const formulario = reactive({ name: "", activity_type: "", max_score: "", due_date: "" });
 
 async function cargarBase(): Promise<void> {
@@ -91,13 +100,11 @@ async function cargarActividades(): Promise<void> {
   cargandoActividades.value = true;
   error.value = "";
   try {
-    const todas = (await activitiesApi.listar()).results;
-    actividades.value = todas.filter(
-      (a) =>
-        a.assignment === asignacionElegida.value &&
-        a.unit === unidadElegida.value &&
-        a.is_active !== false,
-    );
+    const respuesta = await activitiesApi.listar({
+      assignment: asignacionElegida.value,
+      unit: unidadElegida.value,
+    });
+    actividades.value = respuesta.results.filter((a) => a.is_active !== false);
   } catch {
     error.value = "No se pudieron cargar las actividades de la unidad. Probá de nuevo.";
   } finally {
@@ -105,7 +112,36 @@ async function cargarActividades(): Promise<void> {
   }
 }
 
+function abrirEdicion(actividad: Activity): void {
+  editando.value = actividad;
+  errorFormulario.value = "";
+  formulario.name = actividad.name;
+  formulario.activity_type = actividad.activity_type;
+  formulario.max_score = actividad.max_score;
+  formulario.due_date = actividad.due_date;
+  modalAbierto.value = true;
+}
+
+async function darDeBaja(actividad: Activity): Promise<void> {
+  const seguir = await confirmar({
+    titulo: `¿Quitar "${actividad.name}"?`,
+    mensaje: `Libera ${actividad.max_score} puntos de la unidad. Solo se puede si todavía no tiene notas.`,
+    etiquetaConfirmar: "Quitar actividad",
+    peligro: true,
+  });
+  if (!seguir) return;
+  try {
+    await activitiesApi.darDeBaja(actividad.public_id);
+    avisar("Actividad quitada.");
+    await cargarActividades();
+  } catch (e) {
+    error.value = motivoDelRechazo(e, "No se pudo quitar la actividad. Probá de nuevo.");
+  }
+}
+
 function abrirNueva(): void {
+  editando.value = null;
+  errorFormulario.value = "";
   formulario.name = "";
   formulario.activity_type = opcionesTipo.value[0]?.valor ?? "";
   formulario.max_score = "";
@@ -115,8 +151,20 @@ function abrirNueva(): void {
 
 async function guardar(): Promise<void> {
   guardando.value = true;
-  error.value = "";
+  errorFormulario.value = "";
   try {
+    if (editando.value) {
+      await activitiesApi.actualizar(editando.value.public_id, {
+        name: formulario.name,
+        activity_type: formulario.activity_type,
+        max_score: formulario.max_score,
+        due_date: formulario.due_date,
+      });
+      modalAbierto.value = false;
+      avisar("Actividad actualizada.");
+      await cargarActividades();
+      return;
+    }
     await activitiesApi.crear({
       assignment: asignacionElegida.value,
       unit: unidadElegida.value,
@@ -127,8 +175,10 @@ async function guardar(): Promise<void> {
     });
     modalAbierto.value = false;
     await cargarActividades();
-  } catch {
-    error.value = "No se pudo guardar la actividad. Revisá los datos e intentá de nuevo.";
+  } catch (e) {
+    // Dentro del diálogo: el motivo real ("la unidad no puede superar los 100
+    // puntos", "ya tiene notas") sin perder lo que se escribió.
+    errorFormulario.value = motivoDelRechazo(e, "No se pudo guardar la actividad. Revisá los datos e intentá de nuevo.");
   } finally {
     guardando.value = false;
   }
@@ -161,7 +211,7 @@ onMounted(async () => {
         <FormSelect id="unit" etiqueta="Unidad" :opciones="opcionesUnidad" v-model="unidadElegida" />
       </div>
 
-      <p v-if="cargandoUnidades || cargandoActividades">Cargando…</p>
+      <CargandoBloque v-if="cargandoUnidades || cargandoActividades" />
 
       <template v-else-if="unidadElegida">
         <div class="unidad-page__resumen">
@@ -187,12 +237,29 @@ onMounted(async () => {
             { clave: 'due_date', etiqueta: 'Fecha de entrega' },
           ]"
           :filas="actividades"
-        />
+        >
+          <template #acciones="{ fila }">
+            <button type="button" class="unidad-page__accion" @click="abrirEdicion(fila as unknown as Activity)">
+              Editar
+            </button>
+            <button type="button" class="unidad-page__accion" @click="darDeBaja(fila as unknown as Activity)">
+              Quitar
+            </button>
+          </template>
+        </DataTable>
         <p v-else class="unidad-page__vacio">Todavía no hay actividades en esta unidad.</p>
       </template>
 
-      <AppModal v-if="modalAbierto" titulo="Agregar actividad" @cerrar="modalAbierto = false">
+      <AppModal
+        v-if="modalAbierto"
+        :titulo="editando ? 'Editar actividad' : 'Agregar actividad'"
+        @cerrar="modalAbierto = false"
+      >
         <form class="unidad-page__formulario" @submit.prevent="guardar">
+          <ErrorBanner v-if="errorFormulario" :mensaje="errorFormulario" />
+          <p v-if="editando" class="unidad-page__nota">
+            Si la actividad ya tiene notas, su punteo máximo no se puede cambiar.
+          </p>
           <FormField id="name" etiqueta="Nombre de la actividad" v-model="formulario.name" />
           <FormSelect
             id="activity_type"
@@ -204,7 +271,7 @@ onMounted(async () => {
             id="max_score"
             etiqueta="Punteo máximo"
             tipo="number"
-            :pista="`Quedan ${puntosDisponibles} puntos disponibles en esta unidad.`"
+            :pista="`Quedan ${puntosParaElFormulario} puntos disponibles en esta unidad.`"
             v-model="formulario.max_score"
           />
           <FormField id="due_date" etiqueta="Fecha de entrega" tipo="date" v-model="formulario.due_date" />
@@ -246,6 +313,22 @@ onMounted(async () => {
 .unidad-page__vacio {
   color: var(--color-tinta-suave);
   margin-top: var(--espacio-lg);
+}
+
+.unidad-page__accion {
+  background: none;
+  border: none;
+  color: var(--color-accion);
+  font-size: var(--texto-sm);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.3rem 0.5rem;
+}
+
+.unidad-page__nota {
+  color: var(--color-tinta-suave);
+  font-size: var(--texto-sm);
+  margin: 0;
 }
 
 .unidad-page__formulario {

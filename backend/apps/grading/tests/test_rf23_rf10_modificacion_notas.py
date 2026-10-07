@@ -95,7 +95,11 @@ def test_rechazar_no_cambia_la_nota():
     solicitud_id = creada.data["public_id"]
 
     client.force_authenticate(user=direccion)
-    respuesta = client.post(f"/api/v1/grade-change-requests/{solicitud_id}/reject/")
+    respuesta = client.post(
+        f"/api/v1/grade-change-requests/{solicitud_id}/reject/",
+        {"motivo": "La respuesta estaba bien calificada."},
+        format="json",
+    )
 
     assert respuesta.status_code == 200
     assert respuesta.data["status"] == GradeChangeRequest.ESTADO_RECHAZADA

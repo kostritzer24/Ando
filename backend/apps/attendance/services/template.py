@@ -7,6 +7,7 @@ acá, para no procesar macros de un `.xlsm`."""
 import io
 from datetime import date
 
+from django.db import transaction
 from openpyxl import Workbook, load_workbook
 from openpyxl.utils import get_column_letter
 
@@ -57,6 +58,7 @@ def generar_plantilla(*, section: Section) -> bytes:
     return buffer.getvalue()
 
 
+@transaction.atomic
 def procesar_plantilla(
     *, section: Section, fecha: date, archivo, recorded_by
 ) -> tuple[list[Attendance], list[str]]:

@@ -164,6 +164,9 @@ onMounted(async () => {
         <p class="plantilla-notas__vista-titulo">{{ vistaPrevia.filas }} filas leídas, sin errores:</p>
         <ul>
           <li>{{ vistaPrevia.resumen.crear }} notas nuevas</li>
+          <li v-if="vistaPrevia.resumen.correccion">
+            {{ vistaPrevia.resumen.correccion }} se corrigen directo (todavía no pasó la fecha de entrega)
+          </li>
           <li>{{ vistaPrevia.resumen.modificacion }} van a generar una solicitud de corrección (RN-07)</li>
           <li>{{ vistaPrevia.resumen.sin_cambio }} sin cambios</li>
         </ul>
@@ -181,6 +184,7 @@ onMounted(async () => {
 
       <p v-if="resultado?.creados !== undefined" class="plantilla-notas__exito">
         Se guardaron {{ resultado.creados }} notas
+        <template v-if="resultado.correcciones">, se corrigieron {{ resultado.correcciones }}</template>
         <template v-if="resultado.solicitudes_de_modificacion">
           y se generaron {{ resultado.solicitudes_de_modificacion }} solicitudes de corrección.
         </template>

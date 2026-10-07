@@ -1,14 +1,23 @@
 <script setup lang="ts">
-import { isAxiosError } from "axios";
 import { computed, onMounted, ref, watch } from "vue";
 
 import { seccionesApi, unidadesApi } from "@/features/catalogo/api/catalogoApi";
-import { enrollmentsApi, studentsApi } from "@/features/estudiantes/api/estudiantesApi";
+import { motivoDelRechazo } from "@/features/notas/api/notasApi";
 import { AppButton, CargandoBloque, DataTable, EmptyState, ErrorBanner, FormSelect, PageHeader, TagPill } from "@/shared/components";
+import { avisar } from "@/shared/composables/useAvisos";
+import { confirmar } from "@/shared/composables/useConfirmar";
 import { usePermisos } from "@/shared/permisos";
-import type { Enrollment, GradingUnit, ReportCard, Section, Student } from "@/shared/types/models";
+import type { GradingUnit, ReportCard, Section } from "@/shared/types/models";
 
-import { aprobarBoletin, generarBoletines, publicarBoletin, reportCardsApi } from "../api/pagosApi";
+import {
+  aprobarBoletin,
+  aprobarBoletinesEnLote,
+  generarBoletines,
+  publicarBoletin,
+  publicarBoletinesEnLote,
+  reportCardsApi,
+  type ResultadoPublicacionEnLote,
+} from "../api/pagosApi";
 
 // Generar, aprobar y publicar es "editar" en Notas (Dirección);
 // Coordinación y Administrador los consultan.
@@ -29,8 +38,6 @@ const VARIANTE_ESTADO: Record<string, "hoy" | "aviso" | "taller"> = {
 const cargando = ref(true);
 const error = ref("");
 const secciones = ref<Section[]>([]);
-const inscripciones = ref<Enrollment[]>([]);
-const estudiantes = ref<Student[]>([]);
 
 const seccionElegida = ref("");
 const unidades = ref<GradingUnit[]>([]);
@@ -39,9 +46,10 @@ const cargandoUnidades = ref(false);
 
 const boletines = ref<ReportCard[]>([]);
 const cargandoBoletines = ref(false);
-const generando = ref(false);
+const enAccionDeLote = ref(false);
 const errorAccion = ref("");
 const idEnAccion = ref("");
+const sinPublicar = ref<ResultadoPublicacionEnLote["no_publicados"]>([]);
 
 const opcionesSeccion = computed(() =>
   secciones.value.map((s) => ({ valor: s.public_id, etiqueta: `${s.grade} ${s.letter ?? ""}`.trimEnd() })),
@@ -50,24 +58,29 @@ const opcionesUnidad = computed(() =>
   unidades.value.map((u) => ({ valor: u.public_id, etiqueta: `Unidad ${u.number}` })),
 );
 
-function nombreEstudiante(enrollmentPublicId: string): string {
-  const inscripcion = inscripciones.value.find((i) => i.public_id === enrollmentPublicId);
-  const estudiante = inscripcion ? estudiantes.value.find((e) => e.public_id === inscripcion.student) : undefined;
-  return estudiante ? `${estudiante.first_name} ${estudiante.last_name}` : "—";
+const borradores = computed(() => boletines.value.filter((b) => b.status === "borrador"));
+const aprobados = computed(() => boletines.value.filter((b) => b.status === "aprobado"));
+const borradoresIncompletos = computed(() => borradores.value.filter((b) => b.pendientes.length > 0));
+
+/** "Matemática: faltan 2 notas; Física: la unidad suma 60 de 100 puntos" —
+ * lo que el boletín mostraría como nota parcial si se aprueba así. El
+ * detalle lo arma el servidor. */
+function resumenPendientes(boletin: ReportCard): string {
+  if (boletin.pendientes.length === 0) return "Completas";
+  return boletin.pendientes.map((p) => (p.curso ? `${p.curso}: ${p.detalle}` : p.detalle)).join("; ");
 }
+
+const filas = computed(() =>
+  boletines.value
+    .map((b) => ({ ...b, estudiante: b.student_name, notas: resumenPendientes(b) }))
+    .sort((a, b) => a.estudiante.localeCompare(b.estudiante, "es")),
+);
 
 async function cargar(): Promise<void> {
   cargando.value = true;
   error.value = "";
   try {
-    const [seccionesResp, inscripcionesResp, estudiantesResp] = await Promise.all([
-      seccionesApi.listar(),
-      enrollmentsApi.listar(),
-      studentsApi.listar(),
-    ]);
-    secciones.value = seccionesResp.results.filter((s) => s.is_active !== false);
-    inscripciones.value = inscripcionesResp.results;
-    estudiantes.value = estudiantesResp.results;
+    secciones.value = (await seccionesApi.listar()).results.filter((s) => s.is_active !== false);
     seccionElegida.value = opcionesSeccion.value[0]?.valor ?? "";
   } catch {
     error.value = "No se pudo cargar la lista de secciones. Probá de nuevo.";
@@ -101,13 +114,10 @@ async function cargarBoletines(): Promise<void> {
   cargandoBoletines.value = true;
   error.value = "";
   try {
-    const inscripcionesDeLaSeccion = new Set(
-      inscripciones.value.filter((i) => i.section === seccionElegida.value).map((i) => i.public_id),
-    );
-    const todos = (await reportCardsApi.listar()).results;
-    boletines.value = todos.filter(
-      (b) => b.unit === unidadElegida.value && inscripcionesDeLaSeccion.has(b.enrollment),
-    );
+    // Solo la sección y unidad elegidas; el servidor trae nombre y pendientes.
+    boletines.value = (
+      await reportCardsApi.listar({ section: seccionElegida.value, unit: unidadElegida.value })
+    ).results;
   } catch {
     error.value = "No se pudieron cargar los boletines de esta sección. Probá de nuevo.";
   } finally {
@@ -115,34 +125,41 @@ async function cargarBoletines(): Promise<void> {
   }
 }
 
-async function generar(): Promise<void> {
-  generando.value = true;
-  errorAccion.value = "";
-  try {
-    await generarBoletines({ section: seccionElegida.value, unit: unidadElegida.value });
-    await cargarBoletines();
-  } catch {
-    errorAccion.value = "No se pudieron generar los boletines. Probá de nuevo.";
-  } finally {
-    generando.value = false;
-  }
+function seleccion() {
+  return { section: seccionElegida.value, unit: unidadElegida.value };
 }
 
-function mensajeDeError(error: unknown, porOmision: string): string {
-  if (isAxiosError(error) && Array.isArray(error.response?.data)) {
-    return String(error.response.data[0]);
+async function generar(): Promise<void> {
+  enAccionDeLote.value = true;
+  errorAccion.value = "";
+  try {
+    await generarBoletines(seleccion());
+    await cargarBoletines();
+  } catch (e) {
+    errorAccion.value = motivoDelRechazo(e, "No se pudieron generar los boletines. Probá de nuevo.");
+  } finally {
+    enAccionDeLote.value = false;
   }
-  return porOmision;
 }
 
 async function aprobar(boletin: ReportCard): Promise<void> {
+  // Aprobar congela el contenido: con notas faltantes, el boletín sale con
+  // la nota parcial. Se puede, pero no sin saberlo.
+  if (boletin.pendientes.length > 0) {
+    const seguir = await confirmar({
+      titulo: `¿Aprobar el boletín de ${boletin.student_name}?`,
+      mensaje: `Tiene notas pendientes — ${resumenPendientes(boletin)}. Al aprobarlo queda congelado así.`,
+      etiquetaConfirmar: "Aprobar igual",
+    });
+    if (!seguir) return;
+  }
   idEnAccion.value = boletin.public_id;
   errorAccion.value = "";
   try {
     await aprobarBoletin(boletin.public_id);
     await cargarBoletines();
-  } catch (error) {
-    errorAccion.value = mensajeDeError(error, "No se pudo aprobar el boletín.");
+  } catch (e) {
+    errorAccion.value = motivoDelRechazo(e, "No se pudo aprobar el boletín.");
   } finally {
     idEnAccion.value = "";
   }
@@ -154,15 +171,58 @@ async function publicar(boletin: ReportCard): Promise<void> {
   try {
     await publicarBoletin(boletin.public_id);
     await cargarBoletines();
-  } catch (error) {
-    errorAccion.value = mensajeDeError(error, "No se pudo publicar el boletín.");
+  } catch (e) {
+    errorAccion.value = motivoDelRechazo(e, "No se pudo publicar el boletín.");
   } finally {
     idEnAccion.value = "";
   }
 }
 
+async function aprobarTodos(): Promise<void> {
+  const incompletos = borradoresIncompletos.value.length;
+  const seguir = await confirmar({
+    titulo: `¿Aprobar ${borradores.value.length} boletines?`,
+    mensaje:
+      incompletos > 0
+        ? `${incompletos} tienen notas pendientes y quedan congelados con la nota parcial. Revisá la columna "Notas" antes de seguir.`
+        : "Todos tienen las notas completas. Al aprobarlos quedan congelados.",
+    etiquetaConfirmar: "Aprobar todos",
+  });
+  if (!seguir) return;
+  enAccionDeLote.value = true;
+  errorAccion.value = "";
+  try {
+    const { aprobados: cantidad } = await aprobarBoletinesEnLote(seleccion());
+    avisar(`${cantidad} boletines aprobados.`);
+    await cargarBoletines();
+  } catch (e) {
+    errorAccion.value = motivoDelRechazo(e, "No se pudieron aprobar los boletines. Probá de nuevo.");
+  } finally {
+    enAccionDeLote.value = false;
+  }
+}
+
+async function publicarTodos(): Promise<void> {
+  enAccionDeLote.value = true;
+  errorAccion.value = "";
+  sinPublicar.value = [];
+  try {
+    const resultado = await publicarBoletinesEnLote(seleccion());
+    avisar(`${resultado.publicados} boletines publicados.`);
+    sinPublicar.value = resultado.no_publicados;
+    await cargarBoletines();
+  } catch (e) {
+    errorAccion.value = motivoDelRechazo(e, "No se pudieron publicar los boletines. Probá de nuevo.");
+  } finally {
+    enAccionDeLote.value = false;
+  }
+}
+
 watch(seccionElegida, cargarUnidades);
-watch([seccionElegida, unidadElegida], cargarBoletines);
+watch([seccionElegida, unidadElegida], () => {
+  sinPublicar.value = [];
+  return cargarBoletines();
+});
 
 onMounted(async () => {
   await cargar();
@@ -187,12 +247,37 @@ onMounted(async () => {
 
       <template v-else-if="unidadElegida">
         <div v-if="puedeGestionar" class="boletines-page__barra">
-          <AppButton variante="secundario" :deshabilitado="generando" @click="generar">
-            {{ generando ? "Generando…" : "Generar boletines" }}
+          <AppButton variante="secundario" :deshabilitado="enAccionDeLote" @click="generar">
+            Generar boletines
+          </AppButton>
+          <AppButton
+            v-if="borradores.length > 0"
+            variante="secundario"
+            :deshabilitado="enAccionDeLote"
+            @click="aprobarTodos"
+          >
+            Aprobar los {{ borradores.length }} borradores
+          </AppButton>
+          <AppButton
+            v-if="aprobados.length > 0"
+            variante="secundario"
+            :deshabilitado="enAccionDeLote"
+            @click="publicarTodos"
+          >
+            Publicar los {{ aprobados.length }} aprobados
           </AppButton>
         </div>
 
         <ErrorBanner v-if="errorAccion" :mensaje="errorAccion" />
+
+        <div v-if="sinPublicar.length" class="boletines-page__sin-publicar" role="status">
+          <p>Quedaron sin publicar:</p>
+          <ul>
+            <li v-for="item in sinPublicar" :key="item.estudiante">
+              <strong>{{ item.estudiante }}</strong> — {{ item.motivo }}
+            </li>
+          </ul>
+        </div>
 
         <EmptyState
           v-if="boletines.length === 0"
@@ -206,20 +291,31 @@ onMounted(async () => {
           :columnas="[
             { clave: 'estudiante', etiqueta: 'Estudiante' },
             { clave: 'estado', etiqueta: 'Estado' },
+            { clave: 'notas', etiqueta: 'Notas' },
           ]"
-          :filas="boletines.map((b) => ({ ...b, estudiante: nombreEstudiante(b.enrollment) }))"
+          :filas="filas"
         >
           <template #celda-estado="{ fila }">
             <TagPill :variante="VARIANTE_ESTADO[(fila as unknown as ReportCard).status]">
               {{ ETIQUETA_ESTADO[(fila as unknown as ReportCard).status] }}
             </TagPill>
           </template>
+          <template #celda-notas="{ fila }">
+            <span
+              :class="{
+                'boletines-page__pendientes':
+                  (fila as unknown as ReportCard).status === 'borrador' && (fila as unknown as ReportCard).pendientes.length > 0,
+              }"
+            >
+              {{ (fila as unknown as ReportCard).status === "borrador" ? resumenPendientes(fila as unknown as ReportCard) : "Congeladas al aprobar" }}
+            </span>
+          </template>
           <template v-if="puedeGestionar" #acciones="{ fila }">
             <button
               v-if="(fila as unknown as ReportCard).status === 'borrador'"
               type="button"
               class="boletines-page__accion"
-              :disabled="idEnAccion === (fila as unknown as ReportCard).public_id"
+              :disabled="enAccionDeLote || idEnAccion === (fila as unknown as ReportCard).public_id"
               @click="aprobar(fila as unknown as ReportCard)"
             >
               Aprobar
@@ -228,7 +324,7 @@ onMounted(async () => {
               v-else-if="(fila as unknown as ReportCard).status === 'aprobado'"
               type="button"
               class="boletines-page__accion"
-              :disabled="idEnAccion === (fila as unknown as ReportCard).public_id"
+              :disabled="enAccionDeLote || idEnAccion === (fila as unknown as ReportCard).public_id"
               @click="publicar(fila as unknown as ReportCard)"
             >
               Publicar
@@ -248,6 +344,34 @@ onMounted(async () => {
   gap: var(--espacio-md) var(--espacio-lg);
   align-items: end;
   max-width: 52rem;
+}
+
+.boletines-page__barra {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espacio-md);
+  margin-top: var(--espacio-lg);
+}
+
+.boletines-page__sin-publicar {
+  margin-top: var(--espacio-lg);
+  padding: var(--espacio-md) var(--espacio-lg);
+  border: 1px solid var(--color-linea);
+  border-radius: var(--radio-md);
+}
+
+.boletines-page__sin-publicar p {
+  margin: 0 0 var(--espacio-xs);
+  font-weight: 600;
+}
+
+.boletines-page__sin-publicar ul {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.boletines-page__pendientes {
+  color: var(--color-peligro);
 }
 
 .boletines-page__tabla {

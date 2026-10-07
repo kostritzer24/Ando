@@ -4,6 +4,10 @@ RN-10 y que la inscripción esté solvente (RN-09). Las cadenas de estado
 las pasa quien llama (`grading/services/report_card.py`), no se importa
 el modelo acá para mantener el dominio sin depender de Django."""
 
+from decimal import Decimal
+
+from .scoring import aprueba_curso, calcular_nota_final
+
 
 class TransicionDeBoletinInvalida(Exception):
     pass
@@ -27,3 +31,31 @@ def validar_publicacion(
         raise TransicionDeBoletinInvalida(
             "El estudiante no está solvente; no se puede publicar el boletín (RN-09)."
         )
+
+
+TOTAL_UNIDADES = 4
+
+
+def formatear_nota(nota) -> str:
+    """85.00 → "85", 85.50 → "85.5": el boletín no muestra ceros de relleno."""
+    texto = f"{Decimal(nota):f}"
+    return texto.rstrip("0").rstrip(".") if "." in texto else texto
+
+
+def armar_filas_del_boletin(
+    *, cursos: list[tuple[str, list[Decimal]]], unidad_actual: int
+) -> list[dict]:
+    """Una fila por curso con la nota de cada unidad hasta la actual. La
+    nota final y si aprueba (RN-02/RN-03) solo aparecen en el boletín de la
+    última unidad: RN-03 define la aprobación del curso por la nota final,
+    así que marcar "Reprobado" una unidad suelta decía algo que la regla no
+    dice."""
+    filas = []
+    for nombre, notas in cursos:
+        fila = {"nombre": nombre, "notas": [formatear_nota(n) for n in notas]}
+        if unidad_actual == TOTAL_UNIDADES and len(notas) == TOTAL_UNIDADES:
+            final = calcular_nota_final(notas)
+            fila["final"] = final
+            fila["aprobado"] = aprueba_curso(final)
+        filas.append(fila)
+    return filas

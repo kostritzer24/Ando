@@ -57,7 +57,7 @@ no al boletín, que no es un `IssuedDocument`.
     text-transform: uppercase;
     letter-spacing: 0.03em;
   }
-  td.nota {
+  th.nota, td.nota {
     text-align: right;
     font-variant-numeric: tabular-nums;
   }
@@ -66,6 +66,11 @@ no al boletín, que no es un `IssuedDocument`.
   }
   .aprobado { color: #1C6EA4; }
   .reprobado { color: #B3261E; font-weight: 700; }
+  .nota-escala {
+    margin-top: 0.4cm;
+    font-size: 9pt;
+    color: #555;
+  }
   .pie {
     margin-top: 1.5cm;
     font-size: 8.5pt;
@@ -87,22 +92,33 @@ no al boletín, que no es un `IssuedDocument`.
     <thead>
       <tr>
         <th>Curso</th>
-        <th>Nota</th>
-        <th>Estado</th>
+        {% for numero in unidades %}
+        <th class="nota">Unidad {{ numero }}</th>
+        {% endfor %}
+        {% if es_final %}
+        <th class="nota">Nota final</th>
+        <th class="estado">Resultado</th>
+        {% endif %}
       </tr>
     </thead>
     <tbody>
-      {% for curso in cursos %}
+      {% for fila in filas %}
       <tr>
-        <td>{{ curso.nombre }}</td>
-        <td class="nota">{{ curso.nota }}</td>
-        <td class="estado {% if curso.aprobado %}aprobado{% else %}reprobado{% endif %}">
-          {% if curso.aprobado %}Aprobado{% else %}Reprobado{% endif %}
+        <td>{{ fila.nombre }}</td>
+        {% for nota in fila.notas %}
+        <td class="nota">{{ nota }}</td>
+        {% endfor %}
+        {% if es_final %}
+        <td class="nota"><strong>{{ fila.final }}</strong></td>
+        <td class="estado {% if fila.aprobado %}aprobado{% else %}reprobado{% endif %}">
+          {% if fila.aprobado %}Aprobado{% else %}Reprobado{% endif %}
         </td>
+        {% endif %}
       </tr>
       {% endfor %}
     </tbody>
   </table>
+  <p class="nota-escala">Escala de 1 a 100 por unidad. Se aprueba un curso con nota final de 60 o más (promedio de las cuatro unidades).</p>
 
   <div class="pie">
     Boletín publicado el {{ publicado_el }}. Este documento no lleva firma ni sello digital.

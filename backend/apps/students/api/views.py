@@ -1,3 +1,5 @@
+import uuid
+
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
 from rest_framework import status, viewsets
@@ -162,11 +164,22 @@ class EnrollmentViewSet(RegistraAccesoMixin, ScopedQuerysetMixin, viewsets.Model
     no puede quedar sin filtrar solo porque el área es de solo lectura
     para varios roles (sección 14.2)."""
 
-    queryset = Enrollment.objects.all()
+    queryset = Enrollment.objects.select_related("student", "section", "cycle", "scholarship")
     serializer_class = EnrollmentSerializer
     permission_classes = [PermisoPorArea]
     area = "estudiantes_encargados"
     lookup_field = "public_id"
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        seccion = self.request.query_params.get("section")
+        if seccion:
+            try:
+                uuid.UUID(seccion)
+            except ValueError as exc:
+                raise ValidationError({"section": "No es un identificador válido."}) from exc
+            queryset = queryset.filter(section__public_id=seccion)
+        return queryset
 
     def scope_queryset(self, queryset, user):
         role_name = user.role.name

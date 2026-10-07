@@ -40,3 +40,23 @@ def validar_unidad_completa(*, suma_max_score: Decimal, cantidad_pruebas_cortas:
             f"La unidad necesita al menos {MINIMO_PRUEBAS_CORTAS} pruebas cortas "
             f"(lleva {cantidad_pruebas_cortas})."
         )
+
+
+def validar_cambio_de_punteo_maximo(*, tiene_notas: bool) -> None:
+    """Con notas ya registradas, cambiar el máximo deja punteos que valen
+    sobre otro total (un 9/10 pasaría a ser 9/5, o quedaría por encima del
+    nuevo máximo)."""
+    if tiene_notas:
+        raise DefinicionDeUnidadInvalida(
+            "Esta actividad ya tiene notas registradas; su punteo máximo ya no se puede cambiar."
+        )
+
+
+def validar_baja_de_actividad(*, tiene_notas: bool) -> None:
+    """Una actividad calificada no se da de baja: sus notas dejarían de
+    contar en la nota de unidad, y el espacio liberado en los 100 puntos
+    permitiría agregar otra encima."""
+    if tiene_notas:
+        raise DefinicionDeUnidadInvalida(
+            "Esta actividad ya tiene notas registradas; no se puede dar de baja."
+        )
