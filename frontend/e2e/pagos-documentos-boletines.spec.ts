@@ -125,6 +125,10 @@ test("Dirección genera, aprueba y publica boletines, y RN-09 bloquea la publica
   await expect(filaMaria.getByText("Borrador")).toBeVisible();
 
   await filaMaria.getByRole("button", { name: "Aprobar" }).click();
+  // La siembra no tiene notas: aprobar avisa que el boletín sale con notas
+  // pendientes y pide confirmarlo.
+  await expect(page.getByRole("dialog")).toContainText("notas pendientes");
+  await page.getByRole("dialog").getByRole("button", { name: "Aprobar igual" }).click();
   await expect(filaMaria.getByText("Aprobado")).toBeVisible();
 
   await filaMaria.getByRole("button", { name: "Publicar" }).click();
@@ -139,6 +143,10 @@ test("Dirección genera, aprueba y publica boletines, y RN-09 bloquea la publica
   const filaAna = page.locator("tr", { hasText: "Ana Lucía" });
   await expect(filaAna).toBeVisible();
   await filaAna.getByRole("button", { name: "Aprobar" }).click();
+  // La siembra no tiene notas: aprobar avisa que el boletín sale con notas
+  // pendientes y pide confirmarlo.
+  await expect(page.getByRole("dialog")).toContainText("notas pendientes");
+  await page.getByRole("dialog").getByRole("button", { name: "Aprobar igual" }).click();
   await expect(filaAna.getByText("Aprobado")).toBeVisible();
 
   await filaAna.getByRole("button", { name: "Publicar" }).click();

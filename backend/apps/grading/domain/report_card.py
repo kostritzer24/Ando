@@ -73,3 +73,10 @@ def promedio_de_unidades(filas: list[dict]) -> list[int | None]:
     promedios = [fila["promedio"] for fila in filas if fila["promedio"] is not None]
     columnas.append(calcular_nota_final([Decimal(p) for p in promedios]) if promedios else None)
     return columnas
+
+
+def formatear_nota(nota) -> str:
+    """85.00 → "85", 85.50 → "85.5": sin ceros de relleno en los textos
+    que se le muestran a Dirección (pendientes del boletín)."""
+    texto = f"{Decimal(nota):f}"
+    return texto.rstrip("0").rstrip(".") if "." in texto else texto

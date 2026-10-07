@@ -151,3 +151,22 @@ def test_encargado_de_pagos_no_alcanza_asistencia_acceso_no_autorizado():
 
     respuesta = client.get("/api/v1/attendance/")
     assert respuesta.status_code == 403
+
+
+@pytest.mark.django_db
+def test_rnf06_registrar_asistencia_deja_bitacora():
+    from apps.core.models import AuditLog
+
+    direccion = _direccion()
+    client = APIClient()
+    client.force_authenticate(user=direccion)
+
+    client.post(
+        "/api/v1/attendance/",
+        {"enrollment": str(EnrollmentFactory().public_id), "date": "2026-01-13", "status": "tarde"},
+        format="json",
+    )
+
+    registro = AuditLog.objects.get(entity_name="attendance.Attendance")
+    assert registro.user == direccion
+    assert registro.new_value["status"] == "tarde"

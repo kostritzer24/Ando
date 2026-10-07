@@ -116,6 +116,11 @@ class GradeChangeRequest(BaseModel):
         blank=True,
     )
     decided_at = models.DateTimeField("fecha de decisión", null=True, blank=True)
+    resolution_note = models.TextField(
+        "motivo de la decisión",
+        blank=True,
+        help_text="Por qué Dirección la aprobó o rechazó; el docente lo ve en su bandeja.",
+    )
 
     class Meta:
         verbose_name = "modificación de nota"
@@ -127,11 +132,11 @@ class GradeChangeRequest(BaseModel):
 
 
 class ReportCard(BaseModel):
-    """Boletín de una unidad para una inscripción (RF-09). Solo registra el
-    estado del flujo (borrador → aprobado → publicado) — el contenido
-    (curso por curso) se calcula al momento de mostrarlo o descargarlo con
-    `grading/domain/scoring.py`, la misma función que calcula la nota en
-    cualquier otra parte del sistema (ADR-0003: no se duplica el cálculo)."""
+    """Boletín de una unidad para una inscripción (RF-09). Flujo borrador →
+    aprobado → publicado. Mientras está en borrador, el contenido (curso por
+    curso) se calcula en vivo con `grading/domain/scoring.py` (ADR-0003: no
+    se duplica el cálculo); al aprobarlo se congela en `contenido`, que es
+    lo que ve y descarga la familia."""
 
     ESTADO_BORRADOR = "borrador"
     ESTADO_APROBADO = "aprobado"
@@ -168,6 +173,15 @@ class ReportCard(BaseModel):
     )
     approved_at = models.DateTimeField("fecha de aprobación", null=True, blank=True)
     published_at = models.DateTimeField("fecha de publicación", null=True, blank=True)
+    contenido = models.JSONField(
+        "contenido aprobado",
+        null=True,
+        blank=True,
+        help_text=(
+            "Las notas tal como estaban al aprobar el boletín. Es lo que se publica y se "
+            "descarga: un documento oficial no cambia porque después se corrija una nota."
+        ),
+    )
 
     class Meta:
         verbose_name = "boletín"

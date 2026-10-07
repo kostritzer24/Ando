@@ -1,5 +1,8 @@
 from datetime import date, time
 
+from django.db import transaction
+
+from apps.core.services import registrar_cambio
 from apps.students.models import Enrollment
 
 from ..domain.late_arrival import calcular_estado_por_hora_llegada
@@ -10,6 +13,7 @@ class FaltaEstadoOHoraDeLlegada(Exception):
     pass
 
 
+@transaction.atomic
 def registrar_asistencia(
     *,
     enrollment: Enrollment,
@@ -26,10 +30,25 @@ def registrar_asistencia(
         status = calcular_estado_por_hora_llegada(check_in_time)
     if not status:
         raise FaltaEstadoOHoraDeLlegada("Hay que indicar el estado o la hora de llegada.")
-    return Attendance.objects.create(
+    asistencia = Attendance.objects.create(
         enrollment=enrollment,
         date=fecha,
         status=status,
         source=source,
         recorded_by=recorded_by,
     )
+    # RNF-06: la bitácora cubre notas, pagos y asistencia.
+    registrar_cambio(
+        usuario=recorded_by,
+        entidad_nombre="attendance.Attendance",
+        entidad_id=asistencia.id,
+        accion="crear",
+        valor_nuevo={
+            "enrollment": str(enrollment.public_id),
+            "date": str(fecha),
+            "status": status,
+            "check_in_time": check_in_time.isoformat() if check_in_time else None,
+            "source": source,
+        },
+    )
+    return asistencia

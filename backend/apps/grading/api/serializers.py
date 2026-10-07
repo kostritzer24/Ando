@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from apps.catalog.models import ActivityType, GradingUnit, Section
@@ -28,7 +29,22 @@ class ActivitySerializer(serializers.ModelSerializer):
             "due_date",
             "is_active",
         ]
-        read_only_fields = ["public_id"]
+        # La baja es DELETE (baja lógica, validada en el servicio), no un
+        # PATCH de is_active que saltaría esas validaciones.
+        read_only_fields = ["public_id", "is_active"]
+
+
+class ActivityUpdateSerializer(serializers.ModelSerializer):
+    """Editar una actividad: solo nombre, tipo, punteo máximo y fecha. La
+    asignación y la unidad no se mueven."""
+
+    activity_type = serializers.SlugRelatedField(
+        slug_field="public_id", queryset=ActivityType.objects.all()
+    )
+
+    class Meta:
+        model = Activity
+        fields = ["activity_type", "name", "max_score", "due_date"]
 
 
 class GradeSerializer(serializers.ModelSerializer):
@@ -80,8 +96,38 @@ class GradeCreateSerializer(serializers.Serializer):
     raw_score = serializers.DecimalField(max_digits=5, decimal_places=2)
 
 
+class CorreccionSerializer(serializers.Serializer):
+    score = serializers.DecimalField(max_digits=5, decimal_places=2)
+
+
+class ResolucionSerializer(serializers.Serializer):
+    motivo = serializers.CharField(required=False, allow_blank=True, max_length=500)
+
+    def validate(self, datos):
+        if not self.context.get("aprobar") and not datos.get("motivo", "").strip():
+            raise serializers.ValidationError(
+                {"motivo": "Escribí por qué se rechaza; el docente lo va a ver."}
+            )
+        return datos
+
+
 class GradeChangeRequestSerializer(serializers.ModelSerializer):
+    """Trae el contexto que necesita quien decide (estudiante, curso,
+    actividad, nota vigente) para que la bandeja no tenga que descargar
+    notas, actividades, inscripciones y estudiantes completos para armarlo."""
+
     grade = serializers.SlugRelatedField(slug_field="public_id", queryset=Grade.objects.all())
+    student_name = serializers.CharField(
+        source="grade.enrollment.student.nombre_completo", read_only=True
+    )
+    course_name = serializers.CharField(
+        source="grade.activity.assignment.course.name", read_only=True
+    )
+    unit_number = serializers.IntegerField(source="grade.activity.unit.number", read_only=True)
+    activity_name = serializers.CharField(source="grade.activity.name", read_only=True)
+    current_score = serializers.DecimalField(
+        source="grade.current_score", max_digits=5, decimal_places=2, read_only=True
+    )
     requested_by = serializers.CharField(source="requested_by.username", read_only=True)
     authorized_by = serializers.CharField(
         source="authorized_by.username", read_only=True, default=None
@@ -99,6 +145,12 @@ class GradeChangeRequestSerializer(serializers.ModelSerializer):
             "status",
             "authorized_by",
             "decided_at",
+            "resolution_note",
+            "student_name",
+            "course_name",
+            "unit_number",
+            "activity_name",
+            "current_score",
         ]
         read_only_fields = [
             "public_id",
@@ -107,6 +159,7 @@ class GradeChangeRequestSerializer(serializers.ModelSerializer):
             "status",
             "authorized_by",
             "decided_at",
+            "resolution_note",
         ]
 
 
@@ -117,6 +170,30 @@ class ReportCardSerializer(serializers.ModelSerializer):
     unit = serializers.SlugRelatedField(slug_field="public_id", queryset=GradingUnit.objects.all())
     generated_by = serializers.CharField(source="generated_by.username", read_only=True)
     approved_by = serializers.CharField(source="approved_by.username", read_only=True, default=None)
+    student_name = serializers.CharField(
+        source="enrollment.student.nombre_completo", read_only=True
+    )
+    student_code = serializers.CharField(source="enrollment.student.internal_code", read_only=True)
+    pendientes = serializers.SerializerMethodField()
+
+    @extend_schema_field(
+        {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "curso": {"type": "string"},
+                    "faltan": {"type": "integer"},
+                    "diseno_completo": {"type": "boolean"},
+                    "detalle": {"type": "string"},
+                },
+            },
+        }
+    )
+    def get_pendientes(self, boletin) -> list:
+        """Cursos con notas faltantes o con la unidad sin completar sus 100
+        puntos. Solo viene en el listado (lo calcula la vista por lote)."""
+        return self.context.get("pendientes", {}).get(boletin.enrollment_id, [])
 
     class Meta:
         model = ReportCard
@@ -129,6 +206,9 @@ class ReportCardSerializer(serializers.ModelSerializer):
             "approved_by",
             "approved_at",
             "published_at",
+            "student_name",
+            "student_code",
+            "pendientes",
         ]
         read_only_fields = [
             "public_id",

@@ -12,6 +12,49 @@ class CeldaPlantillaInvalida(Exception):
         super().__init__(f"Fila {fila}: {mensaje}")
 
 
+class PlantillaNoCorresponde(Exception):
+    """La plantilla no es la que se descargó para esta asignación y unidad,
+    o las actividades cambiaron desde entonces. Las columnas se leen por
+    posición, así que cualquiera de los dos casos guardaría punteos en la
+    actividad equivocada sin que nadie lo note."""
+
+
+def validar_identidad(
+    *,
+    asignacion_esperada: str,
+    unidad_esperada: str,
+    actividades_esperadas: list[str],
+    asignacion_recibida: str | None,
+    unidad_recibida: str | None,
+    actividades_recibidas: list[str],
+) -> None:
+    if asignacion_recibida is None:
+        raise PlantillaNoCorresponde(
+            "Este archivo no es una plantilla descargada del sistema. "
+            "Descargá la plantilla de nuevo y cargá esa."
+        )
+    if asignacion_recibida != asignacion_esperada or unidad_recibida != unidad_esperada:
+        raise PlantillaNoCorresponde(
+            "Esta plantilla es de otro curso o de otra unidad. "
+            "Revisá que elegiste el curso y la unidad correctos."
+        )
+    if actividades_recibidas != actividades_esperadas:
+        raise PlantillaNoCorresponde(
+            "Las actividades de la unidad cambiaron desde que descargaste esta plantilla. "
+            "Descargala de nuevo y pasá los punteos a la nueva."
+        )
+
+
+def validar_encabezados(*, esperados: list[str], recibidos: list) -> None:
+    """Detecta columnas movidas, borradas o agregadas a mano."""
+    recibidos_texto = [str(valor).strip() if valor is not None else "" for valor in recibidos]
+    if recibidos_texto[: len(esperados)] != esperados or any(recibidos_texto[len(esperados) :]):
+        raise PlantillaNoCorresponde(
+            "Las columnas de la plantilla se movieron o se cambiaron. "
+            "No cambies el orden ni los títulos; descargala de nuevo si hace falta."
+        )
+
+
 def validar_codigo(*, numero_fila: int, internal_code: str, codigos_esperados: set) -> None:
     if not internal_code:
         raise CeldaPlantillaInvalida(numero_fila, "Falta el código del estudiante.")

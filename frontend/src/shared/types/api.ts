@@ -31,10 +31,18 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description RF-17. */
+        /**
+         * @description RF-17. Editar y dar de baja pasan por sus servicios: el tope de 100
+         *     puntos se vuelve a validar, una actividad calificada no cambia su
+         *     máximo ni se da de baja, y nada se borra de verdad.
+         */
         get: operations["v1_activities_list"];
         put?: never;
-        /** @description RF-17. */
+        /**
+         * @description RF-17. Editar y dar de baja pasan por sus servicios: el tope de 100
+         *     puntos se vuelve a validar, una actividad calificada no cambia su
+         *     máximo ni se da de baja, y nada se borra de verdad.
+         */
         post: operations["v1_activities_create"];
         delete?: never;
         options?: never;
@@ -49,16 +57,32 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description RF-17. */
+        /**
+         * @description RF-17. Editar y dar de baja pasan por sus servicios: el tope de 100
+         *     puntos se vuelve a validar, una actividad calificada no cambia su
+         *     máximo ni se da de baja, y nada se borra de verdad.
+         */
         get: operations["v1_activities_retrieve"];
-        /** @description RF-17. */
+        /**
+         * @description RF-17. Editar y dar de baja pasan por sus servicios: el tope de 100
+         *     puntos se vuelve a validar, una actividad calificada no cambia su
+         *     máximo ni se da de baja, y nada se borra de verdad.
+         */
         put: operations["v1_activities_update"];
         post?: never;
-        /** @description RF-17. */
+        /**
+         * @description RF-17. Editar y dar de baja pasan por sus servicios: el tope de 100
+         *     puntos se vuelve a validar, una actividad calificada no cambia su
+         *     máximo ni se da de baja, y nada se borra de verdad.
+         */
         delete: operations["v1_activities_destroy"];
         options?: never;
         head?: never;
-        /** @description RF-17. */
+        /**
+         * @description RF-17. Editar y dar de baja pasan por sus servicios: el tope de 100
+         *     puntos se vuelve a validar, una actividad calificada no cambia su
+         *     máximo ni se da de baja, y nada se borra de verdad.
+         */
         patch: operations["v1_activities_partial_update"];
         trace?: never;
     };
@@ -1151,7 +1175,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** @description RF-23 (solicitar) / RF-10 (autorizar o rechazar). */
+        /** @description Rechazar pide el motivo: el docente lo ve en su bandeja. */
         post: operations["v1_grade_change_requests_reject_create"];
         delete?: never;
         options?: never;
@@ -1166,10 +1190,20 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description RF-18. */
+        /**
+         * @description RF-18. Sin editar ni borrar por PATCH/DELETE (RN-05): con eso
+         *     abierto, borrar y volver a registrar saltaba la autorización. Una nota
+         *     cambia solo por `correct/` (dentro del plazo de entrega, con bitácora) o
+         *     por una solicitud de modificación que autoriza Dirección.
+         */
         get: operations["v1_grades_list"];
         put?: never;
-        /** @description RF-18. */
+        /**
+         * @description RF-18. Sin editar ni borrar por PATCH/DELETE (RN-05): con eso
+         *     abierto, borrar y volver a registrar saltaba la autorización. Una nota
+         *     cambia solo por `correct/` (dentro del plazo de entrega, con bitácora) o
+         *     por una solicitud de modificación que autoriza Dirección.
+         */
         post: operations["v1_grades_create"];
         delete?: never;
         options?: never;
@@ -1184,17 +1218,39 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description RF-18. */
+        /**
+         * @description RF-18. Sin editar ni borrar por PATCH/DELETE (RN-05): con eso
+         *     abierto, borrar y volver a registrar saltaba la autorización. Una nota
+         *     cambia solo por `correct/` (dentro del plazo de entrega, con bitácora) o
+         *     por una solicitud de modificación que autoriza Dirección.
+         */
         get: operations["v1_grades_retrieve"];
-        /** @description RF-18. */
-        put: operations["v1_grades_update"];
+        put?: never;
         post?: never;
-        /** @description RF-18. */
-        delete: operations["v1_grades_destroy"];
+        delete?: never;
         options?: never;
         head?: never;
-        /** @description RF-18. */
-        patch: operations["v1_grades_partial_update"];
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/grades/{public_id}/correct/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description RN-05 dentro del plazo de entrega de notas de la unidad: corregir
+         *     un error de dedo sin pasar por Dirección (queda en bitácora).
+         */
+        post: operations["v1_grades_correct_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/grades/template/{assignment_public_id}/{unit_public_id}/": {
@@ -1660,8 +1716,9 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * @description RF-09. Generar es una acción de lote sobre una sección/unidad;
-         *     aprobar y publicar actúan sobre un boletín individual.
+         * @description RF-09. Generar, aprobar y publicar tienen versión de lote por
+         *     sección/unidad; aprobar y publicar también existen por boletín. El
+         *     listado trae, por boletín, los cursos con notas pendientes.
          */
         get: operations["v1_report_cards_list"];
         put?: never;
@@ -1680,8 +1737,9 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * @description RF-09. Generar es una acción de lote sobre una sección/unidad;
-         *     aprobar y publicar actúan sobre un boletín individual.
+         * @description RF-09. Generar, aprobar y publicar tienen versión de lote por
+         *     sección/unidad; aprobar y publicar también existen por boletín. El
+         *     listado trae, por boletín, los cursos con notas pendientes.
          */
         get: operations["v1_report_cards_retrieve"];
         put?: never;
@@ -1702,8 +1760,9 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * @description RF-09. Generar es una acción de lote sobre una sección/unidad;
-         *     aprobar y publicar actúan sobre un boletín individual.
+         * @description RF-09. Generar, aprobar y publicar tienen versión de lote por
+         *     sección/unidad; aprobar y publicar también existen por boletín. El
+         *     listado trae, por boletín, los cursos con notas pendientes.
          */
         post: operations["v1_report_cards_approve_create"];
         delete?: never;
@@ -1720,8 +1779,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * @description RF-34. El boletín no guarda un PDF aparte (ver docstring del
-         *     modelo): se genera al momento de la descarga, curso por curso.
+         * @description RF-34. No se guarda un PDF aparte: se genera al descargar, a
+         *     partir del contenido congelado al aprobar (ver `ReportCard`).
          */
         get: operations["v1_report_cards_download_retrieve"];
         put?: never;
@@ -1742,10 +1801,32 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * @description RF-09. Generar es una acción de lote sobre una sección/unidad;
-         *     aprobar y publicar actúan sobre un boletín individual.
+         * @description RF-09. Generar, aprobar y publicar tienen versión de lote por
+         *     sección/unidad; aprobar y publicar también existen por boletín. El
+         *     listado trae, por boletín, los cursos con notas pendientes.
          */
         post: operations["v1_report_cards_publish_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/report-cards/approve-batch/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description RF-09. Generar, aprobar y publicar tienen versión de lote por
+         *     sección/unidad; aprobar y publicar también existen por boletín. El
+         *     listado trae, por boletín, los cursos con notas pendientes.
+         */
+        post: operations["v1_report_cards_approve_batch_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1762,10 +1843,32 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * @description RF-09. Generar es una acción de lote sobre una sección/unidad;
-         *     aprobar y publicar actúan sobre un boletín individual.
+         * @description RF-09. Generar, aprobar y publicar tienen versión de lote por
+         *     sección/unidad; aprobar y publicar también existen por boletín. El
+         *     listado trae, por boletín, los cursos con notas pendientes.
          */
         post: operations["v1_report_cards_generate_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/report-cards/publish-batch/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description RF-09. Generar, aprobar y publicar tienen versión de lote por
+         *     sección/unidad; aprobar y publicar también existen por boletín. El
+         *     listado trae, por boletín, los cursos con notas pendientes.
+         */
+        post: operations["v1_report_cards_publish_batch_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2444,7 +2547,7 @@ export interface components {
              */
             due_date: string;
             /** Activo */
-            is_active?: boolean;
+            readonly is_active: boolean;
         };
         ActivityType: {
             /** Format: uuid */
@@ -2458,6 +2561,26 @@ export interface components {
             counts_as_short_quiz?: boolean;
             /** Activo */
             is_active?: boolean;
+        };
+        /**
+         * @description Editar una actividad: solo nombre, tipo, punteo máximo y fecha. La
+         *     asignación y la unidad no se mueven.
+         */
+        ActivityUpdate: {
+            /** Format: uuid */
+            activity_type: string;
+            /** Nombre */
+            name: string;
+            /**
+             * Punteo máximo
+             * Format: decimal
+             */
+            max_score: string;
+            /**
+             * Fecha de entrega
+             * Format: date
+             */
+            due_date: string;
         };
         Announcement: {
             /** Format: uuid */
@@ -2643,6 +2766,10 @@ export interface components {
             /** Activo */
             is_active?: boolean;
         };
+        Correccion: {
+            /** Format: decimal */
+            score: string;
+        };
         Course: {
             /** Format: uuid */
             readonly public_id: string;
@@ -2694,6 +2821,8 @@ export interface components {
             readonly public_id: string;
             /** Format: uuid */
             student: string;
+            readonly student_name: string;
+            readonly student_code: string;
             /** Format: uuid */
             section: string;
             readonly section_grade: string;
@@ -2755,6 +2884,11 @@ export interface components {
             /** Activo */
             is_active?: boolean;
         };
+        /**
+         * @description Trae el contexto que necesita quien decide (estudiante, curso,
+         *     actividad, nota vigente) para que la bandeja no tenga que descargar
+         *     notas, actividades, inscripciones y estudiantes completos para armarlo.
+         */
         GradeChangeRequest: {
             /** Format: uuid */
             readonly public_id: string;
@@ -2781,6 +2915,17 @@ export interface components {
              * Format: date-time
              */
             readonly decided_at: string | null;
+            /**
+             * Motivo de la decisión
+             * @description Por qué Dirección la aprobó o rechazó; el docente lo ve en su bandeja.
+             */
+            readonly resolution_note: string;
+            readonly student_name: string;
+            readonly course_name: string;
+            readonly unit_number: number;
+            readonly activity_name: string;
+            /** Format: decimal */
+            readonly current_score: string;
         };
         GradeCreate: {
             /** Format: uuid */
@@ -3424,13 +3569,24 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["User"][];
         };
-        PatchedActivity: {
+        PatchedActivityType: {
             /** Format: uuid */
             readonly public_id?: string;
-            /** Format: uuid */
-            assignment?: string;
-            /** Format: uuid */
-            unit?: string;
+            /** Nombre */
+            name?: string;
+            /**
+             * Cuenta como prueba corta
+             * @description RN-04: se usa para exigir el mínimo de 4 pruebas cortas por unidad.
+             */
+            counts_as_short_quiz?: boolean;
+            /** Activo */
+            is_active?: boolean;
+        };
+        /**
+         * @description Editar una actividad: solo nombre, tipo, punteo máximo y fecha. La
+         *     asignación y la unidad no se mueven.
+         */
+        PatchedActivityUpdate: {
             /** Format: uuid */
             activity_type?: string;
             /** Nombre */
@@ -3445,21 +3601,6 @@ export interface components {
              * Format: date
              */
             due_date?: string;
-            /** Activo */
-            is_active?: boolean;
-        };
-        PatchedActivityType: {
-            /** Format: uuid */
-            readonly public_id?: string;
-            /** Nombre */
-            name?: string;
-            /**
-             * Cuenta como prueba corta
-             * @description RN-04: se usa para exigir el mínimo de 4 pruebas cortas por unidad.
-             */
-            counts_as_short_quiz?: boolean;
-            /** Activo */
-            is_active?: boolean;
         };
         PatchedAnnouncement: {
             /** Format: uuid */
@@ -3577,6 +3718,8 @@ export interface components {
             readonly public_id?: string;
             /** Format: uuid */
             student?: string;
+            readonly student_name?: string;
+            readonly student_code?: string;
             /** Format: uuid */
             section?: string;
             readonly section_grade?: string;
@@ -3593,40 +3736,6 @@ export interface components {
              * Format: date
              */
             enrolled_at?: string;
-            /** Activo */
-            is_active?: boolean;
-        };
-        /**
-         * @description RN-06: nunca expone `raw_score` — solo `current_score`, la nota
-         *     vigente que entra en los promedios y la única que ve la familia.
-         *
-         *     Los campos denormalizados (`course_name`, `unit_number`,
-         *     `activity_name`, `max_score`) siguen el mismo criterio que
-         *     `TeacherAssignmentSerializer` (sección "scheduling" del contrato): la
-         *     familia no llega a `/activities/` ni a `/assignments/` (RF-29 la
-         *     necesita agrupada por curso y unidad), así que se exponen acá en vez
-         *     de abrirle esos dos catálogos completos.
-         */
-        PatchedGrade: {
-            /** Format: uuid */
-            readonly public_id?: string;
-            /** Format: uuid */
-            enrollment?: string;
-            /** Format: uuid */
-            activity?: string;
-            /**
-             * Nota vigente
-             * Format: decimal
-             */
-            readonly current_score?: string;
-            /** Origen */
-            readonly source?: components["schemas"]["SourceEnum"];
-            readonly recorded_by?: string;
-            readonly course_name?: string;
-            readonly unit_number?: number;
-            readonly activity_name?: string;
-            /** Format: decimal */
-            readonly max_score?: string;
             /** Activo */
             is_active?: boolean;
         };
@@ -3904,6 +4013,20 @@ export interface components {
              * Format: date-time
              */
             readonly published_at: string | null;
+            readonly student_name: string;
+            readonly student_code: string;
+            readonly pendientes: {
+                curso?: string;
+                faltan?: number;
+                diseno_completo?: boolean;
+                detalle?: string;
+            }[];
+        };
+        ReportCardGenerate: {
+            /** Format: uuid */
+            section: string;
+            /** Format: uuid */
+            unit: string;
         };
         /**
          * @description * `borrador` - Borrador
@@ -3912,6 +4035,9 @@ export interface components {
          * @enum {string}
          */
         ReportCardStatusEnum: "borrador" | "aprobado" | "publicado";
+        Resolucion: {
+            motivo?: string;
+        };
         /**
          * @description * `pendiente` - Pendiente
          *     * `aprobada` - Aprobada
@@ -4264,9 +4390,9 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Activity"];
-                "application/x-www-form-urlencoded": components["schemas"]["Activity"];
-                "multipart/form-data": components["schemas"]["Activity"];
+                "application/json": components["schemas"]["ActivityUpdate"];
+                "application/x-www-form-urlencoded": components["schemas"]["ActivityUpdate"];
+                "multipart/form-data": components["schemas"]["ActivityUpdate"];
             };
         };
         responses: {
@@ -4311,9 +4437,9 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": components["schemas"]["PatchedActivity"];
-                "application/x-www-form-urlencoded": components["schemas"]["PatchedActivity"];
-                "multipart/form-data": components["schemas"]["PatchedActivity"];
+                "application/json": components["schemas"]["PatchedActivityUpdate"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedActivityUpdate"];
+                "multipart/form-data": components["schemas"]["PatchedActivityUpdate"];
             };
         };
         responses: {
@@ -6406,11 +6532,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody: {
+        requestBody?: {
             content: {
-                "application/json": components["schemas"]["GradeChangeRequest"];
-                "application/x-www-form-urlencoded": components["schemas"]["GradeChangeRequest"];
-                "multipart/form-data": components["schemas"]["GradeChangeRequest"];
+                "application/json": components["schemas"]["Resolucion"];
+                "application/x-www-form-urlencoded": components["schemas"]["Resolucion"];
+                "multipart/form-data": components["schemas"]["Resolucion"];
             };
         };
         responses: {
@@ -6433,11 +6559,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody: {
+        requestBody?: {
             content: {
-                "application/json": components["schemas"]["GradeChangeRequest"];
-                "application/x-www-form-urlencoded": components["schemas"]["GradeChangeRequest"];
-                "multipart/form-data": components["schemas"]["GradeChangeRequest"];
+                "application/json": components["schemas"]["Resolucion"];
+                "application/x-www-form-urlencoded": components["schemas"]["Resolucion"];
+                "multipart/form-data": components["schemas"]["Resolucion"];
             };
         };
         responses: {
@@ -6521,7 +6647,7 @@ export interface operations {
             };
         };
     };
-    v1_grades_update: {
+    v1_grades_correct_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -6532,56 +6658,9 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Grade"];
-                "application/x-www-form-urlencoded": components["schemas"]["Grade"];
-                "multipart/form-data": components["schemas"]["Grade"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Grade"];
-                };
-            };
-        };
-    };
-    v1_grades_destroy: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                public_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No response body */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    v1_grades_partial_update: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                public_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["PatchedGrade"];
-                "application/x-www-form-urlencoded": components["schemas"]["PatchedGrade"];
-                "multipart/form-data": components["schemas"]["PatchedGrade"];
+                "application/json": components["schemas"]["Correccion"];
+                "application/x-www-form-urlencoded": components["schemas"]["Correccion"];
+                "multipart/form-data": components["schemas"]["Correccion"];
             };
         };
         responses: {
@@ -7543,6 +7622,31 @@ export interface operations {
             };
         };
     };
+    v1_report_cards_approve_batch_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportCardGenerate"];
+                "application/x-www-form-urlencoded": components["schemas"]["ReportCardGenerate"];
+                "multipart/form-data": components["schemas"]["ReportCardGenerate"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportCard"];
+                };
+            };
+        };
+    };
     v1_report_cards_generate_create: {
         parameters: {
             query?: never;
@@ -7555,6 +7659,31 @@ export interface operations {
                 "application/json": components["schemas"]["ReportCard"];
                 "application/x-www-form-urlencoded": components["schemas"]["ReportCard"];
                 "multipart/form-data": components["schemas"]["ReportCard"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportCard"];
+                };
+            };
+        };
+    };
+    v1_report_cards_publish_batch_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportCardGenerate"];
+                "application/x-www-form-urlencoded": components["schemas"]["ReportCardGenerate"];
+                "multipart/form-data": components["schemas"]["ReportCardGenerate"];
             };
         };
         responses: {
