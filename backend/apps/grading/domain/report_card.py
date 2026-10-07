@@ -33,29 +33,50 @@ def validar_publicacion(
         )
 
 
-TOTAL_UNIDADES = 4
+NUMERO_DE_UNIDADES = 4
+
+
+def nivel_del_grado(grado: str) -> str:
+    """Subtítulo del cuadro de notas institucional ("Ciclo Diversificado" en
+    el formato de Quinto Bachillerato). Si el grado no es reconocible no se
+    inventa un nivel: el membrete simplemente lo omite."""
+    minuscula = grado.lower()
+    if "bachillerato" in minuscula or "diversificado" in minuscula:
+        return "Ciclo Diversificado"
+    if "básico" in minuscula or "basico" in minuscula:
+        return "Ciclo Básico"
+    return ""
+
+
+def armar_fila_cuadro(notas_por_unidad: dict[int, Decimal]) -> dict:
+    """Una fila del cuadro de notas (formato institucional: Unidad 1 a 4,
+    Promedio Final y A/R). Una unidad sin nota queda en blanco y no entra
+    al promedio — como el `AVERAGE` de la hoja de cálculo del centro. El
+    promedio y la aprobación salen de `scoring.py` (RN-02/RN-03)."""
+    unidades = [notas_por_unidad.get(numero) for numero in range(1, NUMERO_DE_UNIDADES + 1)]
+    con_nota = [nota for nota in unidades if nota is not None]
+    promedio = calcular_nota_final(con_nota) if con_nota else None
+    return {
+        "unidades": unidades,
+        "promedio": promedio,
+        "aprobado": None if promedio is None else aprueba_curso(promedio),
+    }
+
+
+def promedio_de_unidades(filas: list[dict]) -> list[int | None]:
+    """Fila "Promedio de Unidad" del cuadro: el promedio de todos los cursos
+    en cada columna, más el general en la última posición."""
+    columnas = []
+    for indice in range(NUMERO_DE_UNIDADES):
+        notas = [fila["unidades"][indice] for fila in filas if fila["unidades"][indice] is not None]
+        columnas.append(calcular_nota_final(notas) if notas else None)
+    promedios = [fila["promedio"] for fila in filas if fila["promedio"] is not None]
+    columnas.append(calcular_nota_final([Decimal(p) for p in promedios]) if promedios else None)
+    return columnas
 
 
 def formatear_nota(nota) -> str:
-    """85.00 → "85", 85.50 → "85.5": el boletín no muestra ceros de relleno."""
+    """85.00 → "85", 85.50 → "85.5": sin ceros de relleno en los textos
+    que se le muestran a Dirección (pendientes del boletín)."""
     texto = f"{Decimal(nota):f}"
     return texto.rstrip("0").rstrip(".") if "." in texto else texto
-
-
-def armar_filas_del_boletin(
-    *, cursos: list[tuple[str, list[Decimal]]], unidad_actual: int
-) -> list[dict]:
-    """Una fila por curso con la nota de cada unidad hasta la actual. La
-    nota final y si aprueba (RN-02/RN-03) solo aparecen en el boletín de la
-    última unidad: RN-03 define la aprobación del curso por la nota final,
-    así que marcar "Reprobado" una unidad suelta decía algo que la regla no
-    dice."""
-    filas = []
-    for nombre, notas in cursos:
-        fila = {"nombre": nombre, "notas": [formatear_nota(n) for n in notas]}
-        if unidad_actual == TOTAL_UNIDADES and len(notas) == TOTAL_UNIDADES:
-            final = calcular_nota_final(notas)
-            fila["final"] = final
-            fila["aprobado"] = aprueba_curso(final)
-        filas.append(fila)
-    return filas

@@ -252,6 +252,58 @@ def test_rf34_la_familia_descarga_el_pdf_de_un_boletin_publicado_con_la_nota_por
     assert respuesta.content[:4] == b"%PDF"
 
 
+def test_rf34_el_cuadro_muestra_solo_las_unidades_publicadas_y_deja_en_blanco_el_resto():
+    """La unidad 2 tiene notas pero su boletín sigue en borrador (RN-09/RN-10):
+    el cuadro de la unidad 1 no se la adelanta a la familia."""
+    from apps.grading.services.report_card import contenido_boletin
+
+    ciclo, seccion, unidad1 = _seccion_con_ciclo(report_card_enabled_date=date(2020, 1, 1))
+    unidad2 = GradingUnitFactory(
+        cycle=ciclo,
+        number=2,
+        start_date=date(2026, 3, 1),
+        end_date=date(2026, 4, 30),
+        grades_due_date=date(2026, 5, 15),
+    )
+    inscripcion = EnrollmentFactory(section=seccion, cycle=ciclo)
+    asignacion = TeacherAssignmentFactory(
+        section=seccion, cycle=ciclo, course=CourseFactory(name="Matemática")
+    )
+    for unidad, nota in ((unidad1, 85), (unidad2, 40)):
+        actividad = Activity.objects.create(
+            assignment=asignacion,
+            unit=unidad,
+            activity_type=ActivityTypeFactory(),
+            name="Examen",
+            max_score=100,
+            due_date=unidad.end_date,
+        )
+        Grade.objects.create(
+            enrollment=inscripcion,
+            activity=actividad,
+            raw_score=nota,
+            current_score=nota,
+            recorded_by=asignacion.teacher,
+        )
+    publicado = ReportCard.objects.create(
+        enrollment=inscripcion,
+        unit=unidad1,
+        status=ReportCard.ESTADO_PUBLICADO,
+        generated_by=_direccion(),
+    )
+    ReportCard.objects.create(
+        enrollment=inscripcion, unit=unidad2, generated_by=publicado.generated_by
+    )
+
+    contenido = contenido_boletin(publicado)
+
+    (curso,) = contenido["cursos"]
+    assert curso["nombre"] == "Matemática"
+    assert curso["unidades"] == [85, None, None, None]
+    assert curso["promedio"] == 85
+    assert curso["aprobado"] is True
+
+
 def test_rnf06_aprobar_y_publicar_un_boletin_queda_en_bitacora():
     from apps.core.models import AuditLog
 

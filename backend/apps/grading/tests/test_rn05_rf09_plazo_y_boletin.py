@@ -213,10 +213,13 @@ def test_rf09_el_boletin_aprobado_no_cambia_si_despues_se_corrige_una_nota():
     Grade.objects.filter(pk=nota.pk).update(current_score=40)
 
     contenido = ReportCard.objects.get(public_id=boletin_id).contenido
-    assert contenido["filas"] == [{"nombre": "Matemática", "notas": ["85"]}]
+    (curso,) = contenido["cursos"]
+    assert curso["nombre"] == "Matemática"
+    assert curso["unidades"] == ["85.00", None, None, None]  # congelado: no 40
+    assert curso["promedio"] == 85
 
 
-def test_rn02_rn03_el_boletin_de_la_ultima_unidad_trae_nota_final_y_resultado():
+def test_rn02_rn03_el_cuadro_de_la_ultima_unidad_trae_las_cuatro_y_el_promedio_final():
     ciclo, seccion, unidades = _seccion_con_unidades(4)
     inscripcion = EnrollmentFactory(section=seccion, cycle=ciclo)
     asignacion = TeacherAssignmentFactory(
@@ -224,17 +227,25 @@ def test_rn02_rn03_el_boletin_de_la_ultima_unidad_trae_nota_final_y_resultado():
     )
     for unidad, punteo in zip(unidades, [60, 61, 50, 70], strict=True):
         _examen(asignacion, unidad, inscripcion, punteo)
+    direccion = _direccion()
+    for unidad in unidades[:3]:  # las tres anteriores ya se publicaron
+        ReportCard.objects.create(
+            enrollment=inscripcion,
+            unit=unidad,
+            status=ReportCard.ESTADO_PUBLICADO,
+            generated_by=direccion,
+        )
     client = APIClient()
-    client.force_authenticate(user=_direccion())
+    client.force_authenticate(user=direccion)
     boletin_id = _generar(client, seccion, unidades[3])[0]["public_id"]
 
     client.post(f"/api/v1/report-cards/{boletin_id}/approve/")
 
     contenido = ReportCard.objects.get(public_id=boletin_id).contenido
-    assert contenido["unidades"] == [1, 2, 3, 4]
-    assert contenido["filas"] == [
-        {"nombre": "Ciencias", "notas": ["60", "61", "50", "70"], "final": 60, "aprobado": True}
-    ]
+    (curso,) = contenido["cursos"]
+    assert curso["unidades"] == ["60.00", "61.00", "50.00", "70.00"]
+    assert curso["promedio"] == 60  # 60.25 redondeado (RN-02)
+    assert curso["aprobado"] is True
 
 
 def test_rf09_el_listado_muestra_los_cursos_con_notas_pendientes():

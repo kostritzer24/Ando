@@ -1,17 +1,19 @@
 from collections import defaultdict
+from decimal import Decimal
 
 from django.db import transaction
 from django.utils import timezone
 
-from apps.catalog.models import GradingUnit
 from apps.core.services import registrar_cambio
 from apps.payments.services.solvency import calcular_solvencia
 from apps.students.models import Enrollment
 
 from ..domain.report_card import (
-    TOTAL_UNIDADES,
+    NUMERO_DE_UNIDADES,
     TransicionDeBoletinInvalida,
-    armar_filas_del_boletin,
+    armar_fila_cuadro,
+    nivel_del_grado,
+    promedio_de_unidades,
     validar_aprobacion,
     validar_publicacion,
 )
@@ -72,7 +74,7 @@ def aprobar_boletin(boletin: ReportCard, *, approved_by) -> ReportCard:
     )
     estado_anterior = boletin.status
     validar_aprobacion(estado_actual=boletin.status, estado_borrador=ReportCard.ESTADO_BORRADOR)
-    boletin.contenido = contenido_boletin(boletin)
+    boletin.contenido = _para_json(contenido_boletin(boletin))
     boletin.status = ReportCard.ESTADO_APROBADO
     boletin.approved_by = approved_by
     boletin.approved_at = timezone.now()
@@ -160,40 +162,67 @@ def _notas_por_curso_y_unidad(inscripcion, asignaciones, unidades) -> dict:
 
 
 def contenido_boletin(boletin: ReportCard) -> dict:
-    """RF-09 / RF-34. Curso por curso, la nota de cada unidad del ciclo
-    hasta la de este boletín, y en la última unidad la nota final (RN-02)
-    con si aprueba (RN-03). Solo cursos académicos: los talleres no
-    califican (ADR-0001)."""
+    """RF-09 / RF-34. Formato del "Cuadro de notas" institucional: una
+    fila por curso con las cuatro unidades, promedio final y A/R, la fila
+    "Promedio de Unidad" y la firma del maestro guía. Solo aparecen las
+    unidades con boletín publicado para esta inscripción, más la de este
+    boletín: una unidad en borrador o aprobada no se le adelanta a la
+    familia (RN-09/RN-10). Solo cursos académicos (ADR-0001). Las notas
+    salen de una sola consulta, sumadas con la misma función que
+    `nota_de_unidad` (ADR-0003)."""
     inscripcion = boletin.enrollment
+    unidades_visibles = {boletin.unit.number: boletin.unit}
+    for publicado in ReportCard.objects.filter(
+        enrollment=inscripcion, status=ReportCard.ESTADO_PUBLICADO, is_active=True
+    ).select_related("unit"):
+        unidades_visibles[publicado.unit.number] = publicado.unit
+    unidades_visibles = {
+        numero: unidad
+        for numero, unidad in unidades_visibles.items()
+        if numero <= NUMERO_DE_UNIDADES
+    }
+
     asignaciones = list(
         asignaciones_que_califican(secciones=[inscripcion.section], ciclos=[inscripcion.cycle])
     )
-    unidades = list(
-        GradingUnit.objects.filter(
-            cycle=inscripcion.cycle, number__lte=boletin.unit.number, is_active=True
-        ).order_by("number")
-    )
-    notas = _notas_por_curso_y_unidad(inscripcion, asignaciones, unidades)
-    cursos = [
-        (
-            asignacion.course.name,
-            [
-                notas.get((asignacion.id, unidad.id), calcular_nota_unidad([]))
-                for unidad in unidades
-            ],
-        )
-        for asignacion in asignaciones
-    ]
+    notas = _notas_por_curso_y_unidad(inscripcion, asignaciones, unidades_visibles.values())
+    cursos = []
+    for asignacion in asignaciones:
+        notas_por_unidad = {
+            numero: notas.get((asignacion.id, unidad.id), calcular_nota_unidad([]))
+            for numero, unidad in unidades_visibles.items()
+        }
+        cursos.append({"nombre": asignacion.course.name, **armar_fila_cuadro(notas_por_unidad)})
+
+    maestro_guia = inscripcion.section.homeroom_teacher
     return {
         "estudiante_nombre": inscripcion.student.nombre_completo(),
         "estudiante_codigo": inscripcion.student.internal_code,
-        "grado_seccion": str(inscripcion.section),
+        "grado": inscripcion.section.grade,
+        "seccion": inscripcion.section.letter,
+        "nivel": nivel_del_grado(inscripcion.section.grade),
         "ciclo_anio": inscripcion.cycle.year,
         "unidad_numero": boletin.unit.number,
-        "unidades": [unidad.number for unidad in unidades],
-        "es_final": boletin.unit.number == TOTAL_UNIDADES,
-        "filas": armar_filas_del_boletin(cursos=cursos, unidad_actual=boletin.unit.number),
+        "numeros_unidad": list(range(1, NUMERO_DE_UNIDADES + 1)),
+        "cursos": cursos,
+        "promedios": promedio_de_unidades(cursos),
+        "maestro_guia": f"{maestro_guia.first_name} {maestro_guia.last_name}".strip()
+        if maestro_guia
+        else "",
     }
+
+
+def _para_json(valor):
+    """El contenido congelado se guarda en un JSONField: las notas
+    (`Decimal`) pasan a texto ("85.00"), que la plantilla sigue mostrando
+    igual con `floatformat`."""
+    if isinstance(valor, dict):
+        return {clave: _para_json(v) for clave, v in valor.items()}
+    if isinstance(valor, list | tuple):
+        return [_para_json(v) for v in valor]
+    if isinstance(valor, Decimal):
+        return str(valor)
+    return valor
 
 
 def contenido_para_descargar(boletin: ReportCard) -> dict:

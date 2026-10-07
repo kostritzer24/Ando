@@ -13,10 +13,10 @@ from apps.core.permissions import PermisoPorArea
 from apps.students.models import Enrollment
 
 from ..domain.announcement import PublicacionDeAvisoInvalida
-from ..models import Announcement, ConductReport, ConductReportArticle, Message
+from ..models import Announcement, ConductReport, Message
 from ..services.announcement import avisos_vigentes, crear_aviso
 from ..services.buzon import LenguajeInapropiado, enviar_mensaje, marcar_leido, responder_mensaje
-from ..services.conduct_report import crear_reporte
+from ..services.conduct_report import contenido_reporte, crear_reporte
 from .serializers import (
     AnnouncementSerializer,
     ConductReportCreateSerializer,
@@ -167,16 +167,7 @@ class ConductReportViewSet(
         (`docs/reporte.docx`, ADR-0006), con las líneas de firma en
         blanco (RN-15)."""
         reporte = self.get_object()
-        contexto = {
-            "reporte": reporte,
-            "estudiante_nombre": reporte.enrollment.student.nombre_completo(),
-            "grado_seccion": str(reporte.enrollment.section),
-            "articulos": list(
-                ConductReportArticle.objects.filter(conduct_report=reporte).select_related(
-                    "article"
-                )
-            ),
-        }
+        contexto = contenido_reporte(reporte)
         html = render_to_string("communication/reporte_conducta.html", contexto)
         pdf_bytes = HTML(string=html).write_pdf()
         nombre_archivo = (

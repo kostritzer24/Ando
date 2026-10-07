@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { BookOpenText } from "lucide-vue-next";
 import { computed, onMounted, ref, watch } from "vue";
 
 import { DIAS, PERIODOS } from "@/features/horarios/api/horariosApi";
@@ -87,6 +88,14 @@ onMounted(cargar);
   <section class="inicio-page">
     <PageHeader titulo="Calendario de la semana" />
 
+    <RouterLink to="/portal/convivencia" class="inicio-page__convivencia">
+      <BookOpenText aria-hidden="true" />
+      <span>
+        <strong>Código de convivencia 2026</strong>
+        <small>Conocé las normas del centro y qué pasa cuando no se cumplen.</small>
+      </span>
+    </RouterLink>
+
     <ErrorBanner v-if="error" :mensaje="error" etiqueta-accion="Reintentar" @accion="cargar" />
     <CargandoBloque v-else-if="cargando" />
 
@@ -115,6 +124,30 @@ onMounted(cargar);
 </template>
 
 <style scoped>
+.inicio-page__convivencia {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-md);
+  margin-bottom: var(--espacio-lg);
+  padding: var(--espacio-md);
+  border: 1px solid var(--color-linea);
+  border-radius: var(--radio-md);
+  color: var(--color-tinta);
+  text-decoration: none;
+}
+
+.inicio-page__convivencia svg {
+  flex: none;
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.inicio-page__convivencia small {
+  display: block;
+  margin-top: var(--espacio-2xs);
+  font-size: var(--texto-sm);
+  color: var(--color-tinta-suave);
+}
 
 .inicio-page__agenda {
   list-style: none;

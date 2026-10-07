@@ -406,6 +406,11 @@ const routes: RouteRecordRaw[] = [
         component: () => import("@/features/auth/components/CuentaPage.vue"),
       },
       {
+        path: "convivencia",
+        name: "portal-convivencia",
+        component: () => import("@/features/portal/components/ConvivenciaPage.vue"),
+      },
+      {
         path: "avisos",
         name: "portal-avisos",
         component: () => import("@/features/portal/components/AvisosPage.vue"),
