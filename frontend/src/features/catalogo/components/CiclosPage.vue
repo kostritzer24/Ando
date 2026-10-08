@@ -94,13 +94,14 @@ function abrirNuevaUnidad(): void {
   formularioUnidad.number = String(unidades.value.length + 1);
   formularioUnidad.start_date = "";
   formularioUnidad.end_date = "";
+  errorModal.value = "";
   modalUnidadAbierto.value = true;
 }
 
 async function guardarUnidad(): Promise<void> {
   if (!cicloSeleccionado.value) return;
   guardandoUnidad.value = true;
-  errorUnidades.value = "";
+  errorModal.value = "";
   try {
     await unidadesApi(cicloSeleccionado.value.public_id).crear({
       number: Number(formularioUnidad.number),
@@ -109,9 +110,11 @@ async function guardarUnidad(): Promise<void> {
     });
     modalUnidadAbierto.value = false;
     await verUnidades(cicloSeleccionado.value);
-  } catch {
-    errorUnidades.value =
-      "No se pudo guardar la unidad. Revisa que el número y las fechas no se crucen con otra unidad.";
+  } catch (e) {
+    errorModal.value = mensajeDelServidor(
+      e,
+      "No se pudo guardar la unidad. Revisa que el número y las fechas no se crucen con otra unidad.",
+    );
   } finally {
     guardandoUnidad.value = false;
   }
@@ -201,6 +204,7 @@ onMounted(cargarCiclos);
     </AppModal>
 
     <AppModal v-if="modalUnidadAbierto" titulo="Agregar unidad" @cerrar="modalUnidadAbierto = false">
+      <ErrorBanner v-if="errorModal" :mensaje="errorModal" />
       <form class="ciclos-page__formulario" @submit.prevent="guardarUnidad">
         <FormField id="number" etiqueta="Número de unidad" tipo="number" v-model="formularioUnidad.number" />
         <FormField

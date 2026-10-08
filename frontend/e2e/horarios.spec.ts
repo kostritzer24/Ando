@@ -82,7 +82,7 @@ test("docente publica un evento propio y Dirección publica uno institucional", 
 
   const tituloPropio = `Entrega de proyecto ${Date.now()}`;
   await page.locator('input[type="text"]').fill(tituloPropio);
-  await page.locator('input[type="date"]').fill("2026-03-10");
+  await page.locator('input[type="date"]').fill("2099-03-10");
   const horas = page.locator('input[type="time"]');
   await horas.nth(0).fill("09:00");
   await horas.nth(1).fill("10:00");
@@ -102,7 +102,7 @@ test("docente publica un evento propio y Dirección publica uno institucional", 
   await page.getByRole("button", { name: "Publicar evento" }).click();
   await page.getByLabel("Tipo").selectOption({ label: "Institucional" });
   await page.locator('input[type="text"]').fill(tituloInstitucional);
-  await page.locator('input[type="date"]').fill("2026-03-15");
+  await page.locator('input[type="date"]').fill("2099-03-15");
   const horasDireccion = page.locator('input[type="time"]');
   await horasDireccion.nth(0).fill("08:00");
   await horasDireccion.nth(1).fill("08:40");

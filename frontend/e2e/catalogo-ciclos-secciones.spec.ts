@@ -15,31 +15,37 @@ test.beforeEach(async ({ page }) => {
   await expect(page).toHaveURL(/\/administrativo$/);
 });
 
-test("Dirección agrega una unidad a un ciclo existente y ve las fechas calculadas", async ({ page }) => {
+test("Dirección crea un ciclo, agrega una unidad y ve las fechas calculadas; las fechas incoherentes se rechazan", async ({ page }) => {
   await page.goto("/administrativo/catalogo/ciclos");
   await expect(page.getByRole("heading", { name: "Ciclos escolares y unidades" })).toBeVisible();
 
-  const filaCiclo = page.locator("tr", { hasText: "2026" });
-  await filaCiclo.getByRole("button", { name: "Ver unidades" }).click();
-  await expect(page.getByRole("heading", { name: "Unidades del ciclo 2026" })).toBeVisible();
-
-  const tablaUnidades = page.locator("table").nth(1);
-  // seed_demo crea exactamente 4 unidades para el ciclo 2026 — se espera
-  // a que la carga asíncrona termine antes de contar filas, si no la
-  // lectura puede ganarle a la petición y contar 0.
-  await expect(tablaUnidades.locator("tbody tr")).toHaveCount(4);
-
-  await page.getByRole("button", { name: "Agregar unidad" }).click();
-  await page.getByLabel("Número de unidad").fill("5");
-  await page.getByLabel("Fecha de inicio").fill("2026-08-17");
-  await page.getByLabel("Fecha de cierre").fill("2026-10-09");
+  // Un año propio de la prueba, para no chocar con el ciclo sembrado ni con corridas anteriores.
+  const anio = 2100 + Math.floor(Math.random() * 800);
+  await page.getByRole("button", { name: "Agregar ciclo" }).click();
+  await page.getByLabel("Año").fill(String(anio));
+  await page.getByLabel("Fecha de inicio").fill(`${anio}-01-12`);
+  await page.getByLabel("Fecha de cierre").fill(`${anio}-10-30`);
   await page.getByRole("button", { name: "Guardar" }).click();
 
-  await expect(tablaUnidades.locator("tbody tr")).toHaveCount(5);
-  // RN-10: la fecha de entrega de notas y de habilitación del boletín las
-  // calcula el sistema — no se piden en el formulario y sí aparecen en la
-  // tabla resultante.
-  await expect(tablaUnidades).toContainText("2026-10-24"); // grades_due_date: +15 días
+  const filaCiclo = page.locator("tr", { hasText: String(anio) });
+  await filaCiclo.getByRole("button", { name: "Ver unidades" }).click();
+  await expect(page.getByRole("heading", { name: `Unidades del ciclo ${anio}` })).toBeVisible();
+
+  // Fechas fuera del ciclo: el servidor las rechaza y el motivo se ve en el diálogo.
+  await page.getByRole("button", { name: "Agregar unidad" }).click();
+  await page.getByLabel("Número de unidad").fill("1");
+  await page.getByLabel("Fecha de inicio").fill(`${anio - 1}-12-01`);
+  await page.getByLabel("Fecha de cierre").fill(`${anio}-03-31`);
+  await page.getByRole("button", { name: "Guardar" }).click();
+  await expect(page.getByRole("dialog").getByRole("alert")).toContainText("dentro del ciclo");
+
+  await page.getByLabel("Fecha de inicio").fill(`${anio}-01-12`);
+  await page.getByRole("button", { name: "Guardar" }).click();
+
+  const tablaUnidades = page.locator("table").nth(1);
+  await expect(tablaUnidades.locator("tbody tr")).toHaveCount(1);
+  // La fecha de entrega de notas (+15 días del cierre) la calcula el sistema.
+  await expect(tablaUnidades).toContainText(`${anio}-04-15`);
 });
 
 test("Dirección crea una sección académica con maestro guía", async ({ page }) => {
