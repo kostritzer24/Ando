@@ -22,7 +22,7 @@ async function enviar(): Promise<void> {
     await router.push("/");
   } catch {
     mensajeError.value =
-      "No se pudo cambiar la contraseña. Revisá la contraseña actual y que la nueva cumpla los requisitos.";
+      "No se pudo cambiar la contraseña. Revisa la contraseña actual y que la nueva cumpla los requisitos.";
   } finally {
     enviando.value = false;
   }
@@ -31,8 +31,8 @@ async function enviar(): Promise<void> {
 
 <template>
   <PantallaAcceso
-    titulo="Cambiá tu contraseña"
-    subtitulo="Es tu primer ingreso. Elegí una contraseña nueva antes de seguir."
+    titulo="Cambia tu contraseña"
+    subtitulo="Es tu primer ingreso. Elige una contraseña nueva antes de seguir."
   >
     <ErrorBanner v-if="mensajeError" :mensaje="mensajeError" />
 

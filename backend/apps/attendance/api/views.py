@@ -84,7 +84,7 @@ class AttendanceViewSet(RegistraAccesoMixin, ScopedQuerysetMixin, viewsets.Model
         if request.user.role.name in _ROLES_DOCENTES and not _seccion_asignada_al_docente(
             request.user, enrollment.section
         ):
-            raise PermissionDenied("No tenés una asignación vigente en esa sección.")
+            raise PermissionDenied("No tienes una asignación vigente en esa sección.")
 
         try:
             asistencia = registrar_asistencia(
@@ -175,7 +175,7 @@ class AttendanceTemplateDownloadView(RegistraAccesoMixin, APIView):
         if request.user.role.name in _ROLES_DOCENTES and not _seccion_asignada_al_docente(
             request.user, section
         ):
-            raise PermissionDenied("No tenés una asignación vigente en esa sección.")
+            raise PermissionDenied("No tienes una asignación vigente en esa sección.")
         try:
             contenido = generar_plantilla(section=section)
         except SeccionNoEsDeTaller as exc:
@@ -231,7 +231,7 @@ class AttendanceTemplateUploadView(RegistraAccesoMixin, APIView):
         if request.user.role.name in _ROLES_DOCENTES and not _seccion_asignada_al_docente(
             request.user, section
         ):
-            raise PermissionDenied("No tenés una asignación vigente en esa sección.")
+            raise PermissionDenied("No tienes una asignación vigente en esa sección.")
 
         try:
             creados, errores = procesar_plantilla(

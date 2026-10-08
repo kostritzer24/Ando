@@ -77,7 +77,7 @@ async function cargar(): Promise<void> {
     const cicloId = portal.inscripcionesDelSeleccionado[0]?.cycle;
     unidades.value = cicloId ? (await unidadesApi(cicloId).listar()).results : [];
   } catch {
-    error.value = "No se pudieron cargar las notas. Probá de nuevo.";
+    error.value = "No se pudieron cargar las notas. Inténtalo de nuevo.";
   } finally {
     cargando.value = false;
   }
@@ -90,7 +90,7 @@ async function descargar(boletin: ReportCard): Promise<void> {
     const { blob, nombreArchivo } = await descargarBoletin(boletin.public_id);
     descargarArchivo(blob, nombreArchivo);
   } catch {
-    errorDescarga.value = "No se pudo descargar el boletín. Probá de nuevo.";
+    errorDescarga.value = "No se pudo descargar el boletín. Inténtalo de nuevo.";
   } finally {
     descargandoId.value = "";
   }
@@ -111,7 +111,7 @@ onMounted(cargar);
       <EmptyState
         v-if="notasPorCurso.length === 0"
         titulo="Todavía no hay notas"
-        descripcion="Las notas registradas por los docentes van a aparecer acá, por curso y por unidad."
+        descripcion="Las notas registradas por los docentes van a aparecer aquí, por curso y por unidad."
       />
       <div v-else class="notas-page__cursos">
         <article v-for="grupo in notasPorCurso" :key="grupo.curso" class="notas-page__curso">
@@ -132,7 +132,7 @@ onMounted(cargar);
       <EmptyState
         v-if="boletinesPropios.length === 0"
         titulo="Todavía no hay boletines publicados"
-        descripcion="Cuando Dirección publique un boletín, va a aparecer acá para descargar."
+        descripcion="Cuando Dirección publique un boletín, va a aparecer aquí para descargar."
       />
       <ul v-else class="notas-page__boletines">
         <li v-for="boletin in boletinesPropios" :key="boletin.public_id" class="notas-page__boletin">

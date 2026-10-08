@@ -106,7 +106,7 @@ class ResolucionSerializer(serializers.Serializer):
     def validate(self, datos):
         if not self.context.get("aprobar") and not datos.get("motivo", "").strip():
             raise serializers.ValidationError(
-                {"motivo": "Escribí por qué se rechaza; el docente lo va a ver."}
+                {"motivo": "Escribe por qué se rechaza; el docente lo va a ver."}
             )
         return datos
 

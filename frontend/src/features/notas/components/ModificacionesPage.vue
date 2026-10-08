@@ -41,7 +41,7 @@ async function cargar(): Promise<void> {
   try {
     solicitudes.value = (await gradeChangeRequestsApi.listar()).results;
   } catch {
-    error.value = "No se pudo cargar la bandeja de solicitudes. Probá de nuevo.";
+    error.value = "No se pudo cargar la bandeja de solicitudes. Inténtalo de nuevo.";
   } finally {
     cargando.value = false;
   }
@@ -58,7 +58,7 @@ async function resolver(solicitud: GradeChangeRequest, aprobar: boolean, motivo 
   } catch (e) {
     // Otra persona pudo resolverla mientras tanto: se recarga para ver
     // el estado real en vez de dejar los botones de una solicitud cerrada.
-    errorAccion.value = motivoDelRechazo(e, "No se pudo resolver la solicitud. Probá de nuevo.");
+    errorAccion.value = motivoDelRechazo(e, "No se pudo resolver la solicitud. Inténtalo de nuevo.");
     await cargar();
     return false;
   } finally {
@@ -89,7 +89,7 @@ function abrirRechazo(solicitud: GradeChangeRequest): void {
 async function confirmarRechazo(): Promise<void> {
   if (!rechazando.value) return;
   if (!motivoRechazo.value.trim()) {
-    errorRechazo.value = "Escribí por qué se rechaza; el docente lo va a ver.";
+    errorRechazo.value = "Escribe por qué se rechaza; el docente lo va a ver.";
     return;
   }
   const solicitud = rechazando.value;
@@ -110,7 +110,7 @@ onMounted(cargar);
     <EmptyState
       v-else-if="solicitudes.length === 0"
       titulo="No hay solicitudes"
-      descripcion="Las solicitudes de corrección de nota van a aparecer acá."
+      descripcion="Las solicitudes de corrección de nota van a aparecer aquí."
     />
 
     <DataTable

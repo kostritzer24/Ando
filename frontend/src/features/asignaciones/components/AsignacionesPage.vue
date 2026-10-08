@@ -94,7 +94,7 @@ async function cargar(): Promise<void> {
     docentes.value = docentesResp;
     talleristas.value = talleristasResp;
   } catch {
-    error.value = "No se pudo cargar la lista de asignaciones. Probá de nuevo.";
+    error.value = "No se pudo cargar la lista de asignaciones. Inténtalo de nuevo.";
   } finally {
     cargando.value = false;
   }
@@ -142,7 +142,7 @@ async function darDeBaja(asignacion: TeacherAssignment): Promise<void> {
     avisar("Asignación dada de baja.");
     await cargar();
   } catch {
-    avisar("No se pudo dar de baja la asignación. Probá de nuevo.", "error");
+    avisar("No se pudo dar de baja la asignación. Inténtalo de nuevo.", "error");
   }
 }
 
@@ -162,7 +162,7 @@ onMounted(cargar);
     <EmptyState
       v-else-if="asignaciones.length === 0"
       titulo="Todavía no hay asignaciones"
-      descripcion="Asigná el primer docente o tallerista a una sección."
+      descripcion="Asigna el primer docente o tallerista a una sección."
     />
 
     <DataTable
@@ -193,14 +193,14 @@ onMounted(cargar);
           etiqueta="Curso"
           :opciones="opcionesCurso"
           v-model="formulario.course"
-          :placeholder="formulario.section ? 'Elegí un curso' : 'Elegí primero una sección'"
+          :placeholder="formulario.section ? 'Elige un curso' : 'Elige primero una sección'"
         />
         <FormSelect
           id="teacher"
           etiqueta="Docente o tallerista"
           :opciones="opcionesDocente"
           v-model="formulario.teacher"
-          :placeholder="formulario.section ? 'Elegí una persona' : 'Elegí primero una sección'"
+          :placeholder="formulario.section ? 'Elige una persona' : 'Elige primero una sección'"
         />
         <p class="asignaciones-page__nota">
           El curso y la persona se filtran según el tipo de la sección (académica o taller) —

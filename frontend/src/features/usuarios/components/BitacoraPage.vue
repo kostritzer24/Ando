@@ -136,7 +136,7 @@ async function cargar(): Promise<void> {
       total.value = respuesta.count;
     }
   } catch {
-    error.value = "No se pudo cargar la bitácora. Probá de nuevo.";
+    error.value = "No se pudo cargar la bitácora. Inténtalo de nuevo.";
   } finally {
     cargando.value = false;
   }
@@ -193,7 +193,7 @@ onMounted(async () => {
     <EmptyState
       v-else-if="total === 0"
       titulo="Todavía no hay registros"
-      descripcion="Acá van a aparecer los cambios y las consultas a medida que se use el sistema."
+      descripcion="Aquí van a aparecer los cambios y las consultas a medida que se use el sistema."
     />
 
     <template v-else>

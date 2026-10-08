@@ -70,7 +70,7 @@ async function cargar(): Promise<void> {
     ciclos.value = ciclosResp.results;
     docentes.value = docentesResp;
   } catch {
-    error.value = "No se pudo cargar la lista de secciones. Probá de nuevo.";
+    error.value = "No se pudo cargar la lista de secciones. Inténtalo de nuevo.";
   } finally {
     cargando.value = false;
   }
@@ -115,7 +115,7 @@ async function guardar(): Promise<void> {
     modalAbierto.value = false;
     await cargar();
   } catch {
-    error.value = "No se pudo guardar la sección. Revisá los datos e intentá de nuevo.";
+    error.value = "No se pudo guardar la sección. Revisa los datos e inténtalo de nuevo.";
   } finally {
     guardando.value = false;
   }
@@ -135,7 +135,7 @@ async function darDeBaja(seccion: Section): Promise<void> {
     avisar(`Sección "${nombre}" dada de baja.`);
     await cargar();
   } catch {
-    avisar(`No se pudo dar de baja la sección "${nombre}". Probá de nuevo.`, "error");
+    avisar(`No se pudo dar de baja la sección "${nombre}". Inténtalo de nuevo.`, "error");
   }
 }
 
@@ -160,7 +160,7 @@ onMounted(cargar);
     <EmptyState
       v-else-if="secciones.length === 0"
       titulo="Todavía no hay secciones"
-      descripcion="Agregá la primera sección del ciclo."
+      descripcion="Agrega la primera sección del ciclo."
     />
 
     <template v-else>

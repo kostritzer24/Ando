@@ -124,7 +124,7 @@ class GuardianViewSet(BajaLogicaMixin, RegistraAccesoMixin, viewsets.ModelViewSe
         de agregar uno nuevo o desvincular); POST crea uno. Sin paginar
         a propósito (`pagination_class=None`): un encargado tiene, como
         mucho, un puñado de estudiantes vinculados, y `Response(...)`
-        acá nunca pasa por `self.paginate_queryset` de todos modos — el
+        aquí nunca pasa por `self.paginate_queryset` de todos modos — el
         override es para que el esquema generado no diga lo contrario."""
         guardian = self.get_object()
         if request.method == "GET":

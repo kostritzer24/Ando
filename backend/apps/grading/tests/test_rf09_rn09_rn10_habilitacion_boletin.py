@@ -134,7 +134,7 @@ def test_rn10_no_se_puede_publicar_antes_del_plazo_aunque_este_solvente():
     respuesta = client.post(f"/api/v1/report-cards/{boletin_id}/publish/")
 
     assert respuesta.status_code == 400
-    assert "plazo" in str(respuesta.data).lower()
+    assert "fecha de habilitación" in str(respuesta.data)
 
 
 def test_rn09_no_se_puede_publicar_si_el_estudiante_no_esta_solvente():
@@ -152,7 +152,7 @@ def test_rn09_no_se_puede_publicar_si_el_estudiante_no_esta_solvente():
     respuesta = client.post(f"/api/v1/report-cards/{boletin_id}/publish/")
 
     assert respuesta.status_code == 400
-    assert "solvente" in str(respuesta.data).lower()
+    assert "pagos pendientes" in str(respuesta.data)
 
 
 def test_rf09_se_publica_cuando_se_cumple_el_plazo_y_esta_solvente_y_la_familia_lo_ve():

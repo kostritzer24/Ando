@@ -77,7 +77,7 @@ async function cargar(): Promise<void> {
     estudiantes.value = estudiantesResp.results;
     inscripcionElegida.value = opcionesInscripcion.value[0]?.valor ?? "";
   } catch {
-    error.value = "No se pudo cargar la lista de estudiantes. Probá de nuevo.";
+    error.value = "No se pudo cargar la lista de estudiantes. Inténtalo de nuevo.";
   } finally {
     cargando.value = false;
   }
@@ -99,7 +99,7 @@ async function cargarDetalle(): Promise<void> {
     solvencia.value = solvenciaResp;
     pagos.value = pagosResp.results.filter((p) => p.enrollment === inscripcionElegida.value);
   } catch {
-    error.value = "No se pudo cargar la solvencia de este estudiante. Probá de nuevo.";
+    error.value = "No se pudo cargar la solvencia de este estudiante. Inténtalo de nuevo.";
   } finally {
     cargandoDetalle.value = false;
   }
@@ -122,7 +122,7 @@ async function registrarPago(): Promise<void> {
     formulario.receipt_number = "";
     await cargarDetalle();
   } catch {
-    errorPago.value = "No se pudo registrar el pago. Revisá los datos (el recibo debe ser único) e intentá de nuevo.";
+    errorPago.value = "No se pudo registrar el pago. Revisa los datos (el recibo debe ser único) e inténtalo de nuevo.";
   } finally {
     guardando.value = false;
   }
@@ -135,7 +135,7 @@ async function emitirConstancia(): Promise<void> {
     const { blob, nombreArchivo } = await emitirConstanciaSolvencia(inscripcionElegida.value);
     descargarArchivo(blob, nombreArchivo);
   } catch {
-    errorEmision.value = "No se pudo emitir la constancia. Probá de nuevo.";
+    errorEmision.value = "No se pudo emitir la constancia. Inténtalo de nuevo.";
   } finally {
     emitiendo.value = false;
   }
@@ -148,7 +148,7 @@ async function descargarReporteInsolventes(): Promise<void> {
     const { blob, nombreArchivo } = await descargarReportePdf("insolvent-students", {});
     descargarArchivo(blob, nombreArchivo);
   } catch {
-    error.value = "No se pudo generar el reporte. Probá de nuevo.";
+    error.value = "No se pudo generar el reporte. Inténtalo de nuevo.";
   } finally {
     descargandoReporte.value = false;
   }

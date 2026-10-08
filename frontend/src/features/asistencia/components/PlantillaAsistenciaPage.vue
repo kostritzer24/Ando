@@ -61,7 +61,7 @@ async function cargar(): Promise<void> {
     }
     seccionElegida.value = opcionesSeccion.value[0]?.valor ?? "";
   } catch {
-    error.value = "No se pudo cargar la lista de talleres. Probá de nuevo.";
+    error.value = "No se pudo cargar la lista de talleres. Inténtalo de nuevo.";
   } finally {
     cargando.value = false;
   }
@@ -79,7 +79,7 @@ async function descargar(): Promise<void> {
     enlace.click();
     URL.revokeObjectURL(url);
   } catch {
-    error.value = "No se pudo generar la plantilla. Probá de nuevo.";
+    error.value = "No se pudo generar la plantilla. Inténtalo de nuevo.";
   }
 }
 
@@ -99,7 +99,7 @@ async function subir(): Promise<void> {
       file: archivoElegido.value,
     });
   } catch {
-    error.value = "No se pudo subir la plantilla. Probá de nuevo.";
+    error.value = "No se pudo subir la plantilla. Inténtalo de nuevo.";
   } finally {
     subiendo.value = false;
   }
@@ -115,12 +115,12 @@ onMounted(cargar);
     <ErrorBanner v-if="error" :mensaje="error" etiqueta-accion="Reintentar" @accion="cargar" />
     <CargandoBloque v-else-if="cargando" />
     <p v-else-if="!puedeUsarPlantilla" class="plantilla-asistencia__nota">
-      Esta pantalla es para el taller que tenés a cargo.
+      Esta pantalla es para el taller que tienes a cargo.
     </p>
 
     <template v-else>
       <div class="plantilla-asistencia__pasos">
-        <AppPanel titulo="1. Descargá la plantilla" descripcion="Trae la lista del taller para la fecha que elijas.">
+        <AppPanel titulo="1. Descarga la plantilla" descripcion="Trae la lista del taller para la fecha que elijas.">
           <div class="plantilla-asistencia__campos">
             <div class="plantilla-asistencia__filtros">
               <FormSelect id="section" etiqueta="Taller" :opciones="opcionesSeccion" v-model="seccionElegida" />
@@ -132,7 +132,7 @@ onMounted(cargar);
           </div>
         </AppPanel>
 
-        <AppPanel titulo="2. Subí la plantilla llena" descripcion="Se revisa completa antes de guardar nada.">
+        <AppPanel titulo="2. Sube la plantilla llena" descripcion="Se revisa completa antes de guardar nada.">
           <div class="plantilla-asistencia__campos">
             <CampoArchivo id="file" etiqueta="Archivo de Excel (.xlsx)" accept=".xlsx" @elegir="alElegirArchivo" />
             <AppButton :deshabilitado="!archivoElegido || subiendo" @click="subir">
@@ -147,7 +147,7 @@ onMounted(cargar);
       </p>
 
       <div v-if="resultado?.errores?.length" class="plantilla-asistencia__errores" role="alert">
-        <p>La plantilla tiene errores y no se guardó ningún registro. Corregí estas filas y volvé a subirla:</p>
+        <p>La plantilla tiene errores y no se guardó ningún registro. Corrige estas filas y vuelve a subirla:</p>
         <ul>
           <li v-for="(err, indice) in resultado.errores" :key="indice">{{ err }}</li>
         </ul>

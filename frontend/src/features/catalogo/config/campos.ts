@@ -45,7 +45,7 @@ export const CONFIG_TIPOS_ACTIVIDAD: CatalogoConfig = {
       clave: "counts_as_short_quiz",
       etiqueta: "Cuenta como prueba corta",
       tipo: "booleano",
-      pista: "RN-04: se usa para exigir el mínimo de 4 pruebas cortas por unidad.",
+      pista: "Se usa para verificar el mínimo de 4 pruebas cortas por unidad.",
     },
   ],
   columnas: [{ clave: "name", etiqueta: "Nombre" }],

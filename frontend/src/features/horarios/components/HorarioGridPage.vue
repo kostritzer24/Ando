@@ -88,7 +88,7 @@ async function cargar(): Promise<void> {
       docenteElegido.value = opcionesDocente.value[0]?.valor ?? "";
     }
   } catch {
-    error.value = "No se pudo cargar el horario. Probá de nuevo.";
+    error.value = "No se pudo cargar el horario. Inténtalo de nuevo.";
   } finally {
     cargando.value = false;
   }
@@ -144,7 +144,7 @@ async function quitarBloque(bloque: ScheduleBlock): Promise<void> {
     avisar("Clase quitada del horario.");
     await cargar();
   } catch {
-    avisar("No se pudo quitar la clase. Probá de nuevo.", "error");
+    avisar("No se pudo quitar la clase. Inténtalo de nuevo.", "error");
   }
 }
 
@@ -153,7 +153,7 @@ onMounted(cargar);
 
 <template>
   <section class="horario-grid">
-    <PageHeader titulo="Horario" descripcion="Elegí a la persona para ver o armar su semana de clases." />
+    <PageHeader titulo="Horario" descripcion="Elige a la persona para ver o armar su semana de clases." />
 
     <ErrorBanner v-if="error" :mensaje="error" etiqueta-accion="Reintentar" @accion="cargar" />
     <CargandoBloque v-else-if="cargando" />

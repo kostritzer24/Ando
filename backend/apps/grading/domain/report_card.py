@@ -25,11 +25,12 @@ def validar_publicacion(
         raise TransicionDeBoletinInvalida("Solo se puede publicar un boletín que ya fue aprobado.")
     if not plazo_cumplido:
         raise TransicionDeBoletinInvalida(
-            "Todavía no se cumple el plazo para habilitar el boletín (RN-10)."
+            "Todavía no se puede publicar el boletín: "
+            "aún no llega la fecha de habilitación de la unidad."
         )
     if not es_solvente:
         raise TransicionDeBoletinInvalida(
-            "El estudiante no está solvente; no se puede publicar el boletín (RN-09)."
+            "El estudiante tiene pagos pendientes, por lo que el boletín no se puede publicar."
         )
 
 

@@ -8,7 +8,7 @@ withDefaults(
     placeholder?: string;
     mensajeError?: string;
   }>(),
-  { placeholder: "Elegí una opción" },
+  { placeholder: "Elige una opción" },
 );
 
 defineEmits<{ "update:modelValue": [string] }>();

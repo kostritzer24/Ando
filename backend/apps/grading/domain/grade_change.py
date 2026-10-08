@@ -28,7 +28,7 @@ def validar_solicitud(
     if hay_pendiente:
         raise SolicitudDeModificacionInvalida(
             "Esta nota ya tiene una solicitud de corrección pendiente. "
-            "Esperá a que Dirección la resuelva."
+            "Espera a que Dirección la resuelva."
         )
 
 
@@ -61,11 +61,11 @@ def validar_correccion_directa(
     if not puede_corregirse_sin_autorizacion(hoy=hoy, fecha_entrega_notas=fecha_entrega_notas):
         raise SolicitudDeModificacionInvalida(
             f"La entrega de notas de esta unidad cerró el {fecha_entrega_notas:%d/%m/%Y}. "
-            "Para cambiar esta nota, solicitá una corrección a Dirección."
+            "Para cambiar esta nota, solicita una corrección a Dirección."
         )
     if hay_pendiente:
         raise SolicitudDeModificacionInvalida(
-            "Esta nota tiene una solicitud de corrección pendiente; esperá a que Dirección "
+            "Esta nota tiene una solicitud de corrección pendiente; espera a que Dirección "
             "la resuelva."
         )
     if not (Decimal("0") <= punteo_nuevo <= max_score):

@@ -58,7 +58,7 @@ async function cargar(): Promise<void> {
     eventos.value = eventosResp.results;
     asignaciones.value = asignacionesResp.results;
   } catch {
-    error.value = "No se pudo cargar el calendario. Probá de nuevo.";
+    error.value = "No se pudo cargar el calendario. Inténtalo de nuevo.";
   } finally {
     cargando.value = false;
   }
@@ -130,7 +130,7 @@ async function guardar(): Promise<void> {
     modalAbierto.value = false;
     await cargar();
   } catch {
-    error.value = "No se pudo guardar el evento. Revisá los datos e intentá de nuevo.";
+    error.value = "No se pudo guardar el evento. Revisa los datos e inténtalo de nuevo.";
   } finally {
     guardando.value = false;
   }
@@ -149,7 +149,7 @@ async function eliminar(evento: CalendarEvent): Promise<void> {
     avisar("Evento quitado del calendario.");
     await cargar();
   } catch {
-    avisar("No se pudo quitar el evento. Probá de nuevo.", "error");
+    avisar("No se pudo quitar el evento. Inténtalo de nuevo.", "error");
   }
 }
 
@@ -169,7 +169,7 @@ onMounted(cargar);
     <EmptyState
       v-else-if="eventos.length === 0"
       titulo="Todavía no hay eventos"
-      descripcion="Publicá el primer evento del calendario."
+      descripcion="Publica el primer evento del calendario."
     />
 
     <DataTable

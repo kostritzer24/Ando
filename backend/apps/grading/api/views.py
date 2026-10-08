@@ -238,7 +238,7 @@ class GradeViewSet(
             )
         except YaCalificado as exc:
             raise ValidationError(
-                {"activity": f"{exc} Si hay que corregirla, usá /grade-change-requests/."}
+                {"activity": f"{exc} Si hay que corregirla, usa /grade-change-requests/."}
             ) from exc
         except PunteoFueraDeRango as exc:
             raise ValidationError({"raw_score": str(exc)}) from exc

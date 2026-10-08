@@ -135,7 +135,7 @@ def validar_y_clasificar_plantilla(*, assignment, unit, archivo):
     except (InvalidFileException, zipfile.BadZipFile, KeyError, OSError) as exc:
         raise ArchivoIlegible(
             "No se pudo leer el archivo. "
-            "Asegurate de que sea la plantilla en formato Excel (.xlsx)."
+            "Asegúrate de que sea la plantilla en formato Excel (.xlsx)."
         ) from exc
 
     asignacion_recibida, unidad_recibida, actividades_recibidas = _leer_identidad(libro)
@@ -228,7 +228,7 @@ def validar_y_clasificar_plantilla(*, assignment, unit, archivo):
             elif grade_existente.id in notas_con_pendiente:
                 errores.append(
                     f"Fila {numero}: '{actividad.name}' ya tiene una corrección pendiente "
-                    "de que Dirección la resuelva. Dejá esa celda como estaba."
+                    "de que Dirección la resuelva. Deja esa celda como estaba."
                 )
                 fila_tiene_error = True
                 continue
@@ -281,7 +281,7 @@ def aplicar_plantilla(*, filas_validas, recorded_by) -> dict:
                 solicitar_modificacion(
                     grade=celda["grade"],
                     requested_score=celda["punteo"],
-                    reason="Cargado de nuevo por plantilla (RN-07).",
+                    reason="Cargado de nuevo por plantilla.",
                     requested_by=recorded_by,
                 )
                 solicitudes += 1

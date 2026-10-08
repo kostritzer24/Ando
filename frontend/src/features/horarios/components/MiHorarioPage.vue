@@ -19,7 +19,7 @@ async function cargar(): Promise<void> {
   try {
     bloques.value = await obtenerMiHorario();
   } catch {
-    error.value = "No se pudo cargar tu horario. Probá de nuevo.";
+    error.value = "No se pudo cargar tu horario. Inténtalo de nuevo.";
   } finally {
     cargando.value = false;
   }
@@ -36,8 +36,8 @@ onMounted(cargar);
     <CargandoBloque v-else-if="cargando" />
     <EmptyState
       v-else-if="bloques.length === 0"
-      titulo="Todavía no tenés horario asignado"
-      descripcion="Dirección arma el horario del centro; cuando te asigne clases, van a aparecer acá."
+      titulo="Todavía no tienes horario asignado"
+      descripcion="Dirección arma el horario del centro; cuando te asigne clases, van a aparecer aquí."
     />
 
     <table v-else class="mi-horario__tabla">

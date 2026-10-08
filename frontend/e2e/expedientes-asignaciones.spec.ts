@@ -82,7 +82,7 @@ test("Dirección crea un encargado, lo vincula a un estudiante y lo desvincula",
   await expect(page.getByText(/Estudiantes vinculados a Encargado De Prueba/)).toBeVisible();
   await expect(page.getByText("Sin vínculos todavía.")).toBeVisible();
 
-  await page.locator("select").filter({ hasText: "Elegí un estudiante" }).selectOption({ index: 1 });
+  await page.locator("select").filter({ hasText: "Elige un estudiante" }).selectOption({ index: 1 });
   await page.getByPlaceholder("Parentesco (Madre, Padre, …)").fill("Tía");
   await page.getByRole("button", { name: "Vincular" }).click();
 

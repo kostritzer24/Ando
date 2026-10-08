@@ -15,7 +15,7 @@ def validar_creacion(
         )
     if assignment is not None and not is_direccion and assignment.teacher_id != published_by.id:
         raise PublicacionInvalida(
-            "Solo podés publicar en el calendario asignaciones que son tuyas."
+            "Solo puedes publicar en el calendario asignaciones que son tuyas."
         )
 
 

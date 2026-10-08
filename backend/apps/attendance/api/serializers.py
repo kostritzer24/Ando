@@ -42,7 +42,7 @@ class AttendanceCreateSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         if not attrs.get("status") and not attrs.get("check_in_time"):
-            raise serializers.ValidationError("Mandá 'status' o 'check_in_time'.")
+            raise serializers.ValidationError("Envía 'status' o 'check_in_time'.")
         return attrs
 
 

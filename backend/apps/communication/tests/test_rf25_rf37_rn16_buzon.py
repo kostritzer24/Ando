@@ -155,7 +155,7 @@ def test_rn16_no_se_crea_ningun_mensaje_cuando_el_filtro_lo_rechaza():
     client.force_authenticate(user=familia)
     client.post(
         "/api/v1/messages/",
-        {"section": str(seccion.public_id), "subject": "Queja", "content": "Sos un pendejo"},
+        {"section": str(seccion.public_id), "subject": "Queja", "content": "Eres un pendejo"},
     )
 
     assert Message.objects.count() == 0

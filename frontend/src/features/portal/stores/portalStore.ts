@@ -49,7 +49,7 @@ export const usePortalStore = defineStore("portal", () => {
         estudianteSeleccionadoId.value = estudiantes.value[0]?.public_id ?? "";
       }
     } catch {
-      error.value = "No se pudo cargar la lista de estudiantes. Probá de nuevo.";
+      error.value = "No se pudo cargar la lista de estudiantes. Inténtalo de nuevo.";
     } finally {
       cargando.value = false;
     }

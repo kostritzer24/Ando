@@ -80,7 +80,7 @@ def test_rn05_despues_del_plazo_la_correccion_directa_es_rechazada():
     respuesta = client.post(f"/api/v1/grades/{nota.public_id}/correct/", {"score": "8"})
 
     assert respuesta.status_code == 400
-    assert "solicitá una corrección" in str(respuesta.data)
+    assert "solicita una corrección" in str(respuesta.data)
     nota.refresh_from_db()
     assert nota.current_score == 6
 
@@ -287,7 +287,7 @@ def test_rf09_aprobar_y_publicar_en_lote_informa_quien_quedo_sin_publicar_y_por_
     assert aprobados.data == {"aprobados": 2}
     assert publicados.data["publicados"] == 1
     assert len(publicados.data["no_publicados"]) == 1
-    assert "solvente" in publicados.data["no_publicados"][0]["motivo"]
+    assert "pagos pendientes" in publicados.data["no_publicados"][0]["motivo"]
 
 
 def test_rf09_solo_direccion_aprueba_en_lote_acceso_no_autorizado():

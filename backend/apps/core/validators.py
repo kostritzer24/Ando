@@ -22,7 +22,7 @@ class ContrasenaComunEsValidator:
     def validate(self, password: str, user=None) -> None:
         if password.lower() in _lista_contrasenas_comunes():
             raise ValidationError(
-                "Esta contraseña es muy común. Elegí una distinta.",
+                "Esta contraseña es muy común. Elige una distinta.",
                 code="password_too_common_es",
             )
 

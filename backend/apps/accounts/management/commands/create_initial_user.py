@@ -44,7 +44,7 @@ class Command(BaseCommand):
             ) from None
 
         password = getpass.getpass("Contraseña temporal: ")
-        password_confirm = getpass.getpass("Confirmá la contraseña: ")
+        password_confirm = getpass.getpass("Confirma la contraseña: ")
         if password != password_confirm:
             raise CommandError("Las contraseñas no coinciden.")
 

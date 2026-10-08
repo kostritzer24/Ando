@@ -16,7 +16,7 @@ async function cargar(): Promise<void> {
   try {
     metricas.value = await consultarMetricas();
   } catch {
-    error.value = "No se pudieron cargar las métricas. Probá de nuevo.";
+    error.value = "No se pudieron cargar las métricas. Inténtalo de nuevo.";
   } finally {
     cargando.value = false;
   }

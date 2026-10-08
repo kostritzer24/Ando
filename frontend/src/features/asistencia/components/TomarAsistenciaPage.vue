@@ -93,7 +93,7 @@ async function cargarBase(): Promise<void> {
     }
     seccionElegida.value = opcionesSeccion.value[0]?.valor ?? "";
   } catch {
-    error.value = "No se pudo cargar la información inicial. Probá de nuevo.";
+    error.value = "No se pudo cargar la información inicial. Inténtalo de nuevo.";
   } finally {
     cargando.value = false;
   }
@@ -117,7 +117,7 @@ async function cargarRoster(): Promise<void> {
     );
     asistenciasDelDia.value = asistenciasResp.results.filter((a) => a.date === fecha.value);
   } catch {
-    error.value = "No se pudo cargar la lista de estudiantes de la sección. Probá de nuevo.";
+    error.value = "No se pudo cargar la lista de estudiantes de la sección. Inténtalo de nuevo.";
   } finally {
     cargandoRoster.value = false;
   }
@@ -141,7 +141,7 @@ async function marcar(inscripcion: Enrollment, estado: Attendance["status"]): Pr
       asistenciasDelDia.value.push(creada);
     }
   } catch {
-    error.value = "No se pudo guardar la asistencia de ese estudiante. Probá de nuevo.";
+    error.value = "No se pudo guardar la asistencia de ese estudiante. Inténtalo de nuevo.";
   } finally {
     guardandoPorEstudiante.value[inscripcion.public_id] = false;
   }
@@ -159,7 +159,7 @@ async function marcarPorHoraLlegada(inscripcion: Enrollment, hora: string): Prom
     });
     asistenciasDelDia.value.push(creada);
   } catch {
-    error.value = "No se pudo guardar la hora de llegada de ese estudiante. Probá de nuevo.";
+    error.value = "No se pudo guardar la hora de llegada de ese estudiante. Inténtalo de nuevo.";
   } finally {
     guardandoPorEstudiante.value[inscripcion.public_id] = false;
   }
@@ -233,8 +233,8 @@ onMounted(async () => {
         </li>
       </ul>
       <p v-if="!soloLectura" class="tomar-asistencia__nota">
-        Cada estado se guarda apenas lo elegís — podés cerrar esta pantalla y volver más tarde
-        para completar el resto. También podés registrar la hora de llegada en vez del estado: el
+        Cada estado se guarda apenas lo eliges — puedes cerrar esta pantalla y volver más tarde
+        para completar el resto. También puedes registrar la hora de llegada en vez del estado: el
         sistema decide si cuenta como tarde (RN-11).
       </p>
     </template>

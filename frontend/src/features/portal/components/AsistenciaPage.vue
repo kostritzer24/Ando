@@ -72,7 +72,7 @@ async function cargar(): Promise<void> {
     asistencias.value = asistenciasResp.results;
     reportes.value = reportesResp.results;
   } catch {
-    error.value = "No se pudo cargar la asistencia. Probá de nuevo.";
+    error.value = "No se pudo cargar la asistencia. Inténtalo de nuevo.";
   } finally {
     cargando.value = false;
   }
@@ -93,7 +93,7 @@ onMounted(cargar);
       <EmptyState
         v-if="grupos.length === 0"
         titulo="Todavía no hay asistencia registrada"
-        descripcion="Los registros de asistencia van a aparecer acá."
+        descripcion="Los registros de asistencia van a aparecer aquí."
       />
       <div v-for="grupo in grupos" :key="grupo.etiqueta" class="asistencia-page__grupo">
         <h2>{{ grupo.etiqueta }}</h2>
@@ -111,7 +111,7 @@ onMounted(cargar);
       <EmptyState
         v-if="reportesPropios.length === 0"
         titulo="No hay reportes de conducta"
-        descripcion="Los reportes de conducta registrados van a aparecer acá."
+        descripcion="Los reportes de conducta registrados van a aparecer aquí."
       />
       <ul v-else class="asistencia-page__reportes">
         <li v-for="reporte in reportesPropios" :key="reporte.public_id" class="asistencia-page__reporte">

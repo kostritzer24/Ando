@@ -17,6 +17,6 @@ def validar_cambio_propio(*, es_la_misma_cuenta: bool, desactiva: bool, cambia_r
     if not es_la_misma_cuenta:
         return
     if desactiva:
-        raise CambioNoPermitido("No podés desactivar tu propia cuenta.")
+        raise CambioNoPermitido("No puedes desactivar tu propia cuenta.")
     if cambia_rol:
-        raise CambioNoPermitido("No podés cambiar tu propio rol.")
+        raise CambioNoPermitido("No puedes cambiar tu propio rol.")

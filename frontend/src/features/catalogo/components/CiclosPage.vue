@@ -40,7 +40,7 @@ async function cargarCiclos(): Promise<void> {
     const { results } = await ciclosApi.listar();
     ciclos.value = results;
   } catch {
-    error.value = "No se pudo cargar la lista de ciclos. Probá de nuevo.";
+    error.value = "No se pudo cargar la lista de ciclos. Inténtalo de nuevo.";
   } finally {
     cargando.value = false;
   }
@@ -67,7 +67,7 @@ async function guardarCiclo(): Promise<void> {
     modalCicloAbierto.value = false;
     await cargarCiclos();
   } catch {
-    error.value = "No se pudo guardar el ciclo. Revisá los datos e intentá de nuevo.";
+    error.value = "No se pudo guardar el ciclo. Revisa los datos e inténtalo de nuevo.";
   } finally {
     guardandoCiclo.value = false;
   }
@@ -81,7 +81,7 @@ async function verUnidades(ciclo: SchoolCycle): Promise<void> {
     const { results } = await unidadesApi(ciclo.public_id).listar();
     unidades.value = results.sort((a, b) => a.number - b.number);
   } catch {
-    errorUnidades.value = "No se pudieron cargar las unidades. Probá de nuevo.";
+    errorUnidades.value = "No se pudieron cargar las unidades. Inténtalo de nuevo.";
   } finally {
     cargandoUnidades.value = false;
   }
@@ -108,7 +108,7 @@ async function guardarUnidad(): Promise<void> {
     await verUnidades(cicloSeleccionado.value);
   } catch {
     errorUnidades.value =
-      "No se pudo guardar la unidad. Revisá que el número y las fechas no se crucen con otra unidad.";
+      "No se pudo guardar la unidad. Revisa que el número y las fechas no se crucen con otra unidad.";
   } finally {
     guardandoUnidad.value = false;
   }
@@ -175,8 +175,7 @@ onMounted(cargarCiclos);
         :filas="unidades"
       />
       <p class="ciclos-page__nota">
-        La fecha de entrega de notas y de habilitación del boletín las calcula el sistema
-        (RN-10) — no se escriben a mano.
+        La fecha de entrega de notas y la de habilitación del boletín las calcula el sistema; no se escriben a mano.
       </p>
     </section>
 

@@ -74,7 +74,7 @@ async function cargarBase(): Promise<void> {
     asignaciones.value = (await assignmentsApi.listar()).results;
     asignacionElegida.value = opcionesAsignacion.value[0]?.valor ?? "";
   } catch {
-    error.value = "No se pudo cargar la información inicial. Probá de nuevo.";
+    error.value = "No se pudo cargar la información inicial. Inténtalo de nuevo.";
   } finally {
     cargando.value = false;
   }
@@ -122,7 +122,7 @@ async function cargarRoster(): Promise<void> {
       .sort((a, b) => a.student_name.localeCompare(b.student_name, "es"));
     notas.value = notasResp.results;
   } catch {
-    error.value = "No se pudo cargar la lista de estudiantes. Probá de nuevo.";
+    error.value = "No se pudo cargar la lista de estudiantes. Inténtalo de nuevo.";
   } finally {
     cargandoRoster.value = false;
   }
@@ -147,7 +147,7 @@ async function guardarNota(inscripcion: Enrollment, valor: string): Promise<void
       notas.value.push(creada);
     }
   } catch (e) {
-    errorGuardado.value = motivoDelRechazo(e, "No se pudo guardar el punteo. Revisá el valor e intentá de nuevo.");
+    errorGuardado.value = motivoDelRechazo(e, "No se pudo guardar el punteo. Revisa el valor e inténtalo de nuevo.");
   } finally {
     guardandoPorEstudiante.value[inscripcion.public_id] = false;
   }
@@ -180,7 +180,7 @@ async function guardarCorreccion(): Promise<void> {
     modalCorreccionAbierto.value = false;
     avisar("Solicitud enviada. Dirección tiene que autorizarla.");
   } catch (e) {
-    errorCorreccion.value = motivoDelRechazo(e, "No se pudo enviar la solicitud de corrección. Probá de nuevo.");
+    errorCorreccion.value = motivoDelRechazo(e, "No se pudo enviar la solicitud de corrección. Inténtalo de nuevo.");
   } finally {
     guardandoCorreccion.value = false;
   }
@@ -217,17 +217,17 @@ onMounted(async () => {
           etiqueta="Actividad"
           :opciones="opcionesActividad"
           v-model="actividadElegida"
-          :placeholder="opcionesActividad.length ? 'Elegí una actividad' : 'No hay actividades en esta unidad'"
+          :placeholder="opcionesActividad.length ? 'Elige una actividad' : 'No hay actividades en esta unidad'"
         />
       </div>
 
       <p v-if="actividadElegida && fechaEntrega" class="capturar-notas__plazo">
         <template v-if="enPlazo">
-          Podés corregir una nota ya guardada hasta el {{ fechaEntrega }}, fecha de entrega de notas.
+          Puedes corregir una nota ya guardada hasta el {{ fechaEntrega }}, fecha de entrega de notas.
         </template>
         <template v-else>
           La entrega de notas de esta unidad cerró el {{ fechaEntrega }}: para cambiar una nota,
-          solicitá una corrección a Dirección.
+          solicita una corrección a Dirección.
         </template>
       </p>
 
@@ -235,7 +235,7 @@ onMounted(async () => {
 
       <CargandoBloque v-if="cargandoRoster" />
       <p v-else-if="!actividadElegida" class="capturar-notas__vacio">
-        Elegí una actividad para capturar el punteo.
+        Elige una actividad para capturar el punteo.
       </p>
       <p v-else-if="inscripciones.length === 0" class="capturar-notas__vacio">
         No hay estudiantes inscritos en esta sección.
@@ -286,8 +286,7 @@ onMounted(async () => {
     >
       <form class="capturar-notas__formulario-correccion" @submit.prevent="guardarCorreccion">
         <p class="capturar-notas__nota">
-          El punteo real nunca se sobrescribe (RN-05) — esto crea una solicitud que Dirección
-          tiene que autorizar.
+          El punteo original se conserva: esto crea una solicitud que Dirección debe autorizar.
         </p>
         <ErrorBanner v-if="errorCorreccion" :mensaje="errorCorreccion" />
         <FormField

@@ -50,7 +50,7 @@ async function cargar(): Promise<void> {
     usuarios.value = usuariosResp.results;
     roles.value = rolesResp;
   } catch {
-    error.value = "No se pudo cargar la lista de usuarios. Probá de nuevo.";
+    error.value = "No se pudo cargar la lista de usuarios. Inténtalo de nuevo.";
   } finally {
     cargando.value = false;
   }
@@ -165,7 +165,7 @@ async function guardarNuevo(): Promise<void> {
     credenciales.value = { usuario: creado.username, contrasena: formulario.contrasena };
     await cargar();
   } catch (e) {
-    errorModal.value = mensajeDeError(e, "No se pudo crear el usuario. Revisá los datos.");
+    errorModal.value = mensajeDeError(e, "No se pudo crear el usuario. Revisa los datos.");
   } finally {
     guardando.value = false;
   }
@@ -323,7 +323,7 @@ onMounted(async () => {
       >
         <template #celda-nombre="{ fila }">
           {{ nombreCompleto(fila) }}
-          <TagPill v-if="esYo(fila)" variante="hoy" class="usuarios-page__yo">Vos</TagPill>
+          <TagPill v-if="esYo(fila)" variante="hoy" class="usuarios-page__yo">Tú</TagPill>
         </template>
         <template #celda-estado="{ fila }">
           <TagPill :variante="estado(fila).variante">{{ estado(fila).texto }}</TagPill>
@@ -432,7 +432,7 @@ onMounted(async () => {
         <FormField id="editar-correo" etiqueta="Correo (opcional)" tipo="email" v-model="formulario.email" />
         <template v-if="seleccionado.role_name !== ROL_FAMILIA">
           <p v-if="esYo(seleccionado)" class="usuarios-page__nota">
-            No podés cambiar tu propio rol: pedíselo a otra persona con este permiso.
+            No puedes cambiar tu propio rol: pídeselo a otra persona con este permiso.
           </p>
           <FormSelect v-else id="editar-rol" etiqueta="Rol" :opciones="opcionesRolFormulario" v-model="formulario.role" />
         </template>

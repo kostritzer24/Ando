@@ -65,7 +65,7 @@ export async function crearUsuarioFamilia(payload: {
 }): Promise<Usuario> {
   const rol = await obtenerRolPorNombre("Padre de familia");
   if (!rol) {
-    throw new Error('No existe el rol "Padre de familia" — revisá la siembra de roles.');
+    throw new Error('No existe el rol "Padre de familia" — revisa la siembra de roles.');
   }
   const { data } = await http.post<Usuario>("/users/", { ...payload, role: rol.public_id });
   return data;

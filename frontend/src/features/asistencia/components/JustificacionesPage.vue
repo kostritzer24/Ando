@@ -81,7 +81,7 @@ async function cargar(): Promise<void> {
     estudiantes.value = estResp.results;
     tiposJustificacion.value = tiposResp.results.filter((t) => t.is_active !== false);
   } catch {
-    error.value = "No se pudo cargar la información. Probá de nuevo.";
+    error.value = "No se pudo cargar la información. Inténtalo de nuevo.";
   } finally {
     cargando.value = false;
   }
@@ -112,7 +112,7 @@ async function guardar(): Promise<void> {
     modalAbierto.value = false;
     await cargar();
   } catch {
-    error.value = "No se pudo registrar la justificación. Revisá los datos e intentá de nuevo.";
+    error.value = "No se pudo registrar la justificación. Revisa los datos e inténtalo de nuevo.";
   } finally {
     guardando.value = false;
   }
@@ -149,7 +149,7 @@ onMounted(cargar);
     <EmptyState
       v-else-if="justificaciones.length === 0"
       titulo="Todavía no hay justificaciones"
-      descripcion="Las justificaciones que se registren van a aparecer acá."
+      descripcion="Las justificaciones que se registren van a aparecer aquí."
     />
 
     <DataTable

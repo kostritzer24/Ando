@@ -74,7 +74,7 @@ async function cargar(): Promise<void> {
   try {
     calendario.value = await consultarCalendarioSemanal(portal.estudianteSeleccionadoId);
   } catch {
-    error.value = "No se pudo cargar el calendario. Probá de nuevo.";
+    error.value = "No se pudo cargar el calendario. Inténtalo de nuevo.";
   } finally {
     cargando.value = false;
   }

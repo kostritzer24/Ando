@@ -41,7 +41,7 @@ async function cargar(): Promise<void> {
     asignaciones.value = (await assignmentsApi.listar()).results;
     asignacionElegida.value = opcionesAsignacion.value[0]?.valor ?? "";
   } catch {
-    error.value = "No se pudo cargar la lista de asignaciones. Probá de nuevo.";
+    error.value = "No se pudo cargar la lista de asignaciones. Inténtalo de nuevo.";
   } finally {
     cargando.value = false;
   }
@@ -70,7 +70,7 @@ async function descargar(): Promise<void> {
     enlace.click();
     URL.revokeObjectURL(url);
   } catch {
-    error.value = "No se pudo generar la plantilla. Probá de nuevo.";
+    error.value = "No se pudo generar la plantilla. Inténtalo de nuevo.";
   }
 }
 
@@ -92,7 +92,7 @@ async function previsualizar(): Promise<void> {
       file: archivoElegido.value,
     });
   } catch {
-    error.value = "No se pudo leer el archivo. Probá de nuevo.";
+    error.value = "No se pudo leer el archivo. Inténtalo de nuevo.";
   } finally {
     previsualizando.value = false;
   }
@@ -110,7 +110,7 @@ async function confirmar(): Promise<void> {
     });
     vistaPrevia.value = null;
   } catch {
-    error.value = "No se pudo guardar la plantilla. Probá de nuevo.";
+    error.value = "No se pudo guardar la plantilla. Inténtalo de nuevo.";
   } finally {
     confirmando.value = false;
   }
@@ -133,7 +133,7 @@ onMounted(async () => {
 
     <template v-else>
       <div class="plantilla-notas__pasos">
-        <AppPanel titulo="1. Descargá la plantilla" descripcion="Trae la lista de la sección con las actividades de la unidad.">
+        <AppPanel titulo="1. Descarga la plantilla" descripcion="Trae la lista de la sección con las actividades de la unidad.">
           <div class="plantilla-notas__campos">
             <div class="plantilla-notas__filtros">
               <FormSelect
@@ -150,7 +150,7 @@ onMounted(async () => {
           </div>
         </AppPanel>
 
-        <AppPanel titulo="2. Subí la plantilla llena" descripcion="Primero la revisás; nada se guarda hasta que confirmes.">
+        <AppPanel titulo="2. Sube la plantilla llena" descripcion="Primero la revisas; nada se guarda hasta que confirmes.">
           <div class="plantilla-notas__campos">
             <CampoArchivo id="file" etiqueta="Archivo de Excel (.xlsx)" accept=".xlsx" @elegir="alElegirArchivo" />
             <AppButton :deshabilitado="!archivoElegido || previsualizando" @click="previsualizar">
@@ -167,7 +167,7 @@ onMounted(async () => {
           <li v-if="vistaPrevia.resumen.correccion">
             {{ vistaPrevia.resumen.correccion }} se corrigen directo (todavía no pasó la fecha de entrega)
           </li>
-          <li>{{ vistaPrevia.resumen.modificacion }} van a generar una solicitud de corrección (RN-07)</li>
+          <li>{{ vistaPrevia.resumen.modificacion }} van a generar una solicitud de corrección</li>
           <li>{{ vistaPrevia.resumen.sin_cambio }} sin cambios</li>
         </ul>
         <AppButton :deshabilitado="confirmando" @click="confirmar">
@@ -176,7 +176,7 @@ onMounted(async () => {
       </div>
 
       <div v-if="vistaPrevia?.errores?.length" class="plantilla-notas__errores" role="alert">
-        <p>La plantilla tiene errores y no se guardó ningún registro. Corregí estas filas y volvé a subirla:</p>
+        <p>La plantilla tiene errores y no se guardó ningún registro. Corrige estas filas y vuelve a subirla:</p>
         <ul>
           <li v-for="(err, indice) in vistaPrevia.errores" :key="indice">{{ err }}</li>
         </ul>

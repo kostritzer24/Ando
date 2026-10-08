@@ -22,7 +22,7 @@ describe("FormSelect", () => {
       props: { id: "tipo", etiqueta: "Tipo", modelValue: "", opciones },
     });
     const textos = wrapper.findAll("option").map((opcion) => opcion.text());
-    expect(textos).toEqual(["Elegí una opción", "Académico", "Taller"]);
+    expect(textos).toEqual(["Elige una opción", "Académico", "Taller"]);
   });
 
   it("emite update:modelValue al elegir una opción", async () => {
@@ -35,9 +35,9 @@ describe("FormSelect", () => {
 
   it("muestra el mensaje de error cuando se indica", () => {
     const wrapper = mount(FormSelect, {
-      props: { id: "tipo", etiqueta: "Tipo", modelValue: "", opciones, mensajeError: "Elegí un tipo" },
+      props: { id: "tipo", etiqueta: "Tipo", modelValue: "", opciones, mensajeError: "Elige un tipo" },
     });
-    expect(wrapper.text()).toContain("Elegí un tipo");
+    expect(wrapper.text()).toContain("Elige un tipo");
     expect(wrapper.find("select").attributes("aria-invalid")).toBe("true");
   });
 });

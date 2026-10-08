@@ -27,9 +27,7 @@ class SeccionNoEsDeTaller(Exception):
 
 def _validar_seccion_de_taller(section: Section) -> None:
     if section.type != Section.TIPO_TALLER:
-        raise SeccionNoEsDeTaller(
-            "La plantilla de asistencia es solo para secciones de taller (RF-21)."
-        )
+        raise SeccionNoEsDeTaller("La plantilla de asistencia es solo para secciones de taller.")
 
 
 def generar_plantilla(*, section: Section) -> bytes:

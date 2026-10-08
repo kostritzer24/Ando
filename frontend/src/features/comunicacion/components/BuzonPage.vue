@@ -43,7 +43,7 @@ async function cargar(): Promise<void> {
   try {
     mensajes.value = (await messagesApi.listar()).results;
   } catch {
-    error.value = "No se pudo cargar el buzón. Probá de nuevo.";
+    error.value = "No se pudo cargar el buzón. Inténtalo de nuevo.";
   } finally {
     cargando.value = false;
   }
@@ -63,7 +63,7 @@ async function responder(hilo: Message): Promise<void> {
     contenidoRespuesta.texto = "";
     await cargar();
   } catch {
-    errorRespuesta.value = "No se pudo enviar la respuesta. Revisá el contenido e intentá de nuevo.";
+    errorRespuesta.value = "No se pudo enviar la respuesta. Revisa el contenido e inténtalo de nuevo.";
   } finally {
     respondiendo.value = false;
   }
@@ -82,7 +82,7 @@ onMounted(cargar);
     <EmptyState
       v-else-if="hilos.length === 0"
       titulo="No hay mensajes"
-      descripcion="Los mensajes que envíen las familias van a aparecer acá."
+      descripcion="Los mensajes que envíen las familias van a aparecer aquí."
     />
     <ul v-else class="buzon-page__lista">
       <li v-for="hilo in hilos" :key="hilo.public_id" class="buzon-page__hilo">

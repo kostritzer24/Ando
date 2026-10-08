@@ -49,7 +49,7 @@ async function cargar(): Promise<void> {
     const { results } = await props.recurso.listar();
     registros.value = results;
   } catch {
-    error.value = "No se pudo cargar la lista. Probá de nuevo.";
+    error.value = "No se pudo cargar la lista. Inténtalo de nuevo.";
   } finally {
     cargando.value = false;
   }
@@ -83,7 +83,7 @@ async function guardar(): Promise<void> {
     modalAbierto.value = false;
     await cargar();
   } catch {
-    error.value = "No se pudo guardar. Revisá los datos e intentá de nuevo.";
+    error.value = "No se pudo guardar. Revisa los datos e inténtalo de nuevo.";
   } finally {
     guardando.value = false;
   }
@@ -103,7 +103,7 @@ async function darDeBaja(registro: Registro): Promise<void> {
     avisar(`"${nombre}" dado de baja.`);
     await cargar();
   } catch {
-    avisar(`No se pudo dar de baja "${nombre}". Probá de nuevo.`, "error");
+    avisar(`No se pudo dar de baja "${nombre}". Inténtalo de nuevo.`, "error");
   }
 }
 
@@ -129,8 +129,8 @@ onMounted(cargar);
 
     <EmptyState
       v-else-if="registros.length === 0"
-      titulo="Todavía no hay nada acá"
-      :descripcion="`Agregá el primer ${config.tituloSingular} del catálogo.`"
+      titulo="Todavía no hay nada aquí"
+      :descripcion="`Agrega el primer ${config.tituloSingular} del catálogo.`"
     />
 
     <template v-else>

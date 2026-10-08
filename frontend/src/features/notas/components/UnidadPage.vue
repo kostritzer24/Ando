@@ -69,7 +69,7 @@ async function cargarBase(): Promise<void> {
     tiposActividad.value = tiposResp.results.filter((t) => t.is_active !== false);
     asignacionElegida.value = opcionesAsignacion.value[0]?.valor ?? "";
   } catch {
-    error.value = "No se pudo cargar la información inicial. Probá de nuevo.";
+    error.value = "No se pudo cargar la información inicial. Inténtalo de nuevo.";
   } finally {
     cargando.value = false;
   }
@@ -86,7 +86,7 @@ async function cargarUnidades(): Promise<void> {
     unidades.value = (await unidadesDeCiclo(asignacion.cycle).listar()).results;
     unidadElegida.value = opcionesUnidad.value[0]?.valor ?? "";
   } catch {
-    error.value = "No se pudieron cargar las unidades de este ciclo. Probá de nuevo.";
+    error.value = "No se pudieron cargar las unidades de este ciclo. Inténtalo de nuevo.";
   } finally {
     cargandoUnidades.value = false;
   }
@@ -106,7 +106,7 @@ async function cargarActividades(): Promise<void> {
     });
     actividades.value = respuesta.results.filter((a) => a.is_active !== false);
   } catch {
-    error.value = "No se pudieron cargar las actividades de la unidad. Probá de nuevo.";
+    error.value = "No se pudieron cargar las actividades de la unidad. Inténtalo de nuevo.";
   } finally {
     cargandoActividades.value = false;
   }
@@ -135,7 +135,7 @@ async function darDeBaja(actividad: Activity): Promise<void> {
     avisar("Actividad quitada.");
     await cargarActividades();
   } catch (e) {
-    error.value = motivoDelRechazo(e, "No se pudo quitar la actividad. Probá de nuevo.");
+    error.value = motivoDelRechazo(e, "No se pudo quitar la actividad. Inténtalo de nuevo.");
   }
 }
 
@@ -178,7 +178,7 @@ async function guardar(): Promise<void> {
   } catch (e) {
     // Dentro del diálogo: el motivo real ("la unidad no puede superar los 100
     // puntos", "ya tiene notas") sin perder lo que se escribió.
-    errorFormulario.value = motivoDelRechazo(e, "No se pudo guardar la actividad. Revisá los datos e intentá de nuevo.");
+    errorFormulario.value = motivoDelRechazo(e, "No se pudo guardar la actividad. Revisa los datos e inténtalo de nuevo.");
   } finally {
     guardando.value = false;
   }
@@ -220,7 +220,7 @@ onMounted(async () => {
             ({{ puntosDisponibles }} disponibles).
           </p>
           <p :class="{ 'unidad-page__aviso': cantidadPruebasCortas < 4 }">
-            {{ cantidadPruebasCortas }} de 4 pruebas cortas como mínimo (RN-04).
+            {{ cantidadPruebasCortas }} de 4 pruebas cortas como mínimo.
           </p>
         </div>
 

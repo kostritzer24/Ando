@@ -433,7 +433,7 @@ function claveDe(fila: F, indice: number): string | number {
   .data-table__tabla td:empty {
     display: table-cell;
     /* En tabla, "anywhere" deja que una columna se encoja partiendo
-       palabras a la mitad ("admin.de mo"); acá solo se parte si una
+       palabras a la mitad ("admin.de mo"); aquí solo se parte si una
        palabra sola no cabe. */
     overflow-wrap: break-word;
     padding: var(--espacio-md) var(--espacio-lg);

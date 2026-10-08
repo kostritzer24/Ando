@@ -36,7 +36,7 @@ async function cargar(): Promise<void> {
     avisos.value = avisosResp.results;
     mensajes.value = mensajesResp.results;
   } catch {
-    error.value = "No se pudo cargar los avisos y el buzón. Probá de nuevo.";
+    error.value = "No se pudo cargar los avisos y el buzón. Inténtalo de nuevo.";
   } finally {
     cargando.value = false;
   }
@@ -62,7 +62,7 @@ async function enviar(): Promise<void> {
   } catch (err) {
     errorEnvio.value = isAxiosError(err) && Array.isArray(err.response?.data)
       ? String(err.response.data[0])
-      : "No se pudo enviar el mensaje. Probá de nuevo.";
+      : "No se pudo enviar el mensaje. Inténtalo de nuevo.";
   } finally {
     enviando.value = false;
   }
@@ -83,7 +83,7 @@ onMounted(cargar);
       <EmptyState
         v-if="avisos.length === 0"
         titulo="No hay avisos"
-        descripcion="Los avisos de la cartelera van a aparecer acá."
+        descripcion="Los avisos de la cartelera van a aparecer aquí."
       />
       <ul v-else class="avisos-page__lista">
         <li v-for="aviso in avisos" :key="aviso.public_id" class="avisos-page__aviso">
@@ -106,7 +106,7 @@ onMounted(cargar);
       <EmptyState
         v-if="hilos.length === 0"
         titulo="No hay mensajes"
-        descripcion="Los mensajes que envíes y sus respuestas van a aparecer acá."
+        descripcion="Los mensajes que envíes y sus respuestas van a aparecer aquí."
       />
       <ul v-else class="avisos-page__hilos">
         <li v-for="hilo in hilos" :key="hilo.public_id" class="avisos-page__hilo">

@@ -150,5 +150,5 @@ test("Dirección genera, aprueba y publica boletines, y RN-09 bloquea la publica
   await expect(filaAna.getByText("Aprobado")).toBeVisible();
 
   await filaAna.getByRole("button", { name: "Publicar" }).click();
-  await expect(page.getByText(/no está solvente.*RN-09/)).toBeVisible();
+  await expect(page.getByText(/pagos pendientes/)).toBeVisible();
 });

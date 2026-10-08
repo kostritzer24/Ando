@@ -10,7 +10,7 @@ flujos completos.
 Es el mismo comando que se sigue extendiendo fase a fase hasta llegar al
 "sistema listo para demostración" de la sección 16 del prompt maestro —
 no se crea un comando nuevo por cada fase. Vive en `core` (no en
-`catalog`) porque de acá en adelante toca varias apps a la vez.
+`catalog`) porque de aquí en adelante toca varias apps a la vez.
 """
 
 from datetime import date

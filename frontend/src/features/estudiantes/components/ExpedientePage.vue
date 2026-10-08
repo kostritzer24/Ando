@@ -53,7 +53,7 @@ async function cargar(): Promise<void> {
     formularioGeneral.address = datos.address ?? "";
     formularioGeneral.previous_institution = datos.previous_institution ?? "";
   } catch {
-    error.value = "No se pudo cargar el expediente. Probá de nuevo.";
+    error.value = "No se pudo cargar el expediente. Inténtalo de nuevo.";
   } finally {
     cargando.value = false;
   }
@@ -65,7 +65,7 @@ async function guardarGeneral(): Promise<void> {
   try {
     estudiante.value = await studentsApi.actualizar(publicId, { ...formularioGeneral });
   } catch {
-    error.value = "No se pudo guardar el expediente. Revisá los datos e intentá de nuevo.";
+    error.value = "No se pudo guardar el expediente. Revisa los datos e inténtalo de nuevo.";
   } finally {
     guardandoGeneral.value = false;
   }
@@ -152,7 +152,7 @@ onMounted(async () => {
       <section v-if="alcanceDatosSensibles !== 'ninguno'" class="expediente-page__sensibles">
         <h2>Datos sensibles</h2>
         <p class="expediente-page__nota">
-          Salud y situación socioeconómica — acceso reservado (RNF-04). Cada consulta queda
+          Salud y situación socioeconómica — acceso reservado. Cada consulta queda
           registrada.
         </p>
         <CargandoBloque v-if="cargandoSensibles" />

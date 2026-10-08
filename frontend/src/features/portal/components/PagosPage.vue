@@ -48,7 +48,7 @@ async function cargar(): Promise<void> {
       (d) => d.document_type === "Constancia de solvencia" && d.enrollment === inscripcion.public_id,
     );
   } catch {
-    error.value = "No se pudo cargar el estado de pagos. Probá de nuevo.";
+    error.value = "No se pudo cargar el estado de pagos. Inténtalo de nuevo.";
   } finally {
     cargando.value = false;
   }
@@ -61,7 +61,7 @@ async function descargar(documento: IssuedDocument): Promise<void> {
     const { blob, nombreArchivo } = await descargarDocumento(documento.public_id);
     descargarArchivo(blob, nombreArchivo);
   } catch {
-    errorDescarga.value = "No se pudo descargar la constancia. Probá de nuevo.";
+    errorDescarga.value = "No se pudo descargar la constancia. Inténtalo de nuevo.";
   } finally {
     descargandoId.value = "";
   }

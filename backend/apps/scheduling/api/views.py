@@ -120,7 +120,7 @@ class CalendarEventViewSet(RegistraAccesoMixin, ScopedQuerysetMixin, viewsets.Mo
             published_by_id=evento.published_by_id,
             user_id=self.request.user.id,
         ):
-            raise PermissionDenied("Solo podés editar los eventos que vos publicaste.")
+            raise PermissionDenied("Solo puedes editar los eventos que tú publicaste.")
 
     def perform_update(self, serializer):
         self._requiere_permiso_de_edicion(serializer.instance)

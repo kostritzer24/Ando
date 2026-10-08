@@ -2,7 +2,7 @@ from apps.communication.domain.buzon import contiene_lenguaje_inapropiado
 
 
 def test_rn16_detecta_palabra_inapropiada():
-    assert contiene_lenguaje_inapropiado("Sos un idiota") is True
+    assert contiene_lenguaje_inapropiado("Eres un idiota") is True
 
 
 def test_rn16_no_distingue_mayusculas_ni_acentos():

@@ -23,16 +23,16 @@ const mensajeError = ref("");
 // intentar, alargando el bloqueo.
 function mensajeDeError(error: unknown): string {
   if (!isAxiosError(error) || !error.response) {
-    return "No se pudo conectar con el sistema. Revisá tu conexión e intentá de nuevo.";
+    return "No se pudo conectar con el sistema. Revisa tu conexión e inténtalo de nuevo.";
   }
   if (error.response.status === 429) {
-    return "Demasiados intentos seguidos. Esperá un minuto y volvé a intentar.";
+    return "Demasiados intentos seguidos. Espera un minuto y vuelve a intentarlo.";
   }
   const detalle = (error.response.data as { detail?: unknown } | undefined)?.detail;
   if (typeof detalle === "string" && detalle.includes("bloqueada")) {
     return detalle;
   }
-  return "Usuario o contraseña incorrectos. Volvé a intentar.";
+  return "Usuario o contraseña incorrectos. Vuelve a intentarlo.";
 }
 
 async function enviar(): Promise<void> {
@@ -54,7 +54,7 @@ async function enviar(): Promise<void> {
 </script>
 
 <template>
-  <PantallaAcceso titulo="Ingresar" subtitulo="Entrá con el usuario y la contraseña que te dio el centro.">
+  <PantallaAcceso titulo="Ingresar" subtitulo="Entra con el usuario y la contraseña que te dio el centro.">
     <ErrorBanner v-if="mensajeError" :mensaje="mensajeError" />
 
     <form class="login-page__formulario" @submit.prevent="enviar">

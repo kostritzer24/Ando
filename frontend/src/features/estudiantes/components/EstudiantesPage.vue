@@ -65,7 +65,7 @@ async function cargar(): Promise<void> {
     secciones.value = seccionesResp.results.filter((s) => s.is_active !== false);
     becas.value = becasResp.results.filter((b) => b.is_active !== false);
   } catch {
-    error.value = "No se pudo cargar la lista de estudiantes. Probá de nuevo.";
+    error.value = "No se pudo cargar la lista de estudiantes. Inténtalo de nuevo.";
   } finally {
     cargando.value = false;
   }
@@ -89,7 +89,7 @@ async function inscribir(): Promise<void> {
   try {
     const seccionElegida = secciones.value.find((s) => s.public_id === formulario.section);
     if (!seccionElegida) {
-      error.value = "Elegí una sección.";
+      error.value = "Elige una sección.";
       return;
     }
     const estudiante = await studentsApi.crear({
@@ -109,7 +109,7 @@ async function inscribir(): Promise<void> {
     codigoRecienCreado.value = estudiante.internal_code;
     await cargar();
   } catch {
-    error.value = "No se pudo inscribir al estudiante. Revisá los datos e intentá de nuevo.";
+    error.value = "No se pudo inscribir al estudiante. Revisa los datos e inténtalo de nuevo.";
   } finally {
     guardando.value = false;
   }
@@ -135,7 +135,7 @@ onMounted(cargar);
     <EmptyState
       v-else-if="estudiantes.length === 0"
       titulo="Todavía no hay estudiantes inscritos"
-      descripcion="Inscribí al primer estudiante del ciclo."
+      descripcion="Inscribe al primer estudiante del ciclo."
     />
 
     <DataTable

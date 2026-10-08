@@ -47,7 +47,7 @@ async function cargarBase(): Promise<void> {
     ciclos.value = ciclosResp.results;
     secciones.value = seccionesResp.results;
   } catch {
-    error.value = "No se pudo cargar la información inicial. Probá de nuevo.";
+    error.value = "No se pudo cargar la información inicial. Inténtalo de nuevo.";
   } finally {
     cargandoBase.value = false;
   }
@@ -67,7 +67,7 @@ async function consultar(): Promise<void> {
   try {
     filas.value = await consultarReporte(rutaElegida.value, paramsActivos());
   } catch {
-    error.value = "No se pudo consultar el reporte. Probá de nuevo.";
+    error.value = "No se pudo consultar el reporte. Inténtalo de nuevo.";
   } finally {
     cargandoFilas.value = false;
   }
@@ -80,7 +80,7 @@ async function descargar(): Promise<void> {
     const { blob, nombreArchivo } = await descargarReportePdf(rutaElegida.value, paramsActivos());
     descargarArchivo(blob, nombreArchivo);
   } catch {
-    error.value = "No se pudo generar el PDF. Probá de nuevo.";
+    error.value = "No se pudo generar el PDF. Inténtalo de nuevo.";
   } finally {
     descargando.value = false;
   }

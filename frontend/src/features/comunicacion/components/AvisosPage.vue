@@ -44,7 +44,7 @@ async function cargar(): Promise<void> {
     avisos.value = avisosResp.results;
     secciones.value = seccionesResp.results;
   } catch {
-    error.value = "No se pudo cargar la cartelera de avisos. Probá de nuevo.";
+    error.value = "No se pudo cargar la cartelera de avisos. Inténtalo de nuevo.";
   } finally {
     cargando.value = false;
   }
@@ -85,7 +85,7 @@ async function guardar(): Promise<void> {
     modalAbierto.value = false;
     await cargar();
   } catch {
-    errorGuardado.value = "No se pudo publicar el aviso. Revisá los datos e intentá de nuevo.";
+    errorGuardado.value = "No se pudo publicar el aviso. Revisa los datos e inténtalo de nuevo.";
   } finally {
     guardando.value = false;
   }
@@ -104,7 +104,7 @@ async function retirar(aviso: Announcement): Promise<void> {
     avisar("Aviso retirado de la cartelera.");
     await cargar();
   } catch {
-    avisar("No se pudo retirar el aviso. Probá de nuevo.", "error");
+    avisar("No se pudo retirar el aviso. Inténtalo de nuevo.", "error");
   }
 }
 
@@ -126,7 +126,7 @@ onMounted(cargar);
       <EmptyState
         v-if="avisos.length === 0"
         titulo="No hay avisos"
-        descripcion="Los avisos publicados van a aparecer acá."
+        descripcion="Los avisos publicados van a aparecer aquí."
       />
       <ul v-else class="avisos-page__lista">
         <li v-for="aviso in avisos" :key="aviso.public_id" class="avisos-page__fila">

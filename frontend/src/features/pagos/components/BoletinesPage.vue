@@ -83,7 +83,7 @@ async function cargar(): Promise<void> {
     secciones.value = (await seccionesApi.listar()).results.filter((s) => s.is_active !== false);
     seccionElegida.value = opcionesSeccion.value[0]?.valor ?? "";
   } catch {
-    error.value = "No se pudo cargar la lista de secciones. Probá de nuevo.";
+    error.value = "No se pudo cargar la lista de secciones. Inténtalo de nuevo.";
   } finally {
     cargando.value = false;
   }
@@ -100,7 +100,7 @@ async function cargarUnidades(): Promise<void> {
     unidades.value = (await unidadesApi(seccion.cycle).listar()).results;
     unidadElegida.value = opcionesUnidad.value[0]?.valor ?? "";
   } catch {
-    error.value = "No se pudieron cargar las unidades de este ciclo. Probá de nuevo.";
+    error.value = "No se pudieron cargar las unidades de este ciclo. Inténtalo de nuevo.";
   } finally {
     cargandoUnidades.value = false;
   }
@@ -119,7 +119,7 @@ async function cargarBoletines(): Promise<void> {
       await reportCardsApi.listar({ section: seccionElegida.value, unit: unidadElegida.value })
     ).results;
   } catch {
-    error.value = "No se pudieron cargar los boletines de esta sección. Probá de nuevo.";
+    error.value = "No se pudieron cargar los boletines de esta sección. Inténtalo de nuevo.";
   } finally {
     cargandoBoletines.value = false;
   }
@@ -136,7 +136,7 @@ async function generar(): Promise<void> {
     await generarBoletines(seleccion());
     await cargarBoletines();
   } catch (e) {
-    errorAccion.value = motivoDelRechazo(e, "No se pudieron generar los boletines. Probá de nuevo.");
+    errorAccion.value = motivoDelRechazo(e, "No se pudieron generar los boletines. Inténtalo de nuevo.");
   } finally {
     enAccionDeLote.value = false;
   }
@@ -184,7 +184,7 @@ async function aprobarTodos(): Promise<void> {
     titulo: `¿Aprobar ${borradores.value.length} boletines?`,
     mensaje:
       incompletos > 0
-        ? `${incompletos} tienen notas pendientes y quedan congelados con la nota parcial. Revisá la columna "Notas" antes de seguir.`
+        ? `${incompletos} tienen notas pendientes y quedan congelados con la nota parcial. Revisa la columna "Notas" antes de seguir.`
         : "Todos tienen las notas completas. Al aprobarlos quedan congelados.",
     etiquetaConfirmar: "Aprobar todos",
   });
@@ -196,7 +196,7 @@ async function aprobarTodos(): Promise<void> {
     avisar(`${cantidad} boletines aprobados.`);
     await cargarBoletines();
   } catch (e) {
-    errorAccion.value = motivoDelRechazo(e, "No se pudieron aprobar los boletines. Probá de nuevo.");
+    errorAccion.value = motivoDelRechazo(e, "No se pudieron aprobar los boletines. Inténtalo de nuevo.");
   } finally {
     enAccionDeLote.value = false;
   }
@@ -212,7 +212,7 @@ async function publicarTodos(): Promise<void> {
     sinPublicar.value = resultado.no_publicados;
     await cargarBoletines();
   } catch (e) {
-    errorAccion.value = motivoDelRechazo(e, "No se pudieron publicar los boletines. Probá de nuevo.");
+    errorAccion.value = motivoDelRechazo(e, "No se pudieron publicar los boletines. Inténtalo de nuevo.");
   } finally {
     enAccionDeLote.value = false;
   }
@@ -282,7 +282,7 @@ onMounted(async () => {
         <EmptyState
           v-if="boletines.length === 0"
           titulo="No hay boletines"
-          :descripcion="puedeGestionar ? 'Generá los boletines de esta sección y unidad para empezar.' : 'Todavía no se generaron los boletines de esta sección y unidad.'"
+          :descripcion="puedeGestionar ? 'Genera los boletines de esta sección y unidad para empezar.' : 'Todavía no se generaron los boletines de esta sección y unidad.'"
         />
 
         <DataTable

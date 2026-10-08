@@ -19,7 +19,7 @@ describe("interceptor de http", () => {
 
   it("un 401 del login llega tal cual a la pantalla, sin intentar renovar el token", async () => {
     const post = vi.spyOn(http, "post");
-    const bloqueada = "Esta cuenta está bloqueada temporalmente. Podés volver a intentar después de las 10:30.";
+    const bloqueada = "Esta cuenta está bloqueada temporalmente. Puedes volver a intentarlo después de las 10:30.";
     const manejador = (http.interceptors.response as unknown as {
       handlers: { rejected: (e: unknown) => Promise<unknown> }[];
     }).handlers[0].rejected;

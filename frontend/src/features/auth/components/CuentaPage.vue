@@ -45,7 +45,7 @@ async function guardar(): Promise<void> {
   try {
     await cambiarContrasena(formulario.actual, formulario.nueva);
     Object.assign(formulario, { actual: "", nueva: "", confirmacion: "" });
-    avisar("Contraseña cambiada. La próxima vez entrá con la nueva.");
+    avisar("Contraseña cambiada. La próxima vez entra con la nueva.");
   } catch (e) {
     const datosError = isAxiosError(e) ? (e.response?.data as Record<string, unknown> | undefined) : undefined;
     const detalle = datosError?.contrasena_nueva ?? datosError?.detail;
@@ -53,7 +53,7 @@ async function guardar(): Promise<void> {
       ? String(detalle[0])
       : typeof detalle === "string"
         ? detalle
-        : "No se pudo cambiar la contraseña. Probá de nuevo.";
+        : "No se pudo cambiar la contraseña. Inténtalo de nuevo.";
   } finally {
     guardando.value = false;
   }
@@ -99,7 +99,7 @@ async function guardar(): Promise<void> {
           />
           <FormField
             id="contrasena-confirmacion"
-            etiqueta="Repetí la contraseña nueva"
+            etiqueta="Repite la contraseña nueva"
             tipo="password"
             v-model="formulario.confirmacion"
             :mensaje-error="errorConfirmacion"

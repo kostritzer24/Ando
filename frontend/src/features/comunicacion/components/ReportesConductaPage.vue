@@ -68,7 +68,7 @@ async function cargar(): Promise<void> {
     estudiantes.value = estudiantesResp.results;
     articulos.value = articulosResp.results;
   } catch {
-    error.value = "No se pudo cargar la información. Probá de nuevo.";
+    error.value = "No se pudo cargar la información. Inténtalo de nuevo.";
   } finally {
     cargando.value = false;
   }
@@ -124,7 +124,7 @@ async function guardar(): Promise<void> {
     modalAbierto.value = false;
     await cargar();
   } catch {
-    errorGuardado.value = "No se pudo registrar el reporte. Revisá los datos e intentá de nuevo.";
+    errorGuardado.value = "No se pudo registrar el reporte. Revisa los datos e inténtalo de nuevo.";
   } finally {
     guardando.value = false;
   }
@@ -136,7 +136,7 @@ async function descargar(reporte: ConductReport): Promise<void> {
     const { blob, nombreArchivo } = await descargarReporteConducta(reporte.public_id);
     descargarArchivo(blob, nombreArchivo);
   } catch {
-    error.value = "No se pudo descargar el reporte. Probá de nuevo.";
+    error.value = "No se pudo descargar el reporte. Inténtalo de nuevo.";
   } finally {
     descargandoId.value = "";
   }
@@ -169,7 +169,7 @@ onMounted(cargar);
       <EmptyState
         v-if="reportes.length === 0"
         titulo="No hay reportes"
-        descripcion="Los reportes de conducta registrados van a aparecer acá."
+        descripcion="Los reportes de conducta registrados van a aparecer aquí."
       />
       <DataTable
         v-else

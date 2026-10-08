@@ -91,7 +91,7 @@ class LoginView(APIView):
         except UsuarioBloqueado as exc:
             raise AuthenticationFailed(
                 "Esta cuenta está bloqueada temporalmente. "
-                f"Podés volver a intentar después de {_cuando(exc.bloqueado_hasta)}."
+                f"Puedes volver a intentarlo después de {_cuando(exc.bloqueado_hasta)}."
             ) from exc
 
         response = Response({"access": str(refresh.access_token), "user": MeSerializer(user).data})
@@ -119,7 +119,7 @@ class RefreshView(APIView):
         try:
             serializer.is_valid(raise_exception=True)
         except TokenError as exc:
-            raise AuthenticationFailed("La sesión expiró. Iniciá sesión de nuevo.") from exc
+            raise AuthenticationFailed("La sesión expiró. Inicia sesión de nuevo.") from exc
 
         data = serializer.validated_data
         response = Response({"access": data["access"]})

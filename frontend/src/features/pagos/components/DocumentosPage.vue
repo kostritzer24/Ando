@@ -62,7 +62,7 @@ async function cargar(): Promise<void> {
       formulario.document_type = opcionesTipo.value[0]?.valor ?? "";
     }
   } catch {
-    error.value = "No se pudo cargar la bandeja de documentos. Probá de nuevo.";
+    error.value = "No se pudo cargar la bandeja de documentos. Inténtalo de nuevo.";
   } finally {
     cargando.value = false;
   }
@@ -87,7 +87,7 @@ async function emitir(): Promise<void> {
     formulario.custom_text = "";
     documentos.value = (await issuedDocumentsApi.listar()).results;
   } catch {
-    errorEmision.value = "No se pudo emitir el documento. Revisá los datos e intentá de nuevo.";
+    errorEmision.value = "No se pudo emitir el documento. Revisa los datos e inténtalo de nuevo.";
   } finally {
     emitiendo.value = false;
   }
@@ -99,7 +99,7 @@ async function volverADescargar(documento: IssuedDocument): Promise<void> {
     const { blob, nombreArchivo } = await descargarDocumento(documento.public_id);
     descargarArchivo(blob, nombreArchivo);
   } catch {
-    error.value = "No se pudo descargar el documento. Probá de nuevo.";
+    error.value = "No se pudo descargar el documento. Inténtalo de nuevo.";
   } finally {
     descargandoId.value = "";
   }
@@ -156,7 +156,7 @@ onMounted(cargar);
         <EmptyState
           v-if="documentos.length === 0"
           titulo="No hay documentos emitidos"
-          descripcion="Los documentos que se emitan van a aparecer acá."
+          descripcion="Los documentos que se emitan van a aparecer aquí."
         />
         <DataTable
           v-else

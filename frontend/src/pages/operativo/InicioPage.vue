@@ -61,7 +61,7 @@ onMounted(cargar);
       <CargandoBloque v-else-if="cargando" :filas="3" />
       <p v-else-if="!diaHoy" class="inicio__vacio">Hoy no hay clases. Tu horario de la semana está en Mi horario.</p>
       <p v-else-if="clasesDeHoy.length === 0" class="inicio__vacio">
-        No tenés clases asignadas para hoy en el horario.
+        No tienes clases asignadas para hoy en el horario.
       </p>
       <ol v-else class="inicio__clases">
         <li v-for="clase in clasesDeHoy" :key="clase.public_id" class="inicio__clase">

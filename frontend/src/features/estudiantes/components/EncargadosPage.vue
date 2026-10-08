@@ -51,7 +51,7 @@ async function cargar(): Promise<void> {
     encargados.value = encargadosResp.results;
     estudiantes.value = estudiantesResp.results;
   } catch {
-    error.value = "No se pudo cargar la lista de encargados. Probá de nuevo.";
+    error.value = "No se pudo cargar la lista de encargados. Inténtalo de nuevo.";
   } finally {
     cargando.value = false;
   }
@@ -89,7 +89,7 @@ async function guardarNuevo(): Promise<void> {
     await cargar();
   } catch {
     error.value =
-      "No se pudo crear el encargado. Confirmá que el usuario no exista ya y que la contraseña cumpla los requisitos.";
+      "No se pudo crear el encargado. Confirma que el usuario no exista ya y que la contraseña cumpla los requisitos.";
   } finally {
     guardandoNuevo.value = false;
   }
@@ -148,7 +148,7 @@ onMounted(cargar);
     <EmptyState
       v-else-if="encargados.length === 0"
       titulo="Todavía no hay encargados"
-      descripcion="Agregá el primer encargado."
+      descripcion="Agrega el primer encargado."
     />
 
     <DataTable
@@ -197,7 +197,7 @@ onMounted(cargar);
 
         <form v-if="puedeEditar" class="encargados-page__formulario-vinculo" @submit.prevent="agregarVinculo(encargado)">
           <select v-model="formularioVinculo.student" required>
-            <option value="" disabled>Elegí un estudiante</option>
+            <option value="" disabled>Elige un estudiante</option>
             <option v-for="estudiante in estudiantes" :key="estudiante.public_id" :value="estudiante.public_id">
               {{ estudiante.first_name }} {{ estudiante.last_name }} ({{ estudiante.internal_code }})
             </option>

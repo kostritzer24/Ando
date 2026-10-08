@@ -27,7 +27,7 @@ _ROLES_SIN_ALCANCE_LIMITADO = {
 
 def _enrollments_alcanzados(user):
     """Mismo criterio de alcance en los tres endpoints de esta app: el
-    resto del personal no llega ni siquiera acá (área `sin_acceso`), así
+    resto del personal no llega ni siquiera aquí (área `sin_acceso`), así
     que solo hay dos casos reales: alcance completo o alcance de familia
     (sección 14.2 — nunca se compara el id de la URL contra el usuario,
     se filtra el queryset antes)."""
