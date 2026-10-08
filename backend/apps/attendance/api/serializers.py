@@ -37,13 +37,7 @@ class AttendanceCreateSerializer(serializers.Serializer):
         slug_field="public_id", queryset=Enrollment.objects.all()
     )
     date = serializers.DateField()
-    status = serializers.ChoiceField(choices=Attendance.ESTADOS, required=False)
-    check_in_time = serializers.TimeField(required=False)
-
-    def validate(self, attrs):
-        if not attrs.get("status") and not attrs.get("check_in_time"):
-            raise serializers.ValidationError("Envía 'status' o 'check_in_time'.")
-        return attrs
+    status = serializers.ChoiceField(choices=Attendance.ESTADOS)
 
 
 class JustificationSerializer(serializers.ModelSerializer):

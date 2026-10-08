@@ -175,11 +175,11 @@ Restricción: `unique(student_id, cycle_id, section_id)` — HU-03: no se inscri
 |---|---|---|
 | enrollment_id | FK → Enrollment | aplica igual a jornada matutina y a talleres (ADR-0001) |
 | date | date | |
-| status | enum: `presente, tarde, ausente, justificado` | HU-16 |
+| status | enum: `presente, ausente, justificado` | HU-16 |
 | source | enum: `manual, plantilla` | RF-21 para talleres |
 | recorded_by_id | FK → accounts.User | |
 
-Restricción: `unique(enrollment_id, date)`. RN-11 (tardanza a las 8:05, pérdida del primer período) se implementa como regla de dominio sobre `status = tarde`, no como una columna aparte.
+Restricción: `unique(enrollment_id, date)`. RN-11 (tardanza) fue eliminada en oct 2026: no hay estado `tarde` ni hora de llegada; la migración 0003 convirtió los `tarde` previos en `presente`.
 
 ### `attendance.Justification` — Justificación
 | Columna | Tipo | Notas |

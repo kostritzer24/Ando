@@ -36,33 +36,8 @@ test("docente toma asistencia de su sección y el estado se guarda solo", async 
   await expect(page.locator(".tomar-asistencia__fila").nth(1).getByRole("button", { name: "Ausente" })).toHaveClass(/--activo/);
 
   // Corregir un estado ya guardado (PATCH, no un segundo POST).
-  await page.locator(".tomar-asistencia__fila").nth(1).getByRole("button", { name: "Tarde" }).click();
-  await expect(page.locator(".tomar-asistencia__fila").nth(1).getByRole("button", { name: "Tarde" })).toHaveClass(/--activo/);
-});
-
-test("registrar la hora de llegada deja que el sistema decida presente o tarde (RN-11)", async ({ page }) => {
-  await entrarComo(page, "docente.demo");
-  await expect(page).toHaveURL(/\/operativo$/);
-  await menu(page).getByRole("link", { name: "Asistencia" }).click();
-
-  // Una fecha lo bastante rara para que ninguna otra prueba la use.
-  await page.locator("#fecha").fill("2031-02-02");
-
-  // El input de hora solo aparece en filas sin asistencia registrada
-  // todavía — se toma la primera que lo tenga, sin asumir un orden fijo.
-  // Apenas se guarda, el input desaparece de esa fila (v-if), así que
-  // hay que identificarla por el nombre antes de reconsultar el DOM.
-  const filaConHora = page
-    .locator(".tomar-asistencia__fila")
-    .filter({ has: page.locator('input[type="time"]') })
-    .first();
-  const nombre = await filaConHora.locator(".tomar-asistencia__nombre").innerText();
-  await filaConHora.locator('input[type="time"]').fill("08:10");
-
-  // Después de las 8:05 cuenta como tarde (RN-11) — el frontend no lo
-  // calcula, solo manda la hora y muestra lo que el backend decidió.
-  const fila = page.locator(".tomar-asistencia__fila", { hasText: nombre });
-  await expect(fila.getByRole("button", { name: "Tarde" })).toHaveClass(/--activo/);
+  await page.locator(".tomar-asistencia__fila").nth(1).getByRole("button", { name: "Presente" }).click();
+  await expect(page.locator(".tomar-asistencia__fila").nth(1).getByRole("button", { name: "Presente" })).toHaveClass(/--activo/);
 });
 
 test("docente registra una justificación y Dirección la resuelve", async ({ page }) => {

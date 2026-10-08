@@ -21,10 +21,3 @@ def test_rn12_presente_nunca_pierde_el_derecho():
         pierde_derecho_a_actividades(Attendance.ESTADO_PRESENTE, tiene_justificacion_aprobada=False)
         is False
     )
-
-
-def test_rn12_tarde_no_pierde_el_derecho():
-    assert (
-        pierde_derecho_a_actividades(Attendance.ESTADO_TARDE, tiene_justificacion_aprobada=False)
-        is False
-    )

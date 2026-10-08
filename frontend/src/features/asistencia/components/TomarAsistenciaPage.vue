@@ -12,7 +12,6 @@ import { attendanceApi, registrarAsistencia } from "../api/asistenciaApi";
 
 const ESTADOS = [
   { valor: "presente", etiqueta: "Presente" },
-  { valor: "tarde", etiqueta: "Tarde" },
   { valor: "ausente", etiqueta: "Ausente" },
   { valor: "justificado", etiqueta: "Justificado" },
 ] as const;
@@ -147,24 +146,6 @@ async function marcar(inscripcion: Enrollment, estado: Attendance["status"]): Pr
   }
 }
 
-async function marcarPorHoraLlegada(inscripcion: Enrollment, hora: string): Promise<void> {
-  if (!hora) return;
-  guardandoPorEstudiante.value[inscripcion.public_id] = true;
-  error.value = "";
-  try {
-    const creada = await registrarAsistencia({
-      enrollment: inscripcion.public_id,
-      date: fecha.value,
-      check_in_time: hora,
-    });
-    asistenciasDelDia.value.push(creada);
-  } catch {
-    error.value = "No se pudo guardar la hora de llegada de ese estudiante. Inténtalo de nuevo.";
-  } finally {
-    guardandoPorEstudiante.value[inscripcion.public_id] = false;
-  }
-}
-
 watch([seccionElegida, fecha], cargarRoster);
 
 onMounted(async () => {
@@ -221,21 +202,12 @@ onMounted(async () => {
               {{ estado.etiqueta }}
             </button>
           </span>
-          <span v-if="!soloLectura && !asistenciaDe(inscripcion)" class="tomar-asistencia__hora">
-            <label :for="`hora-${inscripcion.public_id}`">o la hora de llegada</label>
-            <input
-              :id="`hora-${inscripcion.public_id}`"
-              type="time"
-              :disabled="guardandoPorEstudiante[inscripcion.public_id]"
-              @change="marcarPorHoraLlegada(inscripcion, ($event.target as HTMLInputElement).value)"
-            />
-          </span>
         </li>
       </ul>
       <p v-if="!soloLectura" class="tomar-asistencia__nota">
-        Cada estado se guarda apenas lo eliges — puedes cerrar esta pantalla y volver más tarde
-        para completar el resto. También puedes registrar la hora de llegada en vez del estado: el
-        sistema decide si cuenta como tarde (RN-11).
+        Cada estado se guarda apenas lo eliges. Puedes cerrar esta pantalla y volver más tarde
+        para completar el resto. La asistencia es una por estudiante y día: la ven todos los
+        docentes de la sección.
       </p>
     </template>
   </section>
@@ -346,22 +318,6 @@ onMounted(async () => {
   background: var(--color-fondo);
 }
 
-.tomar-asistencia__hora {
-  display: flex;
-  align-items: center;
-  gap: var(--espacio-sm);
-  font-size: var(--texto-sm);
-  color: var(--color-tinta-suave);
-}
-
-.tomar-asistencia__hora input {
-  min-height: 2.5rem;
-  padding: 0 0.5rem;
-  border: 1px solid var(--color-borde-campo);
-  border-radius: var(--radio-sm);
-  background: var(--color-papel);
-}
-
 .tomar-asistencia__nota {
   color: var(--color-tinta-suave);
   font-size: var(--texto-sm);
@@ -379,11 +335,6 @@ onMounted(async () => {
     grid-template-columns: minmax(0, 1fr) 26rem;
     align-items: center;
     column-gap: var(--espacio-xl);
-  }
-
-  .tomar-asistencia__hora {
-    grid-column: 2;
-    justify-content: flex-end;
   }
 }
 </style>

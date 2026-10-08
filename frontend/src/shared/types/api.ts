@@ -1388,7 +1388,7 @@ export interface paths {
          *     de agregar uno nuevo o desvincular); POST crea uno. Sin paginar
          *     a propósito (`pagination_class=None`): un encargado tiene, como
          *     mucho, un puñado de estudiantes vinculados, y `Response(...)`
-         *     acá nunca pasa por `self.paginate_queryset` de todos modos — el
+         *     aquí nunca pasa por `self.paginate_queryset` de todos modos — el
          *     override es para que el esquema generado no diga lo contrario.
          */
         get: operations["v1_guardians_link_student_list"];
@@ -1399,7 +1399,7 @@ export interface paths {
          *     de agregar uno nuevo o desvincular); POST crea uno. Sin paginar
          *     a propósito (`pagination_class=None`): un encargado tiene, como
          *     mucho, un puñado de estudiantes vinculados, y `Response(...)`
-         *     acá nunca pasa por `self.paginate_queryset` de todos modos — el
+         *     aquí nunca pasa por `self.paginate_queryset` de todos modos — el
          *     override es para que el esquema generado no diga lo contrario.
          */
         post: operations["v1_guardians_link_student_create"];
@@ -2618,7 +2618,7 @@ export interface components {
              */
             date: string;
             /** Estado */
-            status: components["schemas"]["Status75aEnum"];
+            status: components["schemas"]["Status2a3Enum"];
             /** Origen */
             readonly source: components["schemas"]["SourceEnum"];
             readonly recorded_by: string;
@@ -2631,9 +2631,7 @@ export interface components {
             enrollment: string;
             /** Format: date */
             date: string;
-            status?: components["schemas"]["Status75aEnum"];
-            /** Format: time */
-            check_in_time?: string;
+            status: components["schemas"]["Status2a3Enum"];
         };
         /**
          * @description * `todos` - Todos
@@ -3638,7 +3636,7 @@ export interface components {
              */
             date?: string;
             /** Estado */
-            status?: components["schemas"]["Status75aEnum"];
+            status?: components["schemas"]["Status2a3Enum"];
             /** Origen */
             readonly source?: components["schemas"]["SourceEnum"];
             readonly recorded_by?: string;
@@ -4161,20 +4159,19 @@ export interface components {
          */
         SourceEnum: "manual" | "plantilla";
         /**
+         * @description * `presente` - Presente
+         *     * `ausente` - Ausente
+         *     * `justificado` - Justificado
+         * @enum {string}
+         */
+        Status2a3Enum: "presente" | "ausente" | "justificado";
+        /**
          * @description * `pendiente` - Pendiente
          *     * `aprobada` - Aprobada
          *     * `rechazada` - Rechazada
          * @enum {string}
          */
         Status39dEnum: "pendiente" | "aprobada" | "rechazada";
-        /**
-         * @description * `presente` - Presente
-         *     * `tarde` - Tarde
-         *     * `ausente` - Ausente
-         *     * `justificado` - Justificado
-         * @enum {string}
-         */
-        Status75aEnum: "presente" | "tarde" | "ausente" | "justificado";
         /**
          * @description Serializer general: nunca incluye `health_notes` ni
          *     `socioeconomic_notes` (RNF-04) — esos solo viven en

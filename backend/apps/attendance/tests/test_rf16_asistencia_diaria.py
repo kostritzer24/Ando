@@ -38,51 +38,56 @@ def test_rf16_direccion_registra_presente_directamente():
 
 
 @pytest.mark.django_db
-def test_rn11_llegada_despues_del_corte_queda_tarde():
+def test_rf16_la_asistencia_es_global_la_ve_cualquier_docente_de_la_seccion():
+    """Decisión del dueño (oct 2026): la asistencia es una por estudiante y
+    día, no por clase: la marque Dirección o un docente, los demás la ven."""
     direccion = _direccion()
     inscripcion = EnrollmentFactory()
+    rol = RoleFactory(name="Docente", permissions={"asistencia": "ver"})
+    docente = UserFactory(role=rol)
+    curso = Course.objects.create(name="Matemática", type=Course.TIPO_ACADEMICO)
+    TeacherAssignment.objects.create(
+        teacher=docente,
+        course=curso,
+        section=inscripcion.section,
+        cycle=inscripcion.section.cycle,
+    )
+    cliente_direccion = APIClient()
+    cliente_direccion.force_authenticate(user=direccion)
+    cliente_direccion.post(
+        "/api/v1/attendance/",
+        {"enrollment": str(inscripcion.public_id), "date": "2026-01-13", "status": "presente"},
+        format="json",
+    )
 
+    cliente_docente = APIClient()
+    cliente_docente.force_authenticate(user=docente)
+    respuesta = cliente_docente.get(
+        "/api/v1/attendance/", {"enrollment": str(inscripcion.public_id)}
+    )
+
+    assert respuesta.status_code == 200
+    assert [a["date"] for a in respuesta.data["results"]] == ["2026-01-13"]
+
+
+@pytest.mark.django_db
+def test_rf16_la_hora_de_llegada_ya_no_existe_y_el_estado_tarde_se_rechaza():
+    direccion = _direccion()
+    inscripcion = EnrollmentFactory()
     client = APIClient()
     client.force_authenticate(user=direccion)
 
     respuesta = client.post(
         "/api/v1/attendance/",
-        {
-            "enrollment": str(inscripcion.public_id),
-            "date": "2026-01-13",
-            "check_in_time": "08:10:00",
-        },
+        {"enrollment": str(inscripcion.public_id), "date": "2026-01-13", "status": "tarde"},
         format="json",
     )
 
-    assert respuesta.status_code == 201
-    assert respuesta.data["status"] == "tarde"
+    assert respuesta.status_code == 400
 
 
 @pytest.mark.django_db
-def test_rn11_llegada_antes_del_corte_queda_presente():
-    direccion = _direccion()
-    inscripcion = EnrollmentFactory()
-
-    client = APIClient()
-    client.force_authenticate(user=direccion)
-
-    respuesta = client.post(
-        "/api/v1/attendance/",
-        {
-            "enrollment": str(inscripcion.public_id),
-            "date": "2026-01-13",
-            "check_in_time": "07:58:00",
-        },
-        format="json",
-    )
-
-    assert respuesta.status_code == 201
-    assert respuesta.data["status"] == "presente"
-
-
-@pytest.mark.django_db
-def test_falta_mandar_estado_o_hora_de_llegada():
+def test_falta_mandar_el_estado():
     direccion = _direccion()
     inscripcion = EnrollmentFactory()
 
@@ -163,13 +168,17 @@ def test_rnf06_registrar_asistencia_deja_bitacora():
 
     client.post(
         "/api/v1/attendance/",
-        {"enrollment": str(EnrollmentFactory().public_id), "date": "2026-01-13", "status": "tarde"},
+        {
+            "enrollment": str(EnrollmentFactory().public_id),
+            "date": "2026-01-13",
+            "status": "ausente",
+        },
         format="json",
     )
 
     registro = AuditLog.objects.get(entity_name="attendance.Attendance")
     assert registro.user == direccion
-    assert registro.new_value["status"] == "tarde"
+    assert registro.new_value["status"] == "ausente"
 
 
 @pytest.mark.django_db

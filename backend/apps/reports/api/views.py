@@ -78,7 +78,6 @@ class AttendanceReportView(ReporteBaseView):
         ("student_name", "Estudiante"),
         ("section", "Sección"),
         ("presente", "Presente"),
-        ("tarde", "Tarde"),
         ("ausente", "Ausente"),
         ("justificado", "Justificado"),
     ]

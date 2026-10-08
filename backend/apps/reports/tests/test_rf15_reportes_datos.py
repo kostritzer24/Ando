@@ -68,7 +68,9 @@ def test_rf15_consolidado_de_notas_usa_la_misma_nota_de_unidad_que_la_captura():
 def test_rf15_reporte_de_asistencia_cuenta_por_estado():
     inscripcion = EnrollmentFactory()
     AttendanceFactory(enrollment=inscripcion, date="2026-01-13", status=Attendance.ESTADO_PRESENTE)
-    AttendanceFactory(enrollment=inscripcion, date="2026-01-14", status=Attendance.ESTADO_TARDE)
+    AttendanceFactory(
+        enrollment=inscripcion, date="2026-01-14", status=Attendance.ESTADO_JUSTIFICADO
+    )
     AttendanceFactory(enrollment=inscripcion, date="2026-01-15", status=Attendance.ESTADO_AUSENTE)
 
     client = APIClient()
@@ -79,9 +81,8 @@ def test_rf15_reporte_de_asistencia_cuenta_por_estado():
 
     fila = respuesta.data["results"][0]
     assert fila["presente"] == 1
-    assert fila["tarde"] == 1
+    assert fila["justificado"] == 1
     assert fila["ausente"] == 1
-    assert fila["justificado"] == 0
 
 
 def test_rf15_reporte_de_insolventes_excluye_a_los_becados():

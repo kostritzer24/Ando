@@ -37,7 +37,6 @@ export const REPORTES: DefinicionReporte[] = [
       { clave: "student_name", etiqueta: "Estudiante" },
       { clave: "section", etiqueta: "Sección" },
       { clave: "presente", etiqueta: "Presente" },
-      { clave: "tarde", etiqueta: "Tarde" },
       { clave: "ausente", etiqueta: "Ausente" },
       { clave: "justificado", etiqueta: "Justificado" },
     ],

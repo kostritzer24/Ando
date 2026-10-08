@@ -12,12 +12,10 @@ class Attendance(BaseModel):
     talleres (ADR-0001) porque ambos cuelgan de `Enrollment`."""
 
     ESTADO_PRESENTE = "presente"
-    ESTADO_TARDE = "tarde"
     ESTADO_AUSENTE = "ausente"
     ESTADO_JUSTIFICADO = "justificado"
     ESTADOS = [
         (ESTADO_PRESENTE, "Presente"),
-        (ESTADO_TARDE, "Tarde"),
         (ESTADO_AUSENTE, "Ausente"),
         (ESTADO_JUSTIFICADO, "Justificado"),
     ]

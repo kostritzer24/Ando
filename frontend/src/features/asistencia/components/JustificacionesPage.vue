@@ -49,7 +49,7 @@ function descripcionAsistencia(asistencia: Attendance): string {
 
 const opcionesAsistencia = computed(() =>
   asistencias.value
-    .filter((a) => a.status === "ausente" || a.status === "tarde")
+    .filter((a) => a.status === "ausente")
     .map((a) => ({ valor: a.public_id, etiqueta: descripcionAsistencia(a) })),
 );
 const opcionesTipo = computed(() =>

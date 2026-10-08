@@ -160,7 +160,7 @@ Diecisiete reglas acordadas con la dirección. Van en la capa de dominio, cada u
 | RN-08 | Es solvente el estudiante que está al día con su mensualidad o que cuenta con beca |
 | RN-09 | La solvencia se verifica al cierre de cada unidad y del ciclo, y es requisito para entregar notas y habilitar el boletín |
 | RN-10 | Las notas se entregan quince días después del cierre de la unidad y el boletín se habilita en el portal una semana después de esa entrega |
-| RN-11 | Pasados cinco minutos de las ocho de la mañana el estudiante queda tarde y pierde el primer período |
+| RN-11 | ~~Pasados cinco minutos de las ocho el estudiante queda tarde~~ **Eliminada (oct 2026)**: no hay estado "tarde" ni hora de llegada; solo se marca la asistencia |
 | RN-12 | Una falta sin justificar quita el derecho a las actividades del día y la justificación se evalúa según el caso |
 | RN-13 | La jornada tiene seis períodos de 40 minutos y un receso de la misma duración |
 | RN-14 | Cada estudiante tiene un código interno único y las cuentas las crea únicamente la administración |
@@ -173,7 +173,7 @@ Cuatro de estas reglas son las que más fácil se implementan mal, así que reci
 - **RN-02 y RN-04.** El total de la unidad no puede pasar de 100 puntos. Las cuatro pruebas cortas de 10 puntos son práctica institucional y el docente decide cómo aplicarlas; los 60 restantes los reparte como quiera. La nota final del ciclo se redondea sin decimales, y el criterio de redondeo debe quedar explícito y probado.
 - **RN-05 y RN-06.** La calificación guarda el punteo real. Una corrección no sobrescribe: crea un registro de modificación con la nota original, la propuesta, el motivo, quién autorizó y la fecha. La nota corregida es la que entra en los promedios. Las familias nunca ven ese historial.
 - **RN-09 y RN-10.** La habilitación del boletín en el portal público depende de dos condiciones que se evalúan juntas: que hayan pasado los plazos y que el estudiante esté solvente.
-- **RN-11.** El corte de tardanza es a las 8:05 y arrastra la pérdida del primer período.
+- **RN-11.** Eliminada por decisión del dueño (oct 2026): la asistencia no distingue tardanza. Se marca a cualquier hora y es una sola por estudiante y día (no por clase): la marque Dirección o un docente, todos los docentes de la sección la ven.
 
 ---
 
@@ -188,7 +188,7 @@ Detalles definidos en las historias de usuario y que son parte del alcance aprob
 - **HU-07.** Cada pago registra mes, fecha, monto y número de recibo. El estudiante con beca aparece siempre solvente. Solo el encargado de pagos y la dirección modifican esta información.
 - **HU-08 y HU-11.** Cada documento lleva nombre del establecimiento, logo y código QR, sin firma ni sello digital, y queda registro de cada emisión.
 - **HU-14.** El código QR abre una página pública de verificación que muestra tipo de documento, fecha y estudiante, sin datos sensibles. Un código inexistente indica que el documento no es válido.
-- **HU-16.** Los estados de asistencia son presente, tarde, ausente y justificado. Se puede registrar durante la clase o al final de la jornada.
+- **HU-16.** Los estados de asistencia son presente, ausente y justificado. Se puede registrar durante la clase o al final de la jornada.
 - **HU-19 y HU-20.** La plantilla trae la lista de estudiantes con su código. Los códigos y la estructura no se pueden modificar. El sistema valida códigos, punteos y estructura, y muestra una vista previa con los errores por fila antes de guardar. La plantilla no sustituye al sistema: respeta la costumbre del docente de llevar su propio cuadro de notas.
 - **HU-25 y HU-37.** Cada mensaje del buzón lo ven solo el encargado que lo envió, el maestro guía de la sección y la dirección. La respuesta queda en el mismo hilo. No hay conversación en tiempo real, ni indicador de escritura, ni de visto.
 - **HU-27.** Un encargado con varios estudiantes vinculados cambia entre ellos con un selector, sin volver a iniciar sesión, y no ve información de estudiantes ajenos.

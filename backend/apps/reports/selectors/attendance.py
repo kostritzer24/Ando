@@ -31,7 +31,6 @@ def resumen_asistencia(*, cycle_id: str | None = None, section_id: str | None = 
                 "student_name": inscripcion.student.nombre_completo(),
                 "section": str(inscripcion.section),
                 "presente": conteos.get("presente", 0),
-                "tarde": conteos.get("tarde", 0),
                 "ausente": conteos.get("ausente", 0),
                 "justificado": conteos.get("justificado", 0),
             }

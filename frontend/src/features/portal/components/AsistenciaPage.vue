@@ -10,13 +10,11 @@ import { attendanceApi } from "../api/portalApi";
 
 const ETIQUETA_ESTADO: Record<string, string> = {
   presente: "Presente",
-  tarde: "Tarde",
   ausente: "Ausente",
   justificado: "Justificado",
 };
 const VARIANTE_ESTADO: Record<string, "taller" | "aviso" | "alerta"> = {
   presente: "taller",
-  tarde: "aviso",
   ausente: "alerta",
   justificado: "aviso",
 };

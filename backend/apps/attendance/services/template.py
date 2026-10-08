@@ -18,7 +18,7 @@ from ..domain.template import FilaPlantillaInvalida, validar_fila
 from ..models import Attendance
 from .attendance import registrar_asistencia
 
-_ENCABEZADOS = ["Código", "Nombre", "Estado (presente/tarde/ausente/justificado)"]
+_ENCABEZADOS = ["Código", "Nombre", "Estado (presente/ausente/justificado)"]
 
 
 class SeccionNoEsDeTaller(Exception):

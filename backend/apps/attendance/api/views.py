@@ -16,11 +16,7 @@ from apps.core.permissions import PermisoPorArea
 from apps.scheduling.models import TeacherAssignment
 
 from ..models import Attendance, Justification
-from ..services.attendance import (
-    AsistenciaYaRegistrada,
-    FaltaEstadoOHoraDeLlegada,
-    registrar_asistencia,
-)
+from ..services.attendance import AsistenciaYaRegistrada, registrar_asistencia
 from ..services.justification import crear_justificacion, resolver_justificacion
 from ..services.template import SeccionNoEsDeTaller, generar_plantilla, procesar_plantilla
 from .serializers import (
@@ -91,10 +87,9 @@ class AttendanceViewSet(RegistraAccesoMixin, ScopedQuerysetMixin, viewsets.Model
                 enrollment=enrollment,
                 fecha=datos["date"],
                 recorded_by=request.user,
-                status=datos.get("status"),
-                check_in_time=datos.get("check_in_time"),
+                status=datos["status"],
             )
-        except (FaltaEstadoOHoraDeLlegada, AsistenciaYaRegistrada) as exc:
+        except AsistenciaYaRegistrada as exc:
             raise ValidationError(str(exc)) from exc
         return Response(AttendanceSerializer(asistencia).data, status=status.HTTP_201_CREATED)
 

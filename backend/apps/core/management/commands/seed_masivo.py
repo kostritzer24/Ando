@@ -301,6 +301,7 @@ class Command(BaseCommand):
                         max_score=Decimal(maximo),
                         due_date=unidad.start_date
                         + timedelta(days=int(duracion * (i + 1) / (len(_DISENO_UNIDAD) + 1))),
+                        usuario=asignacion.teacher,
                     )
                     for inscripcion in inscripciones:
                         perfil = perfiles.setdefault(inscripcion.id, _elegir(self.rng, _PERFILES))
@@ -329,8 +330,7 @@ class Command(BaseCommand):
                 dias.append(cursor)
             cursor -= timedelta(days=1)
         estados = [
-            (Attendance.ESTADO_PRESENTE, 0.85),
-            (Attendance.ESTADO_TARDE, 0.06),
+            (Attendance.ESTADO_PRESENTE, 0.91),
             (Attendance.ESTADO_AUSENTE, 0.09),
         ]
         registros = []
@@ -418,10 +418,10 @@ class Command(BaseCommand):
                     continue
                 for boletin in boletines:
                     if boletin.status == ReportCard.ESTADO_BORRADOR:
-                        aprobar_boletin(boletin, approved_by=direccion)
+                        boletin = aprobar_boletin(boletin, approved_by=direccion)
                     if numero == 1 and boletin.status == ReportCard.ESTADO_APROBADO:
                         try:
-                            publicar_boletin(boletin)
+                            publicar_boletin(boletin, published_by=direccion)
                             publicados += 1
                         except TransicionDeBoletinInvalida:
                             bloqueados += 1

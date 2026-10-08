@@ -10,11 +10,8 @@ export const justificationsApi = crearRecursoCrud<Justification>("/justification
 export async function registrarAsistencia(payload: {
   enrollment: string;
   date: string;
-  status?: string;
-  check_in_time?: string;
+  status: string;
 }): Promise<Attendance> {
-  // RN-11: si se manda `check_in_time` en vez de `status`, el backend
-  // decide presente/tarde — nunca se calcula la tardanza acá.
   const { data } = await http.post<Attendance>("/attendance/", payload);
   return data;
 }
