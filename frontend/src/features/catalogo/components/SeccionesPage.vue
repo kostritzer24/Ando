@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from "vue";
 
+import { mensajeDelServidor } from "@/shared/api/errores";
 import { AppButton, AppModal, CargandoBloque, DataTable, EmptyState, ErrorBanner, FormField, FormSelect, PageHeader } from "@/shared/components";
 import { usePermisos } from "@/shared/permisos";
 import { avisar } from "@/shared/composables/useAvisos";
@@ -20,6 +21,7 @@ const ciclos = ref<SchoolCycle[]>([]);
 const docentes = ref<Usuario[]>([]);
 const cargando = ref(true);
 const error = ref("");
+const errorModal = ref("");
 
 const modalAbierto = ref(false);
 const editando = ref<Section | null>(null);
@@ -83,6 +85,7 @@ function abrirNueva(): void {
   formulario.letter = "";
   formulario.type = "academica";
   formulario.homeroom_teacher = "";
+  errorModal.value = "";
   modalAbierto.value = true;
 }
 
@@ -93,12 +96,13 @@ function abrirEditar(seccion: Section): void {
   formulario.letter = seccion.letter ?? "";
   formulario.type = seccion.type;
   formulario.homeroom_teacher = seccion.homeroom_teacher ?? "";
+  errorModal.value = "";
   modalAbierto.value = true;
 }
 
 async function guardar(): Promise<void> {
   guardando.value = true;
-  error.value = "";
+  errorModal.value = "";
   const payload: Partial<Section> = {
     cycle: formulario.cycle,
     grade: formulario.grade,
@@ -114,8 +118,8 @@ async function guardar(): Promise<void> {
     }
     modalAbierto.value = false;
     await cargar();
-  } catch {
-    error.value = "No se pudo guardar la sección. Revisa los datos e inténtalo de nuevo.";
+  } catch (e) {
+    errorModal.value = mensajeDelServidor(e, "No se pudo guardar la sección. Revisa los datos e inténtalo de nuevo.");
   } finally {
     guardando.value = false;
   }
@@ -206,6 +210,7 @@ onMounted(cargar);
       :titulo="editando ? 'Editar sección' : 'Agregar sección'"
       @cerrar="modalAbierto = false"
     >
+      <ErrorBanner v-if="errorModal" :mensaje="errorModal" />
       <form class="secciones-page__formulario" @submit.prevent="guardar">
         <FormSelect id="cycle" etiqueta="Ciclo escolar" :opciones="opcionesCiclo" v-model="formulario.cycle" />
         <FormField id="grade" etiqueta="Grado" pista="Por ejemplo: Primero básico" v-model="formulario.grade" />

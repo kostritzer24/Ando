@@ -5,7 +5,7 @@ import { useRoute, useRouter } from "vue-router";
 
 import { useAuthStore } from "@/features/auth/stores/authStore";
 import { usePortalStore } from "@/features/portal/stores/portalStore";
-import { AppModal, BottomTabBar, CargandoBloque, ErrorBanner, ListRow, TopAppBar } from "@/shared/components";
+import { AppModal, BottomTabBar, CargandoBloque, EmptyState, ErrorBanner, ListRow, TopAppBar } from "@/shared/components";
 
 const auth = useAuthStore();
 const portal = usePortalStore();
@@ -18,6 +18,13 @@ const nombreEstudiante = computed(() => {
   const e = portal.estudianteSeleccionado;
   return e ? `${e.first_name} ${e.last_name}` : "";
 });
+
+// Cuenta nueva: todavía sin estudiantes vinculados. Las pantallas del
+// portal esperan un estudiante elegido, así que en vez de dejarlas cargando
+// para siempre se explica qué pasa (Mi cuenta sigue disponible).
+const sinEstudiantes = computed(
+  () => portal.estudiantes.length === 0 && route.path !== "/portal/cuenta",
+);
 
 const pestanas = [
   { valor: "/portal", etiqueta: "Inicio", icono: House },
@@ -69,10 +76,16 @@ onMounted(() => {
       </TopAppBar>
 
       <main class="portal-layout__contenido">
-        <RouterView />
+        <EmptyState
+          v-if="sinEstudiantes"
+          titulo="Aún no hay estudiantes vinculados a tu cuenta"
+          descripcion="Pide a la dirección del centro que vincule a tu hijo o hija con tu usuario. Cuando lo haga, aquí verás sus notas, asistencia y pagos."
+        />
+        <RouterView v-else />
       </main>
 
       <BottomTabBar
+        v-if="!sinEstudiantes"
         :items="pestanas"
         :model-value="route.path"
         @update:model-value="(valor) => router.push(valor)"

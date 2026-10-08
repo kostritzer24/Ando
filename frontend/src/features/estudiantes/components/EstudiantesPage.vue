@@ -3,6 +3,7 @@ import { computed, onMounted, reactive, ref } from "vue";
 import { useRouter } from "vue-router";
 
 import { becasApi, seccionesApi } from "@/features/catalogo/api/catalogoApi";
+import { mensajeDelServidor } from "@/shared/api/errores";
 import { opcional } from "@/shared/api/opcional";
 import { AppButton, AppModal, CargandoBloque, DataTable, EmptyState, ErrorBanner, FormField, FormSelect, PageHeader } from "@/shared/components";
 import { usePermisos } from "@/shared/permisos";
@@ -21,6 +22,7 @@ const secciones = ref<Section[]>([]);
 const becas = ref<Scholarship[]>([]);
 const cargando = ref(true);
 const error = ref("");
+const errorModal = ref("");
 
 const modalAbierto = ref(false);
 const guardando = ref(false);
@@ -84,16 +86,17 @@ function abrirNuevo(): void {
   formulario.previous_institution = "";
   formulario.section = secciones.value[0]?.public_id ?? "";
   formulario.scholarship = "";
+  errorModal.value = "";
   modalAbierto.value = true;
 }
 
 async function inscribir(): Promise<void> {
   guardando.value = true;
-  error.value = "";
+  errorModal.value = "";
   try {
     const seccionElegida = secciones.value.find((s) => s.public_id === formulario.section);
     if (!seccionElegida) {
-      error.value = "Elige una sección.";
+      errorModal.value = "Elige una sección.";
       return;
     }
     const estudiante = await studentsApi.crear({
@@ -112,8 +115,8 @@ async function inscribir(): Promise<void> {
     });
     codigoRecienCreado.value = estudiante.internal_code;
     await cargar();
-  } catch {
-    error.value = "No se pudo inscribir al estudiante. Revisa los datos e inténtalo de nuevo.";
+  } catch (e) {
+    errorModal.value = mensajeDelServidor(e, "No se pudo inscribir al estudiante. Revisa los datos e inténtalo de nuevo.");
   } finally {
     guardando.value = false;
   }
@@ -157,6 +160,7 @@ onMounted(cargar);
     </DataTable>
 
     <AppModal v-if="modalAbierto" titulo="Inscribir estudiante" @cerrar="modalAbierto = false">
+      <ErrorBanner v-if="errorModal" :mensaje="errorModal" />
       <p v-if="codigoRecienCreado" class="estudiantes-page__exito">
         Estudiante inscrito con el código <strong>{{ codigoRecienCreado }}</strong
         >.

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from "vue";
 
+import { mensajeDelServidor } from "@/shared/api/errores";
 import { AppButton, AppModal, CargandoBloque, DataTable, EmptyState, ErrorBanner, FormField, PageHeader } from "@/shared/components";
 import { usePermisos } from "@/shared/permisos";
 import type { Guardian, GuardianStudentLinkRead, Student } from "@/shared/types/models";
@@ -21,6 +22,7 @@ const encargados = ref<Guardian[]>([]);
 const estudiantes = ref<Student[]>([]);
 const cargando = ref(true);
 const error = ref("");
+const errorModal = ref("");
 
 const modalNuevoAbierto = ref(false);
 const guardandoNuevo = ref(false);
@@ -65,12 +67,13 @@ function abrirNuevo(): void {
   formularioNuevo.phone = "";
   formularioNuevo.messaging_number = "";
   formularioNuevo.occupation = "";
+  errorModal.value = "";
   modalNuevoAbierto.value = true;
 }
 
 async function guardarNuevo(): Promise<void> {
   guardandoNuevo.value = true;
-  error.value = "";
+  errorModal.value = "";
   try {
     const usuario = await crearUsuarioFamilia({
       username: formularioNuevo.username,
@@ -87,9 +90,8 @@ async function guardarNuevo(): Promise<void> {
     });
     modalNuevoAbierto.value = false;
     await cargar();
-  } catch {
-    error.value =
-      "No se pudo crear el encargado. Confirma que el usuario no exista ya y que la contraseña cumpla los requisitos.";
+  } catch (e) {
+    errorModal.value = mensajeDelServidor(e, "No se pudo crear el encargado. Confirma que el usuario no exista ya y que la contraseña cumpla los requisitos.");
   } finally {
     guardandoNuevo.value = false;
   }
@@ -215,6 +217,7 @@ onMounted(cargar);
     </section>
 
     <AppModal v-if="modalNuevoAbierto" titulo="Agregar encargado" @cerrar="modalNuevoAbierto = false">
+      <ErrorBanner v-if="errorModal" :mensaje="errorModal" />
       <form class="encargados-page__formulario" @submit.prevent="guardarNuevo">
         <FormField id="username" etiqueta="Usuario" v-model="formularioNuevo.username" />
         <FormField

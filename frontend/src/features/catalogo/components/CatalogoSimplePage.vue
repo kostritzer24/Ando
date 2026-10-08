@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from "vue";
 
+import { mensajeDelServidor } from "@/shared/api/errores";
 import { AppButton, AppModal, CargandoBloque, DataTable, EmptyState, ErrorBanner, FormField, FormSelect, PageHeader } from "@/shared/components";
 import { usePermisos } from "@/shared/permisos";
 import { avisar } from "@/shared/composables/useAvisos";
@@ -28,6 +29,7 @@ const puedeEditar = computed(() => permisos.puedeEditar("datos_maestros"));
 const registros = ref<Registro[]>([]);
 const cargando = ref(true);
 const error = ref("");
+const errorModal = ref("");
 const modalAbierto = ref(false);
 const editando = ref<Registro | null>(null);
 const formulario = reactive<Record<string, unknown>>({});
@@ -60,6 +62,7 @@ function abrirNuevo(): void {
   for (const campo of props.config.campos) {
     formulario[campo.clave] = campo.tipo === "booleano" ? false : "";
   }
+  errorModal.value = "";
   modalAbierto.value = true;
 }
 
@@ -68,12 +71,13 @@ function abrirEditar(registro: Registro): void {
   for (const campo of props.config.campos) {
     formulario[campo.clave] = registro[campo.clave] ?? (campo.tipo === "booleano" ? false : "");
   }
+  errorModal.value = "";
   modalAbierto.value = true;
 }
 
 async function guardar(): Promise<void> {
   guardando.value = true;
-  error.value = "";
+  errorModal.value = "";
   try {
     if (editando.value) {
       await props.recurso.actualizar(editando.value.public_id, { ...formulario });
@@ -82,8 +86,8 @@ async function guardar(): Promise<void> {
     }
     modalAbierto.value = false;
     await cargar();
-  } catch {
-    error.value = "No se pudo guardar. Revisa los datos e inténtalo de nuevo.";
+  } catch (e) {
+    errorModal.value = mensajeDelServidor(e, "No se pudo guardar. Revisa los datos e inténtalo de nuevo.");
   } finally {
     guardando.value = false;
   }
@@ -173,6 +177,7 @@ onMounted(cargar);
       :titulo="editando ? `Editar ${config.tituloSingular}` : `Agregar ${config.tituloSingular}`"
       @cerrar="modalAbierto = false"
     >
+      <ErrorBanner v-if="errorModal" :mensaje="errorModal" />
       <form class="catalogo-simple__formulario" @submit.prevent="guardar">
         <template v-for="campo in config.campos" :key="campo.clave">
           <FormSelect

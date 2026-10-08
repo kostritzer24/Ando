@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from "vue";
 
+import { mensajeDelServidor } from "@/shared/api/errores";
 import { AppButton, AppModal, CargandoBloque, DataTable, ErrorBanner, FormField, FormSelect, PageHeader, TagPill } from "@/shared/components";
 import { usePermisos } from "@/shared/permisos";
 import type { GradingUnit, SchoolCycle } from "@/shared/types/models";
@@ -13,6 +14,7 @@ const puedeEditar = computed(() => permisos.puedeEditar("datos_maestros"));
 const ciclos = ref<SchoolCycle[]>([]);
 const cargando = ref(true);
 const error = ref("");
+const errorModal = ref("");
 
 const modalCicloAbierto = ref(false);
 const formularioCiclo = reactive({ year: "", start_date: "", end_date: "", status: "planificado" });
@@ -51,12 +53,13 @@ function abrirNuevoCiclo(): void {
   formularioCiclo.start_date = "";
   formularioCiclo.end_date = "";
   formularioCiclo.status = "planificado";
+  errorModal.value = "";
   modalCicloAbierto.value = true;
 }
 
 async function guardarCiclo(): Promise<void> {
   guardandoCiclo.value = true;
-  error.value = "";
+  errorModal.value = "";
   try {
     await ciclosApi.crear({
       year: Number(formularioCiclo.year),
@@ -66,8 +69,8 @@ async function guardarCiclo(): Promise<void> {
     });
     modalCicloAbierto.value = false;
     await cargarCiclos();
-  } catch {
-    error.value = "No se pudo guardar el ciclo. Revisa los datos e inténtalo de nuevo.";
+  } catch (e) {
+    errorModal.value = mensajeDelServidor(e, "No se pudo guardar el ciclo. Revisa los datos e inténtalo de nuevo.");
   } finally {
     guardandoCiclo.value = false;
   }
@@ -180,6 +183,7 @@ onMounted(cargarCiclos);
     </section>
 
     <AppModal v-if="modalCicloAbierto" titulo="Agregar ciclo" @cerrar="modalCicloAbierto = false">
+      <ErrorBanner v-if="errorModal" :mensaje="errorModal" />
       <form class="ciclos-page__formulario" @submit.prevent="guardarCiclo">
         <FormField id="year" etiqueta="Año" tipo="number" v-model="formularioCiclo.year" />
         <FormField id="start_date" etiqueta="Fecha de inicio" tipo="date" v-model="formularioCiclo.start_date" />

@@ -3,6 +3,7 @@ import { X } from "lucide-vue-next";
 import { computed, onMounted, reactive, ref } from "vue";
 
 import { assignmentsApi, listarUsuariosPorRoles } from "@/features/asignaciones/api/asignacionesApi";
+import { mensajeDelServidor } from "@/shared/api/errores";
 import { opcional } from "@/shared/api/opcional";
 import { AppButton, AppModal, CargandoBloque, ErrorBanner, FormSelect, PageHeader } from "@/shared/components";
 import { avisar } from "@/shared/composables/useAvisos";
@@ -22,6 +23,7 @@ const puedeEditar = computed(() => permisos.puedeEditar("horarios_calendario"));
 
 const cargando = ref(true);
 const error = ref("");
+const errorModal = ref("");
 const asignaciones = ref<TeacherAssignment[]>([]);
 const bloques = ref<ScheduleBlock[]>([]);
 const personas = ref<Usuario[]>([]);
@@ -107,12 +109,13 @@ function abrirCelda(dia: ScheduleBlock["day_of_week"], periodo: number): void {
   celdaElegida.dia = dia;
   celdaElegida.periodo = periodo;
   asignacionParaCelda.value = opcionesAsignacion.value[0]?.valor ?? "";
+  errorModal.value = "";
   modalAbierto.value = true;
 }
 
 async function guardarBloque(): Promise<void> {
   guardando.value = true;
-  error.value = "";
+  errorModal.value = "";
   try {
     await scheduleBlocksApi.crear({
       assignment: asignacionParaCelda.value,
@@ -121,12 +124,11 @@ async function guardarBloque(): Promise<void> {
     });
     modalAbierto.value = false;
     await cargar();
-  } catch {
+  } catch (e) {
     // Si hubo un cruce (otra sesión armó el horario al mismo tiempo,
     // RN-13/HU-06), recargar la grilla ya muestra la celda ocupada de
     // verdad, en vez de intentar adivinar el mensaje del backend.
-    error.value =
-      "No se pudo guardar — puede que este docente ya tenga una clase asignada ese día y período. Se actualizó la grilla.";
+    errorModal.value = mensajeDelServidor(e, "No se pudo guardar — puede que este docente ya tenga una clase asignada ese día y período. Se actualizó la grilla.");
     await cargar();
   } finally {
     guardando.value = false;
@@ -212,6 +214,7 @@ onMounted(cargar);
     </template>
 
     <AppModal v-if="modalAbierto" titulo="Agregar clase" @cerrar="modalAbierto = false">
+      <ErrorBanner v-if="errorModal" :mensaje="errorModal" />
       <form class="horario-grid__formulario" @submit.prevent="guardarBloque">
         <p>{{ DIAS.find((d) => d.valor === celdaElegida.dia)?.etiqueta }}, período {{ celdaElegida.periodo }}</p>
         <FormSelect

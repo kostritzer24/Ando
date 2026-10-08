@@ -2,6 +2,7 @@
 import { computed, onMounted, reactive, ref } from "vue";
 
 import { cursosApi, seccionesApi } from "@/features/catalogo/api/catalogoApi";
+import { mensajeDelServidor } from "@/shared/api/errores";
 import { AppButton, AppModal, CargandoBloque, DataTable, EmptyState, ErrorBanner, FormSelect, PageHeader } from "@/shared/components";
 import { usePermisos } from "@/shared/permisos";
 import { avisar } from "@/shared/composables/useAvisos";
@@ -30,6 +31,7 @@ const docentes = ref<Usuario[]>([]);
 const talleristas = ref<Usuario[]>([]);
 const cargando = ref(true);
 const error = ref("");
+const errorModal = ref("");
 
 const modalAbierto = ref(false);
 const guardando = ref(false);
@@ -106,6 +108,7 @@ function abrirNueva(): void {
   formulario.section = "";
   formulario.course = "";
   formulario.teacher = "";
+  errorModal.value = "";
   modalAbierto.value = true;
 }
 
@@ -113,7 +116,7 @@ async function guardar(): Promise<void> {
   const seccion = seccionElegida.value;
   if (!seccion) return;
   guardando.value = true;
-  error.value = "";
+  errorModal.value = "";
   try {
     await assignmentsApi.crear({
       teacher: formulario.teacher,
@@ -123,9 +126,8 @@ async function guardar(): Promise<void> {
     });
     modalAbierto.value = false;
     await cargar();
-  } catch {
-    error.value =
-      "No se pudo guardar la asignación. Puede que ese docente ya tenga otra asignación en esa sección, o que el rol no coincida con el tipo de curso.";
+  } catch (e) {
+    errorModal.value = mensajeDelServidor(e, "No se pudo guardar la asignación. Puede que ese docente ya tenga otra asignación en esa sección, o que el rol no coincida con el tipo de curso.");
   } finally {
     guardando.value = false;
   }
@@ -188,6 +190,7 @@ onMounted(cargar);
     </DataTable>
 
     <AppModal v-if="modalAbierto" titulo="Agregar asignación" @cerrar="modalAbierto = false">
+      <ErrorBanner v-if="errorModal" :mensaje="errorModal" />
       <form class="asignaciones-page__formulario" @submit.prevent="guardar">
         <FormSelect id="section" etiqueta="Sección" :opciones="opcionesSeccion" v-model="formulario.section" />
         <FormSelect

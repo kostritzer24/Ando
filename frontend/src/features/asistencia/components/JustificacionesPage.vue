@@ -4,6 +4,7 @@ import { computed, onMounted, reactive, ref } from "vue";
 import { useAuthStore } from "@/features/auth/stores/authStore";
 import { tiposJustificacionApi } from "@/features/catalogo/api/catalogoApi";
 import { enrollmentsApi, studentsApi } from "@/features/estudiantes/api/estudiantesApi";
+import { mensajeDelServidor } from "@/shared/api/errores";
 import { AppButton, AppModal, CampoArchivo, CargandoBloque, DataTable, EmptyState, ErrorBanner, FormSelect, PageHeader } from "@/shared/components";
 import { usePermisos } from "@/shared/permisos";
 import type { Attendance, Enrollment, Justification, JustificationType, Student } from "@/shared/types/models";
@@ -25,6 +26,7 @@ const puedeRegistrar = computed(() => permisos.puedeEditar("asistencia"));
 
 const cargando = ref(true);
 const error = ref("");
+const errorModal = ref("");
 const justificaciones = ref<Justification[]>([]);
 const asistencias = ref<Attendance[]>([]);
 const inscripciones = ref<Enrollment[]>([]);
@@ -92,6 +94,7 @@ function abrirNueva(): void {
   formulario.justification_type = tiposJustificacion.value[0]?.public_id ?? "";
   formulario.reason_detail = "";
   archivoElegido.value = null;
+  errorModal.value = "";
   modalAbierto.value = true;
 }
 
@@ -101,7 +104,7 @@ function alElegirArchivo(archivo: File | null): void {
 
 async function guardar(): Promise<void> {
   guardando.value = true;
-  error.value = "";
+  errorModal.value = "";
   try {
     await crearJustificacion({
       attendance: formulario.attendance,
@@ -111,8 +114,8 @@ async function guardar(): Promise<void> {
     });
     modalAbierto.value = false;
     await cargar();
-  } catch {
-    error.value = "No se pudo registrar la justificación. Revisa los datos e inténtalo de nuevo.";
+  } catch (e) {
+    errorModal.value = mensajeDelServidor(e, "No se pudo registrar la justificación. Revisa los datos e inténtalo de nuevo.");
   } finally {
     guardando.value = false;
   }
@@ -190,6 +193,7 @@ onMounted(cargar);
     </DataTable>
 
     <AppModal v-if="modalAbierto" titulo="Registrar justificación" @cerrar="modalAbierto = false">
+      <ErrorBanner v-if="errorModal" :mensaje="errorModal" />
       <form class="justificaciones-page__formulario" @submit.prevent="guardar">
         <FormSelect
           id="attendance"

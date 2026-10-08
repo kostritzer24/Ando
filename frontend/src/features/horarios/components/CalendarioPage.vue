@@ -3,6 +3,7 @@ import { computed, onMounted, reactive, ref } from "vue";
 
 import { assignmentsApi } from "@/features/asignaciones/api/asignacionesApi";
 import { useAuthStore } from "@/features/auth/stores/authStore";
+import { mensajeDelServidor } from "@/shared/api/errores";
 import { AppButton, AppModal, CargandoBloque, DataTable, EmptyState, ErrorBanner, FormSelect, PageHeader } from "@/shared/components";
 import { usePermisos } from "@/shared/permisos";
 import { avisar } from "@/shared/composables/useAvisos";
@@ -32,6 +33,7 @@ const opcionesTipo = computed(() =>
 
 const cargando = ref(true);
 const error = ref("");
+const errorModal = ref("");
 const eventos = ref<CalendarEvent[]>([]);
 const asignaciones = ref<TeacherAssignment[]>([]);
 
@@ -94,6 +96,7 @@ function abrirNuevo(): void {
   formulario.end_time = "";
   formulario.materials = "";
   formulario.assignment = "";
+  errorModal.value = "";
   modalAbierto.value = true;
 }
 
@@ -106,12 +109,13 @@ function abrirEdicion(evento: CalendarEvent): void {
   formulario.end_time = evento.end_time;
   formulario.materials = evento.materials ?? "";
   formulario.assignment = evento.assignment ?? "";
+  errorModal.value = "";
   modalAbierto.value = true;
 }
 
 async function guardar(): Promise<void> {
   guardando.value = true;
-  error.value = "";
+  errorModal.value = "";
   const payload = {
     title: formulario.title,
     type: formulario.type,
@@ -129,8 +133,8 @@ async function guardar(): Promise<void> {
     }
     modalAbierto.value = false;
     await cargar();
-  } catch {
-    error.value = "No se pudo guardar el evento. Revisa los datos e inténtalo de nuevo.";
+  } catch (e) {
+    errorModal.value = mensajeDelServidor(e, "No se pudo guardar el evento. Revisa los datos e inténtalo de nuevo.");
   } finally {
     guardando.value = false;
   }
@@ -202,6 +206,7 @@ onMounted(cargar);
       :titulo="editando ? 'Editar evento' : 'Publicar evento'"
       @cerrar="modalAbierto = false"
     >
+      <ErrorBanner v-if="errorModal" :mensaje="errorModal" />
       <form class="calendario-page__formulario" @submit.prevent="guardar">
         <label class="calendario-page__campo">
           <span>Título</span>

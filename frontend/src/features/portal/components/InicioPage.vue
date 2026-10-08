@@ -92,7 +92,7 @@ onMounted(cargar);
       <BookOpenText aria-hidden="true" />
       <span>
         <strong>Código de convivencia 2026</strong>
-        <small>Conocé las normas del centro y qué pasa cuando no se cumplen.</small>
+        <small>Conoce las normas del centro y qué pasa cuando no se cumplen.</small>
       </span>
     </RouterLink>
 
