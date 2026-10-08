@@ -154,8 +154,17 @@ class JustificationTypeViewSet(CatalogViewSet):
 
 
 class DocumentTypeViewSet(CatalogViewSet):
+    """Misma excepción que `JustificationTypeViewSet`: quien emite documentos
+    (Encargado de pagos incluido) necesita elegir el tipo, aunque "Datos
+    maestros" le dé `sin_acceso`. Administrar el catálogo sigue siendo
+    exclusivo de "datos_maestros"."""
+
     queryset = DocumentType.objects.all()
     serializer_class = DocumentTypeSerializer
+
+    def get_permissions(self):
+        self.area = "documentos" if self.action in {"list", "retrieve"} else "datos_maestros"
+        return [PermisoPorArea()]
 
 
 class ScholarshipViewSet(CatalogViewSet):

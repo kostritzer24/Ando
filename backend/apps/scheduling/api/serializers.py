@@ -21,12 +21,19 @@ class TeacherAssignmentSerializer(serializers.ModelSerializer):
     section_letter = serializers.CharField(source="section.letter", read_only=True)
     section_type = serializers.CharField(source="section.type", read_only=True)
     course_name = serializers.CharField(source="course.name", read_only=True)
+    # Quien consulta asignaciones (p. ej. Coordinación) no tiene acceso a
+    # `/users/`, pero necesita ver el nombre de la persona asignada.
+    teacher_name = serializers.SerializerMethodField()
+
+    def get_teacher_name(self, obj) -> str:
+        return obj.teacher.nombre_completo()
 
     class Meta:
         model = TeacherAssignment
         fields = [
             "public_id",
             "teacher",
+            "teacher_name",
             "course",
             "course_name",
             "section",

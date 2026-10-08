@@ -9,6 +9,8 @@ import { confirmar } from "@/shared/composables/useConfirmar";
 import type { components } from "@/shared/types/api";
 import type { Course, Section, TeacherAssignment } from "@/shared/types/models";
 
+import { opcional } from "@/shared/api/opcional";
+
 import { assignmentsApi, listarUsuariosPorRoles } from "../api/asignacionesApi";
 
 type Usuario = components["schemas"]["User"];
@@ -71,9 +73,9 @@ function nombreSeccion(id: string): string {
 function nombreCurso(id: string): string {
   return cursos.value.find((c) => c.public_id === id)?.name ?? "—";
 }
-function nombreDocente(id: string): string {
-  const u = [...docentes.value, ...talleristas.value].find((u) => u.public_id === id);
-  return u ? `${u.first_name} ${u.last_name}`.trim() || u.username : "—";
+function nombreDocente(asignacion: TeacherAssignment): string {
+  const u = [...docentes.value, ...talleristas.value].find((u) => u.public_id === asignacion.teacher);
+  return u ? `${u.first_name} ${u.last_name}`.trim() || u.username : asignacion.teacher_name || "—";
 }
 
 async function cargar(): Promise<void> {
@@ -85,8 +87,8 @@ async function cargar(): Promise<void> {
         assignmentsApi.listar(),
         seccionesApi.listar(),
         cursosApi.listar(),
-        listarUsuariosPorRoles(["Docente", "Docente con sección a cargo"]),
-        listarUsuariosPorRoles(["Tallerista"]),
+        opcional(listarUsuariosPorRoles(["Docente", "Docente con sección a cargo"]), []),
+        opcional(listarUsuariosPorRoles(["Tallerista"]), []),
       ]);
     asignaciones.value = asignacionesResp.results;
     secciones.value = seccionesResp.results.filter((s) => s.is_active !== false);
@@ -168,7 +170,7 @@ onMounted(cargar);
     <DataTable
       v-else
       :columnas="[
-        { clave: 'teacher', etiqueta: 'Docente', texto: (a) => nombreDocente(a.teacher) },
+        { clave: 'teacher', etiqueta: 'Docente', texto: (a) => nombreDocente(a) },
         { clave: 'course', etiqueta: 'Curso', texto: (a) => nombreCurso(a.course) },
         { clave: 'section', etiqueta: 'Sección', texto: (a) => nombreSeccion(a.section) },
       ]"
@@ -177,7 +179,7 @@ onMounted(cargar);
       placeholder-busqueda="Buscar asignación"
       descripcion="Asignaciones de docentes y talleristas"
     >
-      <template #celda-teacher="{ fila }">{{ nombreDocente(fila.teacher) }}</template>
+      <template #celda-teacher="{ fila }">{{ nombreDocente(fila) }}</template>
       <template #celda-course="{ fila }">{{ nombreCurso(fila.course) }}</template>
       <template #celda-section="{ fila }">{{ nombreSeccion(fila.section) }}</template>
       <template v-if="puedeEditar" #acciones="{ fila }">

@@ -3,6 +3,7 @@ import { computed, onMounted, reactive, ref } from "vue";
 
 import { tiposDocumentoApi } from "@/features/catalogo/api/catalogoApi";
 import { enrollmentsApi, studentsApi } from "@/features/estudiantes/api/estudiantesApi";
+import { opcional } from "@/shared/api/opcional";
 import { AppButton, AppPanel, CargandoBloque, DataTable, EmptyState, ErrorBanner, FormField, FormSelect, PageHeader } from "@/shared/components";
 import { usePermisos } from "@/shared/permisos";
 import type { DocumentType, Enrollment, IssuedDocument, Student } from "@/shared/types/models";
@@ -47,17 +48,20 @@ async function cargar(): Promise<void> {
   cargando.value = true;
   error.value = "";
   try {
+    // Los nombres salen de inscripciones y estudiantes: si el rol no los
+    // alcanza, la bandeja igual se muestra (con "—" en vez del nombre).
+    const vacio = { count: 0, next: null, previous: null, results: [] };
     const [documentosResp, inscripcionesResp, estudiantesResp] = await Promise.all([
       issuedDocumentsApi.listar(),
-      enrollmentsApi.listar(),
-      studentsApi.listar(),
+      opcional(enrollmentsApi.listar(), vacio),
+      opcional(studentsApi.listar(), vacio),
     ]);
     documentos.value = documentosResp.results;
     inscripciones.value = inscripcionesResp.results.filter((i) => i.status === "activo");
     estudiantes.value = estudiantesResp.results;
 
     if (puedeEmitir.value) {
-      tiposDocumento.value = (await tiposDocumentoApi.listar()).results;
+      tiposDocumento.value = (await opcional(tiposDocumentoApi.listar(), vacio)).results;
       formulario.enrollment = opcionesInscripcion.value[0]?.valor ?? "";
       formulario.document_type = opcionesTipo.value[0]?.valor ?? "";
     }

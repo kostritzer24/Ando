@@ -42,6 +42,7 @@ def test_rf02_direccion_administra_cada_catalogo(ruta, payload):
             "asistencia": "editar",
             "notas": "editar",
             "reportes_conducta": "editar",
+            "documentos": "editar",
         },
     )
     direccion = UserFactory(role=rol)

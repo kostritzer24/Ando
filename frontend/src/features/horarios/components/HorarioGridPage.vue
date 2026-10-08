@@ -3,6 +3,7 @@ import { X } from "lucide-vue-next";
 import { computed, onMounted, reactive, ref } from "vue";
 
 import { assignmentsApi, listarUsuariosPorRoles } from "@/features/asignaciones/api/asignacionesApi";
+import { opcional } from "@/shared/api/opcional";
 import { AppButton, AppModal, CargandoBloque, ErrorBanner, FormSelect, PageHeader } from "@/shared/components";
 import { avisar } from "@/shared/composables/useAvisos";
 import { confirmar } from "@/shared/composables/useConfirmar";
@@ -36,14 +37,14 @@ const opcionesDocente = computed(() => {
   for (const a of asignaciones.value) {
     if (vistos.has(a.teacher)) continue;
     vistos.add(a.teacher);
-    opciones.push({ valor: a.teacher, etiqueta: nombreDocente(a.teacher) });
+    opciones.push({ valor: a.teacher, etiqueta: nombreDocente(a.teacher, a.teacher_name) });
   }
   return opciones;
 });
 
-function nombreDocente(teacherPublicId: string): string {
+function nombreDocente(teacherPublicId: string, respaldo = ""): string {
   const u = personas.value.find((u) => u.public_id === teacherPublicId);
-  return u ? `${u.first_name} ${u.last_name}`.trim() || u.username : teacherPublicId;
+  return u ? `${u.first_name} ${u.last_name}`.trim() || u.username : respaldo || teacherPublicId;
 }
 
 const misAsignaciones = computed(() =>
@@ -74,8 +75,8 @@ async function cargar(): Promise<void> {
     const [asignacionesResp, bloquesResp, docentesResp, talleristasResp] = await Promise.all([
       assignmentsApi.listar(),
       scheduleBlocksApi.listar(),
-      listarUsuariosPorRoles(["Docente", "Docente con sección a cargo"]),
-      listarUsuariosPorRoles(["Tallerista"]),
+      opcional(listarUsuariosPorRoles(["Docente", "Docente con sección a cargo"]), []),
+      opcional(listarUsuariosPorRoles(["Tallerista"]), []),
     ]);
     asignaciones.value = asignacionesResp.results;
     bloques.value = bloquesResp.results;

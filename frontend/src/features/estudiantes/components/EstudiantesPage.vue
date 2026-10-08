@@ -3,6 +3,7 @@ import { computed, onMounted, reactive, ref } from "vue";
 import { useRouter } from "vue-router";
 
 import { becasApi, seccionesApi } from "@/features/catalogo/api/catalogoApi";
+import { opcional } from "@/shared/api/opcional";
 import { AppButton, AppModal, CargandoBloque, DataTable, EmptyState, ErrorBanner, FormField, FormSelect, PageHeader } from "@/shared/components";
 import { usePermisos } from "@/shared/permisos";
 import type { ColumnaTabla } from "@/shared/components/DataTable.vue";
@@ -56,10 +57,13 @@ async function cargar(): Promise<void> {
   cargando.value = true;
   error.value = "";
   try {
+    // Secciones y becas solo sirven para inscribir: quien consulta sin ese
+    // permiso (p. ej. Encargado de pagos) igual ve la lista de estudiantes.
+    const vacio = { count: 0, next: null, previous: null, results: [] };
     const [estudiantesResp, seccionesResp, becasResp] = await Promise.all([
       studentsApi.listar(),
-      seccionesApi.listar(),
-      becasApi.listar(),
+      opcional(seccionesApi.listar(), vacio),
+      opcional(becasApi.listar(), vacio),
     ]);
     estudiantes.value = estudiantesResp.results;
     secciones.value = seccionesResp.results.filter((s) => s.is_active !== false);

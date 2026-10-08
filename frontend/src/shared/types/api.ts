@@ -915,14 +915,18 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * @description Base común a los 8 catálogos: mismo permiso, mismo identificador de
-         *     URL, misma baja lógica en vez de borrado (RF-02, HU-02).
+         * @description Misma excepción que `JustificationTypeViewSet`: quien emite documentos
+         *     (Encargado de pagos incluido) necesita elegir el tipo, aunque "Datos
+         *     maestros" le dé `sin_acceso`. Administrar el catálogo sigue siendo
+         *     exclusivo de "datos_maestros".
          */
         get: operations["v1_document_types_list"];
         put?: never;
         /**
-         * @description Base común a los 8 catálogos: mismo permiso, mismo identificador de
-         *     URL, misma baja lógica en vez de borrado (RF-02, HU-02).
+         * @description Misma excepción que `JustificationTypeViewSet`: quien emite documentos
+         *     (Encargado de pagos incluido) necesita elegir el tipo, aunque "Datos
+         *     maestros" le dé `sin_acceso`. Administrar el catálogo sigue siendo
+         *     exclusivo de "datos_maestros".
          */
         post: operations["v1_document_types_create"];
         delete?: never;
@@ -939,26 +943,34 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * @description Base común a los 8 catálogos: mismo permiso, mismo identificador de
-         *     URL, misma baja lógica en vez de borrado (RF-02, HU-02).
+         * @description Misma excepción que `JustificationTypeViewSet`: quien emite documentos
+         *     (Encargado de pagos incluido) necesita elegir el tipo, aunque "Datos
+         *     maestros" le dé `sin_acceso`. Administrar el catálogo sigue siendo
+         *     exclusivo de "datos_maestros".
          */
         get: operations["v1_document_types_retrieve"];
         /**
-         * @description Base común a los 8 catálogos: mismo permiso, mismo identificador de
-         *     URL, misma baja lógica en vez de borrado (RF-02, HU-02).
+         * @description Misma excepción que `JustificationTypeViewSet`: quien emite documentos
+         *     (Encargado de pagos incluido) necesita elegir el tipo, aunque "Datos
+         *     maestros" le dé `sin_acceso`. Administrar el catálogo sigue siendo
+         *     exclusivo de "datos_maestros".
          */
         put: operations["v1_document_types_update"];
         post?: never;
         /**
-         * @description Base común a los 8 catálogos: mismo permiso, mismo identificador de
-         *     URL, misma baja lógica en vez de borrado (RF-02, HU-02).
+         * @description Misma excepción que `JustificationTypeViewSet`: quien emite documentos
+         *     (Encargado de pagos incluido) necesita elegir el tipo, aunque "Datos
+         *     maestros" le dé `sin_acceso`. Administrar el catálogo sigue siendo
+         *     exclusivo de "datos_maestros".
          */
         delete: operations["v1_document_types_destroy"];
         options?: never;
         head?: never;
         /**
-         * @description Base común a los 8 catálogos: mismo permiso, mismo identificador de
-         *     URL, misma baja lógica en vez de borrado (RF-02, HU-02).
+         * @description Misma excepción que `JustificationTypeViewSet`: quien emite documentos
+         *     (Encargado de pagos incluido) necesita elegir el tipo, aunque "Datos
+         *     maestros" le dé `sin_acceso`. Administrar el catálogo sigue siendo
+         *     exclusivo de "datos_maestros".
          */
         patch: operations["v1_document_types_partial_update"];
         trace?: never;
@@ -3919,6 +3931,7 @@ export interface components {
             readonly public_id?: string;
             /** Format: uuid */
             teacher?: string;
+            readonly teacher_name?: string;
             /** Format: uuid */
             course?: string;
             readonly course_name?: string;
@@ -4221,6 +4234,7 @@ export interface components {
             readonly public_id: string;
             /** Format: uuid */
             teacher: string;
+            readonly teacher_name: string;
             /** Format: uuid */
             course: string;
             readonly course_name: string;
