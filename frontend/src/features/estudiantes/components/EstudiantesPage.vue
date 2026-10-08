@@ -13,10 +13,12 @@ import { usePermisos } from "@/shared/permisos";
 import type { ColumnaTabla } from "@/shared/components/DataTable.vue";
 import type { Scholarship, Section, Student } from "@/shared/types/models";
 
-import { enrollmentsApi, studentsApi } from "../api/estudiantesApi";
+import { actualizarDatosSensibles, enrollmentsApi, studentsApi } from "../api/estudiantesApi";
 
 const permisos = usePermisos();
 const puedeInscribir = computed(() => permisos.puedeEditar("estudiantes_encargados"));
+// Salud y situación socioeconómica son datos reservados: solo quien puede editarlos los ve aquí.
+const puedeDatosSensibles = computed(() => permisos.puedeEditar("datos_sensibles"));
 
 const router = useRouter();
 
@@ -38,6 +40,8 @@ const formulario = reactive({
   previous_institution: "",
   section: "",
   scholarship: "",
+  health_notes: "",
+  socioeconomic_notes: "",
 });
 
 // El nombre va primero: en el teléfono es el título de cada bloque.
@@ -89,6 +93,8 @@ function abrirNuevo(): void {
   formulario.previous_institution = "";
   formulario.section = secciones.value[0]?.public_id ?? "";
   formulario.scholarship = "";
+  formulario.health_notes = "";
+  formulario.socioeconomic_notes = "";
   errorModal.value = "";
   modalAbierto.value = true;
 }
@@ -116,6 +122,12 @@ async function inscribir(): Promise<void> {
       scholarship: formulario.scholarship || null,
       enrolled_at: hoyIso(),
     });
+    if (puedeDatosSensibles.value && (formulario.health_notes || formulario.socioeconomic_notes)) {
+      await actualizarDatosSensibles(estudiante.public_id, {
+        health_notes: formulario.health_notes,
+        socioeconomic_notes: formulario.socioeconomic_notes,
+      });
+    }
     codigoRecienCreado.value = estudiante.internal_code;
     await cargar();
   } catch (e) {
@@ -208,8 +220,17 @@ onMounted(cargar);
         />
         <FormSelect id="section" etiqueta="Sección" :opciones="opcionesSeccion" v-model="formulario.section" />
         <FormSelect id="scholarship" etiqueta="Beca" :opciones="opcionesBeca" v-model="formulario.scholarship" />
+        <template v-if="puedeDatosSensibles">
+          <FormField id="health_notes" etiqueta="Datos de salud (opcional)" multilinea v-model="formulario.health_notes" />
+          <FormField
+            id="socioeconomic_notes"
+            etiqueta="Datos socioeconómicos (opcional)"
+            multilinea
+            v-model="formulario.socioeconomic_notes"
+          />
+        </template>
         <p class="estudiantes-page__nota">
-          El código interno del estudiante lo asigna el sistema — se muestra acá apenas se guarda.
+          El código interno del estudiante lo asigna el sistema — se muestra aquí apenas se guarda.
         </p>
         <AppButton tipo="submit" :deshabilitado="guardando">
           {{ guardando ? "Inscribiendo…" : "Inscribir" }}

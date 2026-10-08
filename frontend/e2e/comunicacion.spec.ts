@@ -105,7 +105,7 @@ test("reportes de conducta: el maestro guía registra uno con artículos marcado
   await page.getByRole("button", { name: "Guardar reporte" }).click();
 
   await expect(page.getByRole("heading", { name: "Registrar reporte de conducta" })).not.toBeVisible();
-  const fila = page.locator("tr", { hasText: "2026-03-10" });
+  const fila = page.locator("tr", { hasText: "10/03/2026" });
   await expect(fila).toBeVisible();
 
   const descarga = page.waitForEvent("download");

@@ -50,14 +50,43 @@ const formulario = reactive({
   receipt_number: "",
 });
 
-const opcionesInscripcion = computed(() =>
-  inscripciones.value.map((i) => {
-    const estudiante = estudiantes.value.find((e) => e.public_id === i.student);
-    const nombre = estudiante ? `${estudiante.first_name} ${estudiante.last_name}` : "—";
-    const codigo = estudiante ? ` (${estudiante.internal_code})` : "";
-    return { valor: i.public_id, etiqueta: `${nombre}${codigo}` };
-  }),
-);
+// Con decenas de estudiantes, elegir de una lista plana es lento: se puede
+// acotar por sección y buscar por nombre o código.
+const filtroSeccion = ref("");
+const busqueda = ref("");
+
+function etiquetaSeccion(i: Enrollment): string {
+  return `${i.section_grade ?? ""} ${i.section_letter ?? ""}`.trim();
+}
+
+const opcionesSeccion = computed(() => {
+  const nombres = [...new Set(inscripciones.value.map(etiquetaSeccion))].filter(Boolean).sort();
+  return [{ valor: "", etiqueta: "Todas las secciones" }, ...nombres.map((n) => ({ valor: n, etiqueta: n }))];
+});
+
+function sinTildes(texto: string): string {
+  return texto.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+}
+
+const opcionesInscripcion = computed(() => {
+  const termino = sinTildes(busqueda.value.trim());
+  return inscripciones.value
+    .filter((i) => !filtroSeccion.value || etiquetaSeccion(i) === filtroSeccion.value)
+    .map((i) => {
+      const estudiante = estudiantes.value.find((e) => e.public_id === i.student);
+      const nombre = estudiante ? `${estudiante.first_name} ${estudiante.last_name}` : "—";
+      const codigo = estudiante ? ` (${estudiante.internal_code})` : "";
+      return { valor: i.public_id, etiqueta: `${nombre}${codigo}` };
+    })
+    .filter((o) => !termino || sinTildes(o.etiqueta).includes(termino));
+});
+
+// Si el filtro deja fuera al estudiante elegido, pasa al primero que sí cumpla.
+watch(opcionesInscripcion, (opciones) => {
+  if (!opciones.some((o) => o.valor === inscripcionElegida.value)) {
+    inscripcionElegida.value = opciones[0]?.valor ?? "";
+  }
+});
 
 const opcionesMes = MESES.map((nombre, indice) => ({ valor: String(indice + 1), etiqueta: nombre }));
 
@@ -177,6 +206,8 @@ onMounted(async () => {
 
     <template v-else>
       <div class="pagos-page__selector">
+        <FormSelect id="filtro-seccion" etiqueta="Sección" :opciones="opcionesSeccion" v-model="filtroSeccion" />
+        <FormField id="busqueda-estudiante" etiqueta="Buscar estudiante" v-model="busqueda" />
         <FormSelect
           id="inscripcion"
           etiqueta="Estudiante"
@@ -256,6 +287,9 @@ onMounted(async () => {
 
 <style scoped>
 .pagos-page__selector {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-md);
   max-width: 28rem;
 }
 

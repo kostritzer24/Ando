@@ -353,7 +353,7 @@ onMounted(async () => {
       <details class="usuarios-page__permisos">
         <summary>Qué puede hacer cada rol</summary>
         <p class="usuarios-page__nota">
-          Los permisos siguen la matriz aprobada por dirección. Se consultan acá, pero no se editan desde el sistema.
+          Los permisos siguen la matriz aprobada por dirección. Se consultan aquí, pero no se editan desde el sistema.
         </p>
         <FormSelect id="rol-visto" etiqueta="Rol" :opciones="opcionesRolVisto" v-model="rolVisto" />
         <ul class="usuarios-page__lista-permisos">

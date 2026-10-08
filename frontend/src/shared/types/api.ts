@@ -1803,6 +1803,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/report-cards/{public_id}/preview/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Dirección revisa el boletín (borrador, aprobado o publicado) antes de
+         *     aprobarlo: aprobar congela el contenido, así que un error detectado
+         *     después ya no se corrige en silencio.
+         */
+        get: operations["v1_report_cards_preview_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/report-cards/{public_id}/publish/": {
         parameters: {
             query?: never;
@@ -2524,6 +2545,7 @@ export interface components {
             readonly usuario: string;
             /** Pantalla consultada */
             readonly screen_viewed: string;
+            readonly pantalla: string;
             /**
              * Fecha
              * Format: date-time
@@ -7586,6 +7608,27 @@ export interface operations {
         };
     };
     v1_report_cards_download_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                public_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportCard"];
+                };
+            };
+        };
+    };
+    v1_report_cards_preview_retrieve: {
         parameters: {
             query?: never;
             header?: never;

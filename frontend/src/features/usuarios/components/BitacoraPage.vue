@@ -217,7 +217,7 @@ onMounted(async () => {
       <DataTable v-else :columnas="columnasAccesos" :filas="accesos" :por-pagina="0" descripcion="Registro de accesos">
         <template #celda-accessed_at="{ fila }">{{ formatoFecha.format(new Date(fila.accessed_at)) }}</template>
         <template #celda-screen_viewed="{ fila }">
-          <code class="bitacora-page__ruta">{{ fila.screen_viewed }}</code>
+          {{ fila.pantalla }}
         </template>
       </DataTable>
 
@@ -272,11 +272,6 @@ onMounted(async () => {
 
 .bitacora-page__detalle {
   color: var(--color-tinta-suave);
-  overflow-wrap: anywhere;
-}
-
-.bitacora-page__ruta {
-  font-size: var(--texto-xs);
   overflow-wrap: anywhere;
 }
 
