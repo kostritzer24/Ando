@@ -22,7 +22,11 @@ from ..services.link import (
     desvincular_encargado_estudiante,
     vincular_encargado_estudiante,
 )
-from ..services.student import actualizar_datos_sensibles, crear_estudiante
+from ..services.student import (
+    actualizar_datos_sensibles,
+    crear_estudiante,
+    dar_de_baja_estudiante,
+)
 from .serializers import (
     EnrollmentSerializer,
     GuardianSerializer,
@@ -78,6 +82,17 @@ class StudentViewSet(
                 enrollments__is_active=True,
             ).distinct()
         return queryset.none()
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        # Un estudiante dado de baja sale de las listas; su ficha sigue
+        # accesible por id para los históricos.
+        if self.action == "list":
+            queryset = queryset.filter(is_active=True)
+        return queryset
+
+    def perform_destroy(self, instance):
+        dar_de_baja_estudiante(instance, usuario=self.request.user)
 
     def create(self, request, *args, **kwargs):
         serializer = StudentCreateSerializer(data=request.data)

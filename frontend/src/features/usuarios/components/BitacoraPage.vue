@@ -25,6 +25,7 @@ const formatoFecha = new Intl.DateTimeFormat("es-GT", { dateStyle: "medium", tim
 // Nombres de entidad tal como los escribe cada servicio del backend.
 const ENTIDADES: Record<string, string> = {
   "accounts.User": "Usuario",
+  "students.Student": "Estudiante",
   "attendance.Attendance": "Asistencia",
   "attendance.Justification": "Justificación",
   "grading.Grade": "Nota",

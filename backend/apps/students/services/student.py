@@ -2,8 +2,10 @@ from datetime import date
 
 from django.db import transaction
 
+from apps.core.services import registrar_cambio
+
 from ..domain.internal_code import generar_codigo_interno
-from ..models import Student
+from ..models import Enrollment, Student
 
 
 def _siguiente_numero_secuencial() -> int:
@@ -49,4 +51,26 @@ def actualizar_datos_sensibles(
         campos.append("socioeconomic_notes")
     if campos:
         estudiante.save(update_fields=[*campos, "updated_at"])
+    return estudiante
+
+
+@transaction.atomic
+def dar_de_baja_estudiante(estudiante: Student, *, usuario) -> Student:
+    """RF-03 / HU-02: baja lógica. El estudiante deja de aparecer en listas y
+    en la asistencia, sus inscripciones activas pasan a "retirado" y todo su
+    historial (notas, pagos, boletines, documentos) se conserva."""
+    inscripciones = list(estudiante.enrollments.filter(status=Enrollment.ESTADO_ACTIVO))
+    for inscripcion in inscripciones:
+        inscripcion.status = Enrollment.ESTADO_RETIRADO
+        inscripcion.save(update_fields=["status", "updated_at"])
+    estudiante.is_active = False
+    estudiante.save(update_fields=["is_active", "updated_at"])
+    registrar_cambio(
+        usuario=usuario,
+        entidad_nombre="students.Student",
+        entidad_id=estudiante.id,
+        accion="eliminar",
+        valor_anterior={"is_active": True},
+        valor_nuevo={"is_active": False, "inscripciones_retiradas": len(inscripciones)},
+    )
     return estudiante

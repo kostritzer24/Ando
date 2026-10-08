@@ -99,3 +99,32 @@ def test_tallerista_no_alcanza_notas_de_ningun_tipo_acceso_no_autorizado():
 
     respuesta = client.get("/api/v1/grades/")
     assert respuesta.status_code == 403
+
+
+@pytest.mark.django_db
+def test_rn06_la_familia_ve_solo_la_nota_total_sin_detalle_de_actividad_ni_docente():
+    """Decisión del dueño (oct 2026): la familia ve la nota por curso y unidad."""
+    rol_familia = RoleFactory(name="Padre de familia", permissions={"notas": "ver"})
+    usuario_familia = UserFactory(role=rol_familia)
+    encargado = GuardianFactory(user=usuario_familia)
+    hijo = StudentFactory()
+    vincular_encargado_estudiante(guardian=encargado, student=hijo, relationship="Madre")
+    asignacion = TeacherAssignmentFactory()
+    inscripcion = EnrollmentFactory(
+        student=hijo, section=asignacion.section, cycle=asignacion.cycle
+    )
+    Grade.objects.create(
+        enrollment=inscripcion,
+        activity=ActivityFactory(assignment=asignacion),
+        raw_score=8,
+        current_score=8,
+        recorded_by=asignacion.teacher,
+    )
+    client = APIClient()
+    client.force_authenticate(user=usuario_familia)
+
+    fila = client.get("/api/v1/grades/").data["results"][0]
+
+    assert fila["current_score"] is not None
+    assert {"course_name", "unit_number"} <= set(fila)
+    assert not {"recorded_by", "activity_name", "max_score", "raw_score"} & set(fila)

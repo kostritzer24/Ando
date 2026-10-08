@@ -181,3 +181,29 @@ def test_hu02_delete_da_de_baja_logica_y_no_borra_la_fila(recurso):
     assert respuesta.status_code == 204
     registro.refresh_from_db()
     assert registro.is_active is False
+
+
+@pytest.mark.django_db
+def test_rf03_dar_de_baja_a_un_estudiante_retira_sus_inscripciones_y_lo_saca_de_las_listas():
+    """Decisión del dueño (oct 2026) / hallazgo D-016: la baja conserva todo el
+    historial, retira las inscripciones activas y deja registro en la bitácora."""
+    from apps.core.models import AuditLog
+    from apps.students.models import Enrollment
+    from apps.students.tests.factories import EnrollmentFactory
+
+    rol = RoleFactory(name="Dirección", permissions={"estudiantes_encargados": "editar"})
+    direccion = UserFactory(role=rol)
+    inscripcion = EnrollmentFactory()
+    estudiante = inscripcion.student
+    client = APIClient()
+    client.force_authenticate(user=direccion)
+
+    respuesta = client.delete(f"/api/v1/students/{estudiante.public_id}/")
+
+    assert respuesta.status_code == 204
+    inscripcion.refresh_from_db()
+    assert inscripcion.status == Enrollment.ESTADO_RETIRADO
+    listado = client.get("/api/v1/students/")
+    assert estudiante.public_id.hex not in str(listado.data).replace("-", "")
+    assert client.get(f"/api/v1/students/{estudiante.public_id}/").status_code == 200
+    assert AuditLog.objects.filter(entity_name="students.Student", action="eliminar").exists()

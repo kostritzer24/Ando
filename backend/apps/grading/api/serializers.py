@@ -87,6 +87,18 @@ class GradeSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["public_id", "current_score", "source", "recorded_by"]
 
+    # Decisión del dueño (oct 2026): la familia ve solo la nota total por
+    # curso y unidad, no el detalle de cada actividad ni quién la registró.
+    _SOLO_PERSONAL = ("recorded_by", "activity_name", "max_score")
+
+    def to_representation(self, instance):
+        datos = super().to_representation(instance)
+        peticion = self.context.get("request")
+        if peticion is not None and peticion.user.role.name == "Padre de familia":
+            for campo in self._SOLO_PERSONAL:
+                datos.pop(campo, None)
+        return datos
+
 
 class GradeCreateSerializer(serializers.Serializer):
     enrollment = serializers.SlugRelatedField(

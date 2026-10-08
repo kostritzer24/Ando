@@ -5,6 +5,8 @@ import { useRouter } from "vue-router";
 import { becasApi, seccionesApi } from "@/features/catalogo/api/catalogoApi";
 import { mensajeDelServidor } from "@/shared/api/errores";
 import { opcional } from "@/shared/api/opcional";
+import { avisar } from "@/shared/composables/useAvisos";
+import { confirmar } from "@/shared/composables/useConfirmar";
 import { AppButton, AppModal, CargandoBloque, DataTable, EmptyState, ErrorBanner, FormField, FormSelect, PageHeader } from "@/shared/components";
 import { usePermisos } from "@/shared/permisos";
 import type { ColumnaTabla } from "@/shared/components/DataTable.vue";
@@ -122,6 +124,25 @@ async function inscribir(): Promise<void> {
   }
 }
 
+async function darDeBaja(estudiante: Student): Promise<void> {
+  const nombre = `${estudiante.first_name} ${estudiante.last_name}`;
+  const confirmado = await confirmar({
+    titulo: `¿Dar de baja a ${nombre}?`,
+    mensaje:
+      "Dejará de aparecer en las listas y en la asistencia. Sus notas, pagos y documentos se conservan.",
+    etiquetaConfirmar: "Dar de baja",
+    peligro: true,
+  });
+  if (!confirmado) return;
+  try {
+    await studentsApi.darDeBaja(estudiante.public_id);
+    avisar(`${nombre} fue dado de baja.`);
+    await cargar();
+  } catch {
+    avisar(`No se pudo dar de baja a ${nombre}. Inténtalo de nuevo.`, "error");
+  }
+}
+
 function verExpediente(estudiante: Student): void {
   router.push(`/administrativo/estudiantes/${estudiante.public_id}`);
 }
@@ -156,6 +177,9 @@ onMounted(cargar);
       <template #celda-nombre="{ fila }">{{ fila.first_name }} {{ fila.last_name }}</template>
       <template #acciones="{ fila }">
         <AppButton variante="discreto" compacto @click="verExpediente(fila)">Ver expediente</AppButton>
+        <AppButton v-if="puedeInscribir" variante="discreto" compacto @click="darDeBaja(fila)">
+          Dar de baja
+        </AppButton>
       </template>
     </DataTable>
 

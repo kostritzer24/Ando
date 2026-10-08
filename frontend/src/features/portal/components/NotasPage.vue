@@ -30,7 +30,6 @@ const inscripcionesIds = computed(
 interface FilaUnidad {
   unidad: number;
   nota: number;
-  actividades: { nombre: string; nota: number; maximo: number }[];
 }
 interface GrupoCurso {
   curso: string;
@@ -43,14 +42,11 @@ const notasPorCurso = computed<GrupoCurso[]>(() => {
   for (const nota of propias) {
     const courseName = nota.course_name;
     const unitNumber = nota.unit_number;
-    const activityName = nota.activity_name;
-    const maxScore = Number(nota.max_score);
     if (!cursos.has(courseName)) cursos.set(courseName, new Map());
     const unidades = cursos.get(courseName)!;
-    if (!unidades.has(unitNumber)) unidades.set(unitNumber, { unidad: unitNumber, nota: 0, actividades: [] });
+    if (!unidades.has(unitNumber)) unidades.set(unitNumber, { unidad: unitNumber, nota: 0 });
     const fila = unidades.get(unitNumber)!;
     fila.nota += Number(nota.current_score);
-    fila.actividades.push({ nombre: activityName, nota: Number(nota.current_score), maximo: maxScore });
   }
   return Array.from(cursos.entries())
     .map(([curso, unidades]) => ({
@@ -118,11 +114,6 @@ onMounted(cargar);
           <h2>{{ grupo.curso }}</h2>
           <div v-for="fila in grupo.unidades" :key="fila.unidad" class="notas-page__unidad">
             <p class="notas-page__unidad-titulo">Unidad {{ fila.unidad }} — {{ fila.nota }} / 100</p>
-            <ul class="notas-page__actividades">
-              <li v-for="(act, indice) in fila.actividades" :key="indice">
-                {{ act.nombre }}: {{ act.nota }} / {{ act.maximo }}
-              </li>
-            </ul>
           </div>
         </article>
       </div>
@@ -174,13 +165,6 @@ onMounted(cargar);
 .notas-page__unidad-titulo {
   margin: 0;
   font-weight: 600;
-}
-
-.notas-page__actividades {
-  margin: var(--espacio-2xs) 0 0;
-  padding-left: 1.2rem;
-  color: var(--color-tinta-suave);
-  font-size: var(--texto-sm);
 }
 
 .notas-page__boletines {
