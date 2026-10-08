@@ -4,6 +4,7 @@ from rest_framework.test import APIClient
 
 from apps.accounts.tests.factories import RoleFactory, UserFactory
 from apps.catalog.tests.factories import SectionFactory
+from apps.communication.models import Message
 from apps.students.services.link import vincular_encargado_estudiante
 from apps.students.tests.factories import EnrollmentFactory, GuardianFactory, StudentFactory
 
@@ -222,3 +223,22 @@ def test_rf25_direccion_ve_y_responde_cualquier_hilo():
     )
 
     assert respuesta.status_code == 201
+
+
+def test_rn16_con_la_cuenta_bloqueada_no_se_puede_seguir_enviando_mensajes():
+    """Hallazgo D-001: el bloqueo solo se revisaba al iniciar sesión, y el
+    token emitido antes seguía enviando."""
+    seccion = SectionFactory()
+    _guia_de(seccion)
+    familia = _familia_con_hijo(seccion)
+    client = APIClient()
+    client.force_authenticate(user=familia)
+    datos = {"section": str(seccion.public_id), "subject": "Hola", "content": "Buenos días"}
+    client.post("/api/v1/messages/", {**datos, "content": "eres un idiota"})
+    familia.refresh_from_db()
+    assert familia.esta_bloqueado is True
+
+    segundo = client.post("/api/v1/messages/", datos)
+
+    assert segundo.status_code == 400
+    assert Message.objects.filter(sender=familia).count() == 0

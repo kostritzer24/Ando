@@ -30,12 +30,23 @@ _PALABRAS_INAPROPIADAS = frozenset(
 )
 
 _ACENTOS = str.maketrans("áéíóúñ", "aeioun")
-_PATRON_PALABRA = re.compile(r"[a-z]+")
+# Sustituciones típicas para evadir el filtro: "put0", "1diota", "m13rda".
+_LEET = str.maketrans("013457@$", "oieastas")
+_PATRON_PALABRA = re.compile(r"[a-z0-9@$]+")
+_LETRAS_REPETIDAS = re.compile(r"(.)\1+")
 
 
 def contiene_lenguaje_inapropiado(texto: str) -> bool:
     """Compara sin acentos ni mayúsculas, palabra completa — "estúpido" y
     "ESTUPIDO" coinciden con "estupido" en la lista, pero "estupidez" no
-    (coincidencia de palabra completa, no de subcadena)."""
+    (coincidencia de palabra completa, no de subcadena). También detecta
+    cambios de letra por número ("put0") y letras repetidas ("puuuta")."""
     palabras = _PATRON_PALABRA.findall(texto.lower().translate(_ACENTOS))
-    return any(palabra in _PALABRAS_INAPROPIADAS for palabra in palabras)
+    for palabra in palabras:
+        normal = palabra.translate(_LEET)
+        # "puuuta" cuenta igual que "puta".
+        if normal in _PALABRAS_INAPROPIADAS or (
+            _LETRAS_REPETIDAS.sub(r"\1", normal) in _PALABRAS_INAPROPIADAS
+        ):
+            return True
+    return False

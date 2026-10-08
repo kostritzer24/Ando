@@ -15,7 +15,13 @@ from apps.students.models import Enrollment
 from ..domain.announcement import PublicacionDeAvisoInvalida
 from ..models import Announcement, ConductReport, Message
 from ..services.announcement import avisos_vigentes, crear_aviso
-from ..services.buzon import LenguajeInapropiado, enviar_mensaje, marcar_leido, responder_mensaje
+from ..services.buzon import (
+    CuentaBloqueada,
+    LenguajeInapropiado,
+    enviar_mensaje,
+    marcar_leido,
+    responder_mensaje,
+)
 from ..services.conduct_report import contenido_reporte, crear_reporte
 from .serializers import (
     AnnouncementSerializer,
@@ -230,7 +236,7 @@ class MessageViewSet(
                 subject=serializer.validated_data.get("subject", ""),
                 content=serializer.validated_data["content"],
             )
-        except LenguajeInapropiado as exc:
+        except (LenguajeInapropiado, CuentaBloqueada) as exc:
             raise ValidationError(str(exc)) from exc
         return Response(MessageSerializer(mensaje).data, status=status.HTTP_201_CREATED)
 
@@ -249,6 +255,6 @@ class MessageViewSet(
                 sender=request.user,
                 content=serializer.validated_data["content"],
             )
-        except LenguajeInapropiado as exc:
+        except (LenguajeInapropiado, CuentaBloqueada) as exc:
             raise ValidationError(str(exc)) from exc
         return Response(MessageSerializer(respuesta).data, status=status.HTTP_201_CREATED)

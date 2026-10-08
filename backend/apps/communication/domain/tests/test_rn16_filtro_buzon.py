@@ -16,3 +16,15 @@ def test_rn16_mensaje_normal_no_se_marca():
 def test_rn16_coincidencia_es_por_palabra_completa():
     """ "estupidez" no es "estupido" — el filtro no debe marcar de más."""
     assert contiene_lenguaje_inapropiado("Qué estupidez de trámite tan largo") is False
+
+
+def test_rn16_detecta_letras_cambiadas_por_numeros_y_repetidas():
+    """Hallazgo D-002."""
+    assert contiene_lenguaje_inapropiado("put0") is True
+    assert contiene_lenguaje_inapropiado("1diota") is True
+    assert contiene_lenguaje_inapropiado("m13rda") is True
+    assert contiene_lenguaje_inapropiado("puuuta") is True
+
+
+def test_rn16_numeros_normales_no_se_marcan():
+    assert contiene_lenguaje_inapropiado("La reunión es el 12 de marzo de 2026 a las 10") is False

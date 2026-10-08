@@ -8,6 +8,16 @@ class LenguajeInapropiado(Exception):
     """RN-16: el mensaje nunca se crea, y quien lo envió queda bloqueado."""
 
 
+class CuentaBloqueada(Exception):
+    """RN-16: mientras dure el bloqueo no se envía nada, aunque el token
+    emitido antes del bloqueo siga siendo válido."""
+
+
+def _exigir_cuenta_libre(usuario) -> None:
+    if usuario.esta_bloqueado:
+        raise CuentaBloqueada("Tu cuenta está bloqueada temporalmente; no puedes enviar mensajes.")
+
+
 def _bloquear(usuario) -> None:
     usuario.locked_until = timezone.now() + DURACION_BLOQUEO
     usuario.save(update_fields=["locked_until"])
@@ -15,6 +25,7 @@ def _bloquear(usuario) -> None:
 
 def enviar_mensaje(*, sender, section, subject: str, content: str) -> Message:
     """RF-25/RF-37: mensaje raíz de un hilo nuevo."""
+    _exigir_cuenta_libre(sender)
     if contiene_lenguaje_inapropiado(subject) or contiene_lenguaje_inapropiado(content):
         _bloquear(sender)
         raise LenguajeInapropiado(
@@ -28,6 +39,7 @@ def responder_mensaje(*, hilo_raiz: Message, sender, content: str) -> Message:
     """RF-25: la respuesta siempre cuelga del mensaje raíz del hilo, nunca
     de la última respuesta (sección 8: "mensajes enlazados... no una
     conversación") — y deja el hilo en `respondido`."""
+    _exigir_cuenta_libre(sender)
     if contiene_lenguaje_inapropiado(content):
         _bloquear(sender)
         raise LenguajeInapropiado(
