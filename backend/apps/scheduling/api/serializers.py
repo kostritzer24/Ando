@@ -1,3 +1,4 @@
+from django.utils import timezone
 from rest_framework import serializers
 
 from apps.accounts.models import User
@@ -85,3 +86,17 @@ class CalendarEventSerializer(serializers.ModelSerializer):
             "is_active",
         ]
         read_only_fields = ["public_id", "published_by"]
+
+    def validate(self, attrs):
+        inicio = attrs.get("start_time", getattr(self.instance, "start_time", None))
+        fin = attrs.get("end_time", getattr(self.instance, "end_time", None))
+        if inicio and fin and fin <= inicio:
+            raise serializers.ValidationError(
+                {"end_time": "La hora de fin debe ser posterior a la de inicio."}
+            )
+        fecha = attrs.get("event_date")
+        if self.instance is None and fecha and fecha < timezone.localdate():
+            raise serializers.ValidationError(
+                {"event_date": "No se puede publicar un evento en una fecha que ya pasó."}
+            )
+        return attrs

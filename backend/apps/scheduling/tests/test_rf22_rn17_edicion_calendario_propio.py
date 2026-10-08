@@ -30,7 +30,7 @@ def test_rf22_docente_publica_un_evento_de_su_propia_asignacion():
         {
             "title": "Entrega de tarea de fracciones",
             "type": "asignacion_docente",
-            "event_date": "2026-02-10",
+            "event_date": "2099-02-10",
             "start_time": "08:00:00",
             "end_time": "08:40:00",
             "assignment": str(asignacion.public_id),
@@ -53,7 +53,7 @@ def test_rn17_docente_no_puede_publicar_un_evento_institucional():
         {
             "title": "Día del cariño",
             "type": "institucional",
-            "event_date": "2026-02-14",
+            "event_date": "2099-02-14",
             "start_time": "08:00:00",
             "end_time": "12:40:00",
         },
@@ -77,7 +77,7 @@ def test_docente_no_puede_publicar_la_asignacion_de_otro_docente():
         {
             "title": "Examen",
             "type": "asignacion_docente",
-            "event_date": "2026-02-10",
+            "event_date": "2099-02-10",
             "start_time": "08:00:00",
             "end_time": "08:40:00",
             "assignment": str(asignacion_ajena.public_id),
@@ -219,3 +219,31 @@ def test_docente_ve_sus_propios_eventos_y_los_institucionales_no_los_de_otros():
     titulos = {evento["title"] for evento in respuesta.data["results"]}
 
     assert titulos == {mio.title, institucional.title}
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "cambios,campo",
+    [
+        ({"start_time": "10:00:00", "end_time": "09:00:00"}, "end_time"),  # fin antes del inicio
+        ({"event_date": "2020-01-10"}, "event_date"),  # fecha que ya pasó
+    ],
+)
+def test_rf22_un_evento_con_horas_o_fecha_imposibles_responde_400(cambios, campo):
+    """Hallazgos B-003 y D-012."""
+    rol = RoleFactory(name="Dirección", permissions={"horarios_calendario": "editar"})
+    client = APIClient()
+    client.force_authenticate(user=UserFactory(role=rol))
+    datos = {
+        "title": "Reunión",
+        "type": "institucional",
+        "event_date": "2099-02-10",
+        "start_time": "08:00:00",
+        "end_time": "09:00:00",
+        **cambios,
+    }
+
+    respuesta = client.post("/api/v1/calendar-events/", datos, format="json")
+
+    assert respuesta.status_code == 400
+    assert campo in respuesta.data

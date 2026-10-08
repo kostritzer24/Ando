@@ -69,3 +69,17 @@ def test_rf02_tallerista_no_puede_editar_ningun_catalogo(ruta, payload):
 
     respuesta = client.post(ruta, payload, format="json")
     assert respuesta.status_code == 403
+
+
+@pytest.mark.django_db
+def test_rf02_no_se_crea_un_curso_repetido_aunque_cambien_las_mayusculas():
+    """Hallazgo A-006."""
+    rol = RoleFactory(name="Dirección", permissions={"datos_maestros": "editar"})
+    client = APIClient()
+    client.force_authenticate(user=UserFactory(role=rol))
+    cuerpo = {"name": "Matemática", "type": "academico"}
+
+    assert client.post("/api/v1/courses/", cuerpo, format="json").status_code == 201
+    repetido = client.post("/api/v1/courses/", {**cuerpo, "name": "matemática"}, format="json")
+
+    assert repetido.status_code == 400

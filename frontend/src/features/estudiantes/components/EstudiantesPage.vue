@@ -3,6 +3,7 @@ import { computed, onMounted, reactive, ref } from "vue";
 import { useRouter } from "vue-router";
 
 import { becasApi, seccionesApi } from "@/features/catalogo/api/catalogoApi";
+import { hoyIso } from "@/shared/fechas";
 import { mensajeDelServidor } from "@/shared/api/errores";
 import { opcional } from "@/shared/api/opcional";
 import { avisar } from "@/shared/composables/useAvisos";
@@ -113,7 +114,7 @@ async function inscribir(): Promise<void> {
       section: seccionElegida.public_id,
       cycle: seccionElegida.cycle,
       scholarship: formulario.scholarship || null,
-      enrolled_at: new Date().toISOString().slice(0, 10),
+      enrolled_at: hoyIso(),
     });
     codigoRecienCreado.value = estudiante.internal_code;
     await cargar();
@@ -192,7 +193,13 @@ onMounted(cargar);
       <form v-else class="estudiantes-page__formulario" @submit.prevent="inscribir">
         <FormField id="first_name" etiqueta="Nombres" v-model="formulario.first_name" />
         <FormField id="last_name" etiqueta="Apellidos" v-model="formulario.last_name" />
-        <FormField id="birth_date" etiqueta="Fecha de nacimiento" tipo="date" v-model="formulario.birth_date" />
+        <FormField
+          id="birth_date"
+          etiqueta="Fecha de nacimiento"
+          tipo="date"
+          :max="hoyIso()"
+          v-model="formulario.birth_date"
+        />
         <FormField id="address" etiqueta="Dirección" v-model="formulario.address" />
         <FormField
           id="previous_institution"

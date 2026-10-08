@@ -167,3 +167,31 @@ def test_un_docente_ve_el_grado_y_curso_de_su_propia_asignacion_sin_pasar_por_el
     assert fila["section_grade"] == "Segundo básico"
     assert fila["section_type"] == "academica"
     assert fila["course_name"] == "Matemática"
+
+
+@pytest.mark.django_db
+def test_rf05_editar_una_asignacion_vuelve_a_validar_el_rol_del_docente():
+    """Hallazgo B-020: un PATCH dejaba a un Tallerista en un curso académico."""
+    direccion = UserFactory(
+        role=RoleFactory(name="Dirección", permissions={"horarios_calendario": "editar"})
+    )
+    docente = UserFactory(role=RoleFactory(name="Docente"))
+    tallerista = UserFactory(role=RoleFactory(name="Tallerista"))
+    ciclo = SchoolCycleFactory()
+    seccion = SectionFactory(cycle=ciclo, type="academica")
+    curso = Course.objects.create(name="Matemática", type=Course.TIPO_ACADEMICO)
+    asignacion = TeacherAssignment.objects.create(
+        teacher=docente, course=curso, section=seccion, cycle=ciclo
+    )
+    client = APIClient()
+    client.force_authenticate(user=direccion)
+
+    respuesta = client.patch(
+        f"/api/v1/assignments/{asignacion.public_id}/",
+        {"teacher": str(tallerista.public_id)},
+        format="json",
+    )
+
+    assert respuesta.status_code == 400
+    asignacion.refresh_from_db()
+    assert asignacion.teacher == docente

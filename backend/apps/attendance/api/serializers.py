@@ -1,3 +1,4 @@
+from django.utils import timezone
 from rest_framework import serializers
 
 from apps.catalog.models import JustificationType
@@ -38,6 +39,17 @@ class AttendanceCreateSerializer(serializers.Serializer):
     )
     date = serializers.DateField()
     status = serializers.ChoiceField(choices=Attendance.ESTADOS)
+
+    def validate_date(self, value):
+        if value > timezone.localdate():
+            raise serializers.ValidationError(
+                "No se puede registrar asistencia de una fecha futura."
+            )
+        if value.weekday() >= 5:
+            raise serializers.ValidationError(
+                "El centro no abre sábados ni domingos: elige un día de lunes a viernes."
+            )
+        return value
 
 
 class JustificationSerializer(serializers.ModelSerializer):

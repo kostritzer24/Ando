@@ -207,3 +207,21 @@ def test_rf03_dar_de_baja_a_un_estudiante_retira_sus_inscripciones_y_lo_saca_de_
     assert estudiante.public_id.hex not in str(listado.data).replace("-", "")
     assert client.get(f"/api/v1/students/{estudiante.public_id}/").status_code == 200
     assert AuditLog.objects.filter(entity_name="students.Student", action="eliminar").exists()
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("nacimiento", ["2099-01-01", "1850-01-01"])
+def test_rf03_la_fecha_de_nacimiento_futura_o_absurda_se_rechaza(nacimiento):
+    """Hallazgo B-002."""
+    rol = RoleFactory(name="Dirección", permissions={"estudiantes_encargados": "editar"})
+    client = APIClient()
+    client.force_authenticate(user=UserFactory(role=rol))
+
+    respuesta = client.post(
+        "/api/v1/students/",
+        {"first_name": "Ana", "last_name": "López", "birth_date": nacimiento},
+        format="json",
+    )
+
+    assert respuesta.status_code == 400
+    assert "birth_date" in respuesta.data

@@ -240,3 +240,38 @@ def test_rnf06_aprobar_una_justificacion_deja_el_cambio_de_estado_en_bitacora():
     cambio = AuditLog.objects.get(entity_name="attendance.Attendance", action="actualizar")
     assert cambio.old_value == {"status": Attendance.ESTADO_AUSENTE}
     assert cambio.new_value == {"status": Attendance.ESTADO_JUSTIFICADO}
+
+
+@pytest.mark.django_db
+def test_rf12_una_falta_no_acepta_una_segunda_justificacion_mientras_hay_una_vigente():
+    """Hallazgo B-006."""
+    from apps.attendance.services.justification import JustificacionInvalida, crear_justificacion
+
+    asistencia = AttendanceFactory(status=Attendance.ESTADO_AUSENTE)
+    usuario = UserFactory()
+    tipo = JustificationType.objects.create(name="Enfermedad")
+    crear_justificacion(attendance=asistencia, justification_type=tipo, submitted_by=usuario)
+
+    with pytest.raises(JustificacionInvalida):
+        crear_justificacion(attendance=asistencia, justification_type=tipo, submitted_by=usuario)
+
+
+@pytest.mark.django_db
+def test_rn12_una_justificacion_resuelta_no_se_puede_resolver_otra_vez():
+    """Hallazgo B-008: aprobada ↔ rechazada sin control y se perdía quién resolvió."""
+    from apps.attendance.services.justification import (
+        JustificacionInvalida,
+        crear_justificacion,
+        resolver_justificacion,
+    )
+
+    asistencia = AttendanceFactory(status=Attendance.ESTADO_AUSENTE)
+    usuario = UserFactory()
+    tipo = JustificationType.objects.create(name="Enfermedad")
+    justificacion = crear_justificacion(
+        attendance=asistencia, justification_type=tipo, submitted_by=usuario
+    )
+    resolver_justificacion(justificacion, aprobar=True, resolved_by=usuario)
+
+    with pytest.raises(JustificacionInvalida):
+        resolver_justificacion(justificacion, aprobar=False, resolved_by=usuario)

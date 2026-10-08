@@ -107,3 +107,28 @@ def test_rf02_unidad_solo_se_lista_dentro_de_su_propio_ciclo():
 
     assert respuesta.status_code == 200
     assert respuesta.data["count"] == 0
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "inicio,fin",
+    [
+        ("2026-05-01", "2026-04-01"),  # cierre antes del inicio
+        ("2025-01-01", "2025-02-01"),  # fuera del ciclo
+    ],
+)
+def test_hu02_unidad_con_fechas_incoherentes_responde_400(inicio, fin):
+    """Hallazgo A-004: fechas invertidas o fuera del ciclo se guardaban sin aviso."""
+    rol = RoleFactory(name="Dirección", permissions={"datos_maestros": "editar", "notas": "editar"})
+    ciclo = SchoolCycleFactory()
+    client = APIClient()
+    client.force_authenticate(user=UserFactory(role=rol))
+
+    respuesta = client.post(
+        f"/api/v1/cycles/{ciclo.public_id}/units/",
+        {"number": 1, "start_date": inicio, "end_date": fin},
+        format="json",
+    )
+
+    assert respuesta.status_code == 400
+    assert GradingUnit.objects.filter(cycle=ciclo).count() == 0

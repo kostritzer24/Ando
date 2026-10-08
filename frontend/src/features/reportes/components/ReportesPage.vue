@@ -45,7 +45,7 @@ async function cargarBase(): Promise<void> {
   try {
     const [ciclosResp, seccionesResp] = await Promise.all([ciclosApi.listar(), seccionesApi.listar()]);
     ciclos.value = ciclosResp.results;
-    secciones.value = seccionesResp.results;
+    secciones.value = seccionesResp.results.filter((s) => s.is_active !== false);
   } catch {
     error.value = "No se pudo cargar la información inicial. Inténtalo de nuevo.";
   } finally {

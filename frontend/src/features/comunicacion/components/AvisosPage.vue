@@ -42,7 +42,7 @@ async function cargar(): Promise<void> {
       veSecciones.value ? seccionesApi.listar() : Promise.resolve({ results: [] as Section[] }),
     ]);
     avisos.value = avisosResp.results;
-    secciones.value = seccionesResp.results;
+    secciones.value = seccionesResp.results.filter((s) => s.is_active !== false);
   } catch {
     error.value = "No se pudo cargar la cartelera de avisos. Inténtalo de nuevo.";
   } finally {

@@ -17,7 +17,11 @@ from apps.scheduling.models import TeacherAssignment
 
 from ..models import Attendance, Justification
 from ..services.attendance import AsistenciaYaRegistrada, registrar_asistencia
-from ..services.justification import crear_justificacion, resolver_justificacion
+from ..services.justification import (
+    JustificacionInvalida,
+    crear_justificacion,
+    resolver_justificacion,
+)
 from ..services.template import SeccionNoEsDeTaller, generar_plantilla, procesar_plantilla
 from .serializers import (
     AttendanceCreateSerializer,
@@ -120,9 +124,12 @@ class JustificationViewSet(RegistraAccesoMixin, ScopedQuerysetMixin, viewsets.Mo
         return queryset.none()
 
     def perform_create(self, serializer):
-        serializer.instance = crear_justificacion(
-            submitted_by=self.request.user, **serializer.validated_data
-        )
+        try:
+            serializer.instance = crear_justificacion(
+                submitted_by=self.request.user, **serializer.validated_data
+            )
+        except JustificacionInvalida as exc:
+            raise ValidationError(str(exc)) from exc
 
     def get_permissions(self):
         if self.action == "resolve":
@@ -137,9 +144,14 @@ class JustificationViewSet(RegistraAccesoMixin, ScopedQuerysetMixin, viewsets.Mo
         justificacion = self.get_object()
         serializer = JustificationResolveSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        resolver_justificacion(
-            justificacion, aprobar=serializer.validated_data["aprobar"], resolved_by=request.user
-        )
+        try:
+            resolver_justificacion(
+                justificacion,
+                aprobar=serializer.validated_data["aprobar"],
+                resolved_by=request.user,
+            )
+        except JustificacionInvalida as exc:
+            raise ValidationError(str(exc)) from exc
         return Response(JustificationSerializer(justificacion).data)
 
     @action(detail=True, methods=["get"], url_path="document")

@@ -6,6 +6,10 @@ from apps.core.services import registrar_cambio
 from ..models import Attendance, Justification
 
 
+class JustificacionInvalida(Exception):
+    pass
+
+
 def crear_justificacion(
     *,
     attendance: Attendance,
@@ -14,7 +18,14 @@ def crear_justificacion(
     reason_detail: str = "",
     supporting_document=None,
 ) -> Justification:
-    """RF-12."""
+    """RF-12. Una falta tiene una sola justificación vigente: si ya hay una
+    pendiente o aprobada no se abre otra (una rechazada sí permite reintentar)."""
+    if (
+        Justification.objects.filter(attendance=attendance, is_active=True)
+        .exclude(resolution=Justification.RESOLUCION_RECHAZADA)
+        .exists()
+    ):
+        raise JustificacionInvalida("Esta falta ya tiene una justificación pendiente o aprobada.")
     return Justification.objects.create(
         attendance=attendance,
         justification_type=justification_type,
@@ -29,7 +40,10 @@ def resolver_justificacion(
     justificacion: Justification, *, aprobar: bool, resolved_by
 ) -> Justification:
     """RN-12: la resolución evalúa cada caso — nunca es automática. Una
-    justificación aprobada cambia la asistencia a 'justificado'."""
+    justificación aprobada cambia la asistencia a 'justificado'. Una vez
+    resuelta no se puede volver a resolver: queda como evidencia."""
+    if justificacion.resolution != Justification.RESOLUCION_PENDIENTE:
+        raise JustificacionInvalida("Esta justificación ya fue resuelta.")
     justificacion.resolution = (
         Justification.RESOLUCION_APROBADA if aprobar else Justification.RESOLUCION_RECHAZADA
     )

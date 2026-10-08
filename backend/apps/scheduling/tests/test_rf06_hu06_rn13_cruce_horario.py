@@ -150,3 +150,28 @@ def test_docente_solo_ve_sus_propios_bloques_de_horario():
     respuesta = client.get("/api/v1/schedule-blocks/")
 
     assert respuesta.data["count"] == 1
+
+
+@pytest.mark.django_db
+def test_rn13_una_seccion_no_tiene_dos_cursos_a_la_misma_hora():
+    """Hallazgo B-021: el horario permitía dos clases simultáneas en una sección."""
+    client = APIClient()
+    client.force_authenticate(user=_direccion())
+    primera = TeacherAssignmentFactory()
+    segunda = TeacherAssignmentFactory(section=primera.section, cycle=primera.cycle)
+    datos = {"day_of_week": "lunes", "period_number": 1}
+    assert (
+        client.post(
+            "/api/v1/schedule-blocks/",
+            {"assignment": str(primera.public_id), **datos},
+            format="json",
+        ).status_code
+        == 201
+    )
+
+    respuesta = client.post(
+        "/api/v1/schedule-blocks/", {"assignment": str(segunda.public_id), **datos}, format="json"
+    )
+
+    assert respuesta.status_code == 400
+    assert ScheduleBlock.objects.count() == 1

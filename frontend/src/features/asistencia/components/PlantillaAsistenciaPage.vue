@@ -4,6 +4,7 @@ import { computed, onMounted, ref } from "vue";
 import { assignmentsApi } from "@/features/asignaciones/api/asignacionesApi";
 import { seccionesApi } from "@/features/catalogo/api/catalogoApi";
 import { useAuthStore } from "@/features/auth/stores/authStore";
+import { hoyIso, ultimoDiaHabilIso } from "@/shared/fechas";
 import { AppButton, AppPanel, CampoArchivo, CargandoBloque, ErrorBanner, FormField, FormSelect, PageHeader } from "@/shared/components";
 import type { Section, TeacherAssignment } from "@/shared/types/models";
 
@@ -24,7 +25,7 @@ const secciones = ref<Section[]>([]);
 const asignaciones = ref<TeacherAssignment[]>([]);
 
 const seccionElegida = ref("");
-const fecha = ref(new Date().toISOString().slice(0, 10));
+const fecha = ref(ultimoDiaHabilIso());
 const archivoElegido = ref<File | null>(null);
 const subiendo = ref(false);
 const resultado = ref<ResultadoPlantilla | null>(null);
@@ -57,7 +58,7 @@ async function cargar(): Promise<void> {
   try {
     asignaciones.value = (await assignmentsApi.listar()).results;
     if (auth.usuario?.role_name === "Dirección") {
-      secciones.value = (await seccionesApi.listar()).results;
+      secciones.value = (await seccionesApi.listar()).results.filter((s) => s.is_active !== false);
     }
     seccionElegida.value = opcionesSeccion.value[0]?.valor ?? "";
   } catch {
@@ -124,7 +125,7 @@ onMounted(cargar);
           <div class="plantilla-asistencia__campos">
             <div class="plantilla-asistencia__filtros">
               <FormSelect id="section" etiqueta="Taller" :opciones="opcionesSeccion" v-model="seccionElegida" />
-              <FormField id="fecha" etiqueta="Fecha" tipo="date" v-model="fecha" />
+              <FormField id="fecha" etiqueta="Fecha" tipo="date" :max="hoyIso()" v-model="fecha" />
             </div>
             <AppButton variante="secundario" :deshabilitado="!seccionElegida" @click="descargar">
               Descargar plantilla

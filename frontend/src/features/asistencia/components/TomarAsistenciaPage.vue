@@ -4,6 +4,8 @@ import { computed, onMounted, ref, watch } from "vue";
 import { assignmentsApi } from "@/features/asignaciones/api/asignacionesApi";
 import { seccionesApi } from "@/features/catalogo/api/catalogoApi";
 import { enrollmentsApi, studentsApi } from "@/features/estudiantes/api/estudiantesApi";
+import { mensajeDelServidor } from "@/shared/api/errores";
+import { hoyIso, ultimoDiaHabilIso } from "@/shared/fechas";
 import { CargandoBloque, ErrorBanner, FormSelect, PageHeader } from "@/shared/components";
 import { usePermisos } from "@/shared/permisos";
 import type { Attendance, Enrollment, Section, Student, TeacherAssignment } from "@/shared/types/models";
@@ -23,7 +25,7 @@ const secciones = ref<Section[]>([]);
 const estudiantes = ref<Student[]>([]);
 
 const seccionElegida = ref("");
-const fecha = ref(new Date().toISOString().slice(0, 10));
+const fecha = ref(ultimoDiaHabilIso());
 
 const inscripciones = ref<Enrollment[]>([]);
 const asistenciasDelDia = ref<Attendance[]>([]);
@@ -88,7 +90,7 @@ async function cargarBase(): Promise<void> {
     asignaciones.value = asignacionesResp.results;
     estudiantes.value = estudiantesResp.results;
     if (veTodasLasSecciones.value) {
-      secciones.value = (await seccionesApi.listar()).results;
+      secciones.value = (await seccionesApi.listar()).results.filter((s) => s.is_active !== false);
     }
     seccionElegida.value = opcionesSeccion.value[0]?.valor ?? "";
   } catch {
@@ -139,8 +141,8 @@ async function marcar(inscripcion: Enrollment, estado: Attendance["status"]): Pr
       });
       asistenciasDelDia.value.push(creada);
     }
-  } catch {
-    error.value = "No se pudo guardar la asistencia de ese estudiante. Inténtalo de nuevo.";
+  } catch (e) {
+    error.value = mensajeDelServidor(e, "No se pudo guardar la asistencia de ese estudiante. Inténtalo de nuevo.");
   } finally {
     guardandoPorEstudiante.value[inscripcion.public_id] = false;
   }
@@ -174,7 +176,7 @@ onMounted(async () => {
         />
         <div class="tomar-asistencia__fecha">
           <label for="fecha">Fecha</label>
-          <input id="fecha" type="date" v-model="fecha" />
+          <input id="fecha" type="date" :max="hoyIso()" v-model="fecha" />
         </div>
       </div>
 

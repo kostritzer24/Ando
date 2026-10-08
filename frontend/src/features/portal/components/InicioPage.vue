@@ -4,6 +4,7 @@ import { computed, onMounted, ref, watch } from "vue";
 
 import { DIAS, PERIODOS } from "@/features/horarios/api/horariosApi";
 import { usePortalStore } from "@/features/portal/stores/portalStore";
+import { aFechaIso } from "@/shared/fechas";
 import { CargandoBloque, DayTabs, EmptyState, ErrorBanner, PageHeader, TagPill } from "@/shared/components";
 
 import { consultarCalendarioSemanal } from "../api/portalApi";
@@ -31,7 +32,7 @@ const semana = DIAS.map((dia, indice) => {
   return {
     valor: dia.valor,
     etiqueta: `${dia.etiqueta.slice(0, 3).toLowerCase()} ${fecha.getDate()}`,
-    fechaIso: fecha.toISOString().slice(0, 10),
+    fechaIso: aFechaIso(fecha),
   };
 });
 

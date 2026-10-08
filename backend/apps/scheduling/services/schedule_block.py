@@ -29,6 +29,23 @@ def crear_bloque(
             f"en el período {period_number}."
         )
 
+    # Una sección tampoco puede tener dos cursos a la misma hora.
+    seccion_ocupada = (
+        ScheduleBlock.objects.filter(
+            assignment__section=assignment.section,
+            day_of_week=day_of_week,
+            period_number=period_number,
+            is_active=True,
+        )
+        .exclude(assignment=assignment)
+        .exists()
+    )
+    if seccion_ocupada:
+        raise CruceDeHorario(
+            f"La sección {assignment.section} ya tiene otro curso ese día en el período "
+            f"{period_number}."
+        )
+
     return ScheduleBlock.objects.create(
         assignment=assignment, day_of_week=day_of_week, period_number=period_number
     )

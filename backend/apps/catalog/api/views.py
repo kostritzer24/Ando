@@ -5,6 +5,7 @@ from rest_framework.exceptions import ValidationError
 from apps.core.api.mixins import BajaLogicaMixin, RegistraAccesoMixin
 from apps.core.permissions import PermisoPorArea
 
+from ..domain.grading_unit import UnidadInvalida
 from ..domain.section import MaestroGuiaInvalido
 from ..models import (
     ActivityType,
@@ -68,21 +69,27 @@ class GradingUnitViewSet(CatalogViewSet):
 
     def perform_create(self, serializer):
         cycle = get_object_or_404(SchoolCycle, public_id=self.kwargs["cycle_public_id"])
-        serializer.instance = crear_unidad(
-            cycle=cycle,
-            number=serializer.validated_data["number"],
-            start_date=serializer.validated_data["start_date"],
-            end_date=serializer.validated_data["end_date"],
-        )
+        try:
+            serializer.instance = crear_unidad(
+                cycle=cycle,
+                number=serializer.validated_data["number"],
+                start_date=serializer.validated_data["start_date"],
+                end_date=serializer.validated_data["end_date"],
+            )
+        except UnidadInvalida as exc:
+            raise ValidationError(str(exc)) from exc
 
     def perform_update(self, serializer):
         instancia = serializer.instance
-        actualizar_unidad(
-            instancia,
-            number=serializer.validated_data.get("number", instancia.number),
-            start_date=serializer.validated_data.get("start_date", instancia.start_date),
-            end_date=serializer.validated_data.get("end_date", instancia.end_date),
-        )
+        try:
+            actualizar_unidad(
+                instancia,
+                number=serializer.validated_data.get("number", instancia.number),
+                start_date=serializer.validated_data.get("start_date", instancia.start_date),
+                end_date=serializer.validated_data.get("end_date", instancia.end_date),
+            )
+        except UnidadInvalida as exc:
+            raise ValidationError(str(exc)) from exc
 
 
 class SectionViewSet(CatalogViewSet):

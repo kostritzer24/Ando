@@ -92,3 +92,22 @@ def test_contrasena_temporal_bloquea_otros_endpoints_hasta_cambiarla():
     usuario_nuevo.refresh_from_db()
     assert usuario_nuevo.must_change_password is False
     assert usuario_nuevo.check_password("Definitiva-Aun-Mas-Segura-2026")
+
+
+@pytest.mark.django_db
+def test_cambiar_la_contrasena_por_la_misma_se_rechaza():
+    """Hallazgo A-009."""
+    usuario = UserFactory(password="Clave-Actual-Segura-2026")
+    client = APIClient()
+    client.force_authenticate(user=usuario)
+
+    respuesta = client.post(
+        "/api/v1/auth/change-password/",
+        {
+            "contrasena_actual": "Clave-Actual-Segura-2026",
+            "contrasena_nueva": "Clave-Actual-Segura-2026",
+        },
+        format="json",
+    )
+
+    assert respuesta.status_code == 400

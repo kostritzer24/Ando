@@ -14,7 +14,7 @@ from apps.students.models import Enrollment, Student
 
 from ..domain.calendar_event import PublicacionInvalida, puede_editar
 from ..domain.day_structure import PeriodoInvalido
-from ..domain.teacher_assignment import AsignacionInvalida
+from ..domain.teacher_assignment import AsignacionInvalida, validar_asignacion
 from ..models import CalendarEvent, ScheduleBlock, TeacherAssignment
 from ..services.calendar_event import crear_evento
 from ..services.schedule_block import CruceDeHorario, crear_bloque
@@ -66,6 +66,24 @@ class TeacherAssignmentViewSet(RegistraAccesoMixin, ScopedQuerysetMixin, viewset
             serializer.instance = crear_asignacion(**serializer.validated_data)
         except AsignacionInvalida as exc:
             raise ValidationError({"course": str(exc)}) from exc
+
+    def perform_update(self, serializer):
+        # Cambiar el docente, el curso o la sección vuelve a exigir las
+        # mismas reglas que al crear (ADR-0001).
+        instancia = serializer.instance
+        datos = serializer.validated_data
+        curso = datos.get("course", instancia.course)
+        seccion = datos.get("section", instancia.section)
+        docente = datos.get("teacher", instancia.teacher)
+        try:
+            validar_asignacion(
+                course_type=curso.type,
+                section_type=seccion.type,
+                teacher_role_name=docente.role.name,
+            )
+        except AsignacionInvalida as exc:
+            raise ValidationError({"course": str(exc)}) from exc
+        serializer.save()
 
 
 class ScheduleBlockViewSet(RegistraAccesoMixin, ScopedQuerysetMixin, viewsets.ModelViewSet):

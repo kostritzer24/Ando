@@ -195,3 +195,23 @@ def test_rf16_registrar_dos_veces_el_mismo_dia_responde_400_no_500():
 
     assert segunda.status_code == 400
     assert Attendance.objects.filter(enrollment=inscripcion).count() == 1
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("fecha", ["2099-01-05", "2026-01-10", "2026-01-11"])
+def test_rf16_no_se_registra_asistencia_en_fecha_futura_ni_en_fin_de_semana(fecha):
+    """Hallazgo B-004: sábado, domingo y fechas futuras ensuciaban los reportes."""
+    client = APIClient()
+    client.force_authenticate(user=_direccion())
+
+    respuesta = client.post(
+        "/api/v1/attendance/",
+        {
+            "enrollment": str(EnrollmentFactory().public_id),
+            "date": fecha,
+            "status": "presente",
+        },
+        format="json",
+    )
+
+    assert respuesta.status_code == 400

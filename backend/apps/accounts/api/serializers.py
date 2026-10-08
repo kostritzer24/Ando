@@ -88,6 +88,13 @@ class ChangePasswordSerializer(serializers.Serializer):
         validate_password(value, user=self.context.get("user"))
         return value
 
+    def validate(self, attrs):
+        if attrs["contrasena_actual"] == attrs["contrasena_nueva"]:
+            raise serializers.ValidationError(
+                {"contrasena_nueva": "La contraseña nueva debe ser distinta de la actual."}
+            )
+        return attrs
+
 
 class ResetPasswordSerializer(serializers.Serializer):
     contrasena_temporal = serializers.CharField(write_only=True)

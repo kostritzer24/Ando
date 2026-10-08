@@ -60,6 +60,18 @@ class CourseSerializer(serializers.ModelSerializer):
         fields = ["public_id", "name", "type", "is_active"]
         read_only_fields = ["public_id"]
 
+    def validate(self, attrs):
+        nombre = attrs.get("name", getattr(self.instance, "name", None))
+        tipo = attrs.get("type", getattr(self.instance, "type", None))
+        repetidos = Course.objects.filter(
+            name__iexact=(nombre or "").strip(), type=tipo, is_active=True
+        )
+        if self.instance is not None:
+            repetidos = repetidos.exclude(pk=self.instance.pk)
+        if repetidos.exists():
+            raise serializers.ValidationError({"name": "Ya existe un curso con ese nombre y tipo."})
+        return attrs
+
 
 class ActivityTypeSerializer(serializers.ModelSerializer):
     class Meta:

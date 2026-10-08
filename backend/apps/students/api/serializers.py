@@ -1,9 +1,21 @@
+from datetime import timedelta
+
+from django.utils import timezone
 from rest_framework import serializers
 
 from apps.accounts.models import User
 from apps.catalog.models import Scholarship, SchoolCycle, Section
 
 from ..models import Enrollment, Guardian, GuardianStudentLink, Student
+
+
+def validar_fecha_de_nacimiento(value):
+    hoy = timezone.localdate()
+    if value > hoy:
+        raise serializers.ValidationError("La fecha de nacimiento no puede ser futura.")
+    if value < hoy - timedelta(days=365 * 100):
+        raise serializers.ValidationError("La fecha de nacimiento no es válida: revisa el año.")
+    return value
 
 
 class StudentSerializer(serializers.ModelSerializer):
@@ -25,11 +37,14 @@ class StudentSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["public_id", "internal_code"]
 
+    def validate_birth_date(self, value):
+        return validar_fecha_de_nacimiento(value)
+
 
 class StudentCreateSerializer(serializers.Serializer):
     first_name = serializers.CharField(max_length=100)
     last_name = serializers.CharField(max_length=100)
-    birth_date = serializers.DateField()
+    birth_date = serializers.DateField(validators=[validar_fecha_de_nacimiento])
     address = serializers.CharField(required=False, allow_blank=True, default="")
     previous_institution = serializers.CharField(required=False, allow_blank=True, default="")
 
