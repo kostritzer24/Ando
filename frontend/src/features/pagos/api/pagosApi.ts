@@ -68,6 +68,17 @@ export function descargarArchivo(blob: Blob, nombreArchivo: string): void {
   URL.revokeObjectURL(url);
 }
 
+/** Abre el PDF de revisión de un boletín (borrador, aprobado o publicado)
+ * en otra pestaña: Dirección lo revisa antes de aprobar. */
+export async function verVistaPreviaBoletin(reportCardPublicId: string): Promise<void> {
+  const respuesta = await http.get(`/report-cards/${reportCardPublicId}/preview/`, {
+    responseType: "blob",
+  });
+  const url = URL.createObjectURL(respuesta.data as Blob);
+  window.open(url, "_blank");
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+}
+
 export async function generarBoletines(payload: {
   section: string;
   unit: string;

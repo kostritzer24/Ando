@@ -235,3 +235,20 @@ def contenido_para_descargar(boletin: ReportCard) -> dict:
         else ""
     )
     return contenido
+
+
+def contenido_para_vista_previa(boletin: ReportCard) -> dict:
+    """Lo que Dirección revisa antes de aprobar: un borrador se calcula en
+    vivo (es lo que quedará congelado al aprobar); uno ya aprobado o
+    publicado muestra su contenido congelado."""
+    if boletin.contenido:
+        contenido = dict(boletin.contenido)
+    else:
+        contenido = _para_json(contenido_boletin(boletin))
+    contenido["publicado_el"] = (
+        timezone.localtime(boletin.published_at).strftime("%d/%m/%Y")
+        if boletin.published_at
+        else ""
+    )
+    contenido["vista_previa"] = boletin.status != ReportCard.ESTADO_PUBLICADO
+    return contenido

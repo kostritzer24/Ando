@@ -43,6 +43,7 @@ from ..services.report_card import (
     aprobar_boletin,
     aprobar_boletines,
     contenido_para_descargar,
+    contenido_para_vista_previa,
     generar_boletines,
     publicar_boletin,
     publicar_boletines,
@@ -496,7 +497,14 @@ class ReportCardViewSet(
     lookup_field = "public_id"
 
     def get_permissions(self):
-        if self.action in {"generate", "approve", "publish", "approve_batch", "publish_batch"}:
+        if self.action in {
+            "generate",
+            "approve",
+            "publish",
+            "approve_batch",
+            "publish_batch",
+            "preview",
+        }:
             return [PermisoPorArea(), _SoloDireccion()]
         return [PermisoPorArea()]
 
@@ -577,6 +585,19 @@ class ReportCardViewSet(
         except TransicionDeBoletinInvalida as exc:
             raise ValidationError(str(exc)) from exc
         return Response(ReportCardSerializer(boletin).data)
+
+    @action(detail=True, methods=["get"], url_path="preview")
+    def preview(self, request, public_id=None):
+        """Dirección revisa el boletín (borrador, aprobado o publicado) antes de
+        aprobarlo: aprobar congela el contenido, así que un error detectado
+        después ya no se corrige en silencio."""
+        boletin = self.get_object()
+        html = render_to_string("grading/boletin.html", contenido_para_vista_previa(boletin))
+        return HttpResponse(
+            HTML(string=html).write_pdf(),
+            content_type="application/pdf",
+            headers={"Content-Disposition": 'inline; filename="vista_previa_boletin.pdf"'},
+        )
 
     @action(detail=True, methods=["get"], url_path="download")
     def download(self, request, public_id=None):

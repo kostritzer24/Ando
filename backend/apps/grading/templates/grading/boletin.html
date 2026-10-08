@@ -59,10 +59,12 @@ sin acceso garantizado a internet), igual que
     font-weight: 700;
   }
   .firma .nombre { font-size: 9.5pt; color: #444; }
+  .vista-previa { margin-bottom: 0.6cm; padding: 0.2cm; border: 1px dashed #b45309; color: #b45309; text-align: center; font-size: 9pt; }
   .pie { margin-top: 1.2cm; font-size: 8.5pt; color: #666; text-align: center; }
 </style>
 </head>
 <body>
+  {% if vista_previa %}<div class="vista-previa">Vista previa para revisión de Dirección. Este boletín todavía no está publicado.</div>{% endif %}
   <div class="encabezado">
     <div class="centro">Centro Socioeducativo "Lic. Magno Rudy Romero Arévalo"</div>
     {% if nivel %}<div class="nivel">{{ nivel }}</div>{% endif %}

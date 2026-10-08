@@ -377,3 +377,35 @@ def test_rf09_el_detalle_dice_cuantos_puntos_suma_una_unidad_a_medio_disenar():
     (pendiente,) = respuesta.data["results"][0]["pendientes"]
     assert pendiente["detalle"] == "falta 1 nota, la unidad suma 60 de 100 puntos"
     assert inscripcion.section == seccion
+
+
+def test_rf09_direccion_ve_la_vista_previa_del_boletin_antes_de_aprobarlo():
+    """Decisión del dueño (oct 2026) / hallazgo C-023: nada sale sin que
+    Dirección lo revise; aprobar congela el contenido, así que se revisa antes."""
+    ciclo, seccion, (unidad,) = _seccion_con_unidades()
+    inscripcion = EnrollmentFactory(section=seccion, cycle=ciclo)
+    asignacion = TeacherAssignmentFactory(section=seccion, cycle=ciclo)
+    _examen(asignacion, unidad, inscripcion, 85)
+    client = APIClient()
+    client.force_authenticate(user=_direccion())
+    boletin_id = _generar(client, seccion, unidad)[0]["public_id"]
+
+    respuesta = client.get(f"/api/v1/report-cards/{boletin_id}/preview/")
+
+    assert respuesta.status_code == 200
+    assert respuesta["Content-Type"] == "application/pdf"
+    assert respuesta.content.startswith(b"%PDF")
+    assert ReportCard.objects.get(public_id=boletin_id).status == ReportCard.ESTADO_BORRADOR
+
+
+def test_rf09_solo_direccion_ve_la_vista_previa_acceso_no_autorizado():
+    ciclo, seccion, (unidad,) = _seccion_con_unidades()
+    EnrollmentFactory(section=seccion, cycle=ciclo)
+    TeacherAssignmentFactory(section=seccion, cycle=ciclo)
+    direccion = APIClient()
+    direccion.force_authenticate(user=_direccion())
+    boletin_id = _generar(direccion, seccion, unidad)[0]["public_id"]
+    docente = APIClient()
+    docente.force_authenticate(user=_docente())
+
+    assert docente.get(f"/api/v1/report-cards/{boletin_id}/preview/").status_code == 403

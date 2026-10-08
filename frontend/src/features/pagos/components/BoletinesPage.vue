@@ -17,6 +17,7 @@ import {
   publicarBoletinesEnLote,
   reportCardsApi,
   type ResultadoPublicacionEnLote,
+  verVistaPreviaBoletin,
 } from "../api/pagosApi";
 
 // Generar, aprobar y publicar es "editar" en Notas (Dirección);
@@ -142,13 +143,22 @@ async function generar(): Promise<void> {
   }
 }
 
+async function verBoletin(boletin: ReportCard): Promise<void> {
+  errorAccion.value = "";
+  try {
+    await verVistaPreviaBoletin(boletin.public_id);
+  } catch {
+    errorAccion.value = "No se pudo abrir la vista previa del boletín. Inténtalo de nuevo.";
+  }
+}
+
 async function aprobar(boletin: ReportCard): Promise<void> {
   // Aprobar congela el contenido: con notas faltantes, el boletín sale con
   // la nota parcial. Se puede, pero no sin saberlo.
   if (boletin.pendientes.length > 0) {
     const seguir = await confirmar({
       titulo: `¿Aprobar el boletín de ${boletin.student_name}?`,
-      mensaje: `Tiene notas pendientes — ${resumenPendientes(boletin)}. Al aprobarlo queda congelado así.`,
+      mensaje: `Tiene notas pendientes — ${resumenPendientes(boletin)}. Revísalo con «Ver boletín»: al aprobarlo queda congelado así.`,
       etiquetaConfirmar: "Aprobar igual",
     });
     if (!seguir) return;
@@ -185,7 +195,7 @@ async function aprobarTodos(): Promise<void> {
     mensaje:
       incompletos > 0
         ? `${incompletos} tienen notas pendientes y quedan congelados con la nota parcial. Revisa la columna "Notas" antes de seguir.`
-        : "Todos tienen las notas completas. Al aprobarlos quedan congelados.",
+        : "Todos tienen las notas completas. Puedes revisar cada uno con «Ver boletín»: al aprobarlos quedan congelados.",
     etiquetaConfirmar: "Aprobar todos",
   });
   if (!seguir) return;
@@ -311,6 +321,13 @@ onMounted(async () => {
             </span>
           </template>
           <template v-if="puedeGestionar" #acciones="{ fila }">
+            <button
+              type="button"
+              class="boletines-page__accion"
+              @click="verBoletin(fila as unknown as ReportCard)"
+            >
+              Ver boletín
+            </button>
             <button
               v-if="(fila as unknown as ReportCard).status === 'borrador'"
               type="button"

@@ -124,6 +124,13 @@ test("Dirección genera, aprueba y publica boletines, y RN-09 bloquea la publica
   await expect(filaMaria).toBeVisible();
   await expect(filaMaria.getByText("Borrador")).toBeVisible();
 
+  // Dirección revisa el boletín (vista previa en otra pestaña) antes de aprobarlo.
+  const [vistaPrevia] = await Promise.all([
+    page.waitForEvent("popup"),
+    filaMaria.getByRole("button", { name: "Ver boletín" }).click(),
+  ]);
+  await vistaPrevia.close(); // el PDF en sí lo cubre la prueba de backend
+
   await filaMaria.getByRole("button", { name: "Aprobar" }).click();
   // La siembra no tiene notas: aprobar avisa que el boletín sale con notas
   // pendientes y pide confirmarlo.
