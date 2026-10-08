@@ -95,3 +95,19 @@ def test_rf15_coordinacion_solo_puede_ver_no_editar():
     respuesta = client.get("/api/v1/reports/enrolled-students/")
 
     assert respuesta.status_code == 200
+
+
+def test_rnf04_una_familia_no_accede_al_reporte_institucional_de_insolventes():
+    """Hallazgo A-001: la familia tiene `ver` en pagos_solvencia (para ver
+    la solvencia de sus hijos) y recibía la lista de TODOS los insolventes."""
+    rol = RoleFactory(
+        name="Padre de familia",
+        permissions={"pagos_solvencia": "ver", "reportes_institucionales": "sin_acceso"},
+    )
+    familia = UserFactory(role=rol)
+    client = APIClient()
+    client.force_authenticate(user=familia)
+
+    respuesta = client.get("/api/v1/reports/insolvent-students/")
+
+    assert respuesta.status_code == 403

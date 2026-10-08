@@ -90,12 +90,29 @@ class AttendanceReportView(ReporteBaseView):
         )
 
 
+class PermisoReporteInsolventes(PermisoPorArea):
+    """El reporte es institucional: lista a TODOS los insolventes. Que
+    `pagos_solvencia` sea `ver` no alcanza (la familia lo tiene para ver la
+    solvencia de sus propios hijos, RNF-04): hace falta `editar` en pagos o
+    `ver` en reportes institucionales."""
+
+    def has_permission(self, request, view) -> bool:
+        if not super().has_permission(request, view):
+            return False
+        rol = request.user.role
+        return (
+            rol.nivel_en("pagos_solvencia") == "editar"
+            or rol.nivel_en("reportes_institucionales") != "sin_acceso"
+        )
+
+
 class InsolventStudentsView(ReporteBaseView):
     """Nota 8 de docs/permisos-roles.md: para Encargado de pagos, este
     reporte es una vista dentro de "Pagos y solvencia" (área
     `pagos_solvencia`), no de "Reportes institucionales" — el rol nunca
     tiene acceso a los otros siete."""
 
+    permission_classes = [PermisoReporteInsolventes]
     area = "pagos_solvencia"
     titulo = "Estudiantes insolventes"
     columnas = [
