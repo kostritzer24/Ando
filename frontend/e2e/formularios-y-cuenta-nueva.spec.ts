@@ -37,3 +37,13 @@ test("una familia sin estudiantes vinculados ve un mensaje y no un cargando infi
 
   await expect(page.getByText("Aún no hay estudiantes vinculados a tu cuenta")).toBeVisible();
 });
+
+test("una dirección que no existe muestra una página amable y no una pantalla en blanco (A-007)", async ({ page }) => {
+  await entrarComo(page, "dir.demo");
+  await expect(page).toHaveURL(/\/administrativo/);
+
+  await page.goto("/administrativo/zzz");
+  await expect(page.getByText("Esta página no existe")).toBeVisible();
+  await page.getByRole("link", { name: "Volver al inicio" }).click();
+  await expect(page).toHaveURL(/\/administrativo$/);
+});

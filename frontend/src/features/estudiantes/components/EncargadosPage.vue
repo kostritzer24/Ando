@@ -23,6 +23,7 @@ const estudiantes = ref<Student[]>([]);
 const cargando = ref(true);
 const error = ref("");
 const errorModal = ref("");
+const errorVinculos = ref("");
 
 const modalNuevoAbierto = ref(false);
 const guardandoNuevo = ref(false);
@@ -98,17 +99,16 @@ async function guardarNuevo(): Promise<void> {
 }
 
 async function verVinculos(encargado: Guardian): Promise<void> {
-  if (encargadoExpandido.value === encargado.public_id) {
-    encargadoExpandido.value = null;
-    return;
-  }
   encargadoExpandido.value = encargado.public_id;
+  errorVinculos.value = "";
   cargandoVinculos.value = true;
   formularioVinculo.student = "";
   formularioVinculo.relationship = "";
   formularioVinculo.is_primary = false;
   try {
     vinculos.value = await listarVinculos(encargado.public_id);
+  } catch {
+    errorVinculos.value = "No se pudieron cargar los vínculos. Inténtalo de nuevo.";
   } finally {
     cargandoVinculos.value = false;
   }
@@ -123,7 +123,7 @@ async function agregarVinculo(encargado: Guardian): Promise<void> {
     formularioVinculo.relationship = "";
     formularioVinculo.is_primary = false;
   } catch {
-    error.value = "No se pudo vincular al estudiante. Puede que el vínculo ya exista.";
+    errorVinculos.value = "No se pudo vincular al estudiante. Puede que el vínculo ya exista.";
   } finally {
     guardandoVinculo.value = false;
   }
@@ -167,17 +167,18 @@ onMounted(cargar);
     >
       <template #acciones="{ fila }">
         <AppButton variante="discreto" compacto @click="verVinculos(fila)">
-          {{ encargadoExpandido === fila.public_id ? "Ocultar vínculos" : "Ver vínculos" }}
+          Ver vínculos
         </AppButton>
       </template>
     </DataTable>
 
-    <section
+    <AppModal
       v-for="encargado in encargados.filter((e) => e.public_id === encargadoExpandido)"
       :key="encargado.public_id"
-      class="encargados-page__vinculos"
+      :titulo="`Estudiantes vinculados a ${encargado.full_name}`"
+      @cerrar="encargadoExpandido = null"
     >
-      <h2>Estudiantes vinculados a {{ encargado.full_name }}</h2>
+      <ErrorBanner v-if="errorVinculos" :mensaje="errorVinculos" />
       <CargandoBloque v-if="cargandoVinculos" />
       <template v-else>
         <p v-if="vinculos.length === 0" class="encargados-page__vacio">Sin vínculos todavía.</p>
@@ -214,7 +215,7 @@ onMounted(cargar);
           </AppButton>
         </form>
       </template>
-    </section>
+    </AppModal>
 
     <AppModal v-if="modalNuevoAbierto" titulo="Agregar encargado" @cerrar="modalNuevoAbierto = false">
       <ErrorBanner v-if="errorModal" :mensaje="errorModal" />

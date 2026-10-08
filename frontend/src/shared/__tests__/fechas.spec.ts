@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { aFechaIso, ultimoDiaHabilIso } from "../fechas";
+import { aFechaIso, fechaLegible, ultimoDiaHabilIso } from "../fechas";
 
 describe("aFechaIso", () => {
   it("usa la fecha local, no la de UTC", () => {
@@ -21,5 +21,17 @@ describe("ultimoDiaHabilIso", () => {
   it("retrocede al viernes en sábado y domingo", () => {
     expect(ultimoDiaHabilIso(new Date(2026, 9, 10))).toBe("2026-10-09"); // sábado
     expect(ultimoDiaHabilIso(new Date(2026, 9, 11))).toBe("2026-10-09"); // domingo
+  });
+});
+
+describe("fechaLegible", () => {
+  it("pasa AAAA-MM-DD a DD/MM/AAAA", () => {
+    expect(fechaLegible("2015-01-01")).toBe("01/01/2015");
+  });
+
+  it("deja igual lo que no es una fecha", () => {
+    expect(fechaLegible("María")).toBe("María");
+    expect(fechaLegible(12)).toBe(12);
+    expect(fechaLegible(null)).toBe(null);
   });
 });

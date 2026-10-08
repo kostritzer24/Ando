@@ -19,3 +19,12 @@ export function ultimoDiaHabilIso(desde: Date = new Date()): string {
   if (dia === 0) fecha.setDate(fecha.getDate() - 2);
   return aFechaIso(fecha);
 }
+
+const FECHA_ISO = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+/** `2015-01-01` → `01/01/2015`. Cualquier otro valor se devuelve igual. */
+export function fechaLegible<T>(valor: T): T | string {
+  if (typeof valor !== "string") return valor;
+  const partes = FECHA_ISO.exec(valor);
+  return partes ? `${partes[3]}/${partes[2]}/${partes[1]}` : valor;
+}

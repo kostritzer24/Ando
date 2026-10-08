@@ -247,7 +247,10 @@ class AttendanceTemplateUploadView(RegistraAccesoMixin, APIView):
         except SeccionNoEsDeTaller as exc:
             raise ValidationError(str(exc)) from exc
         except Exception as exc:  # noqa: BLE001 — archivo corrupto o que no es un .xlsx real
-            raise ValidationError(f"No se pudo leer el archivo: {exc}") from exc
+            raise ValidationError(
+                "No se pudo leer el archivo. Descarga la plantilla de nuevo y sube ese "
+                "archivo de Excel (.xlsx) sin cambiarle el formato."
+            ) from exc
 
         if errores:
             return Response({"errores": errores}, status=status.HTTP_400_BAD_REQUEST)

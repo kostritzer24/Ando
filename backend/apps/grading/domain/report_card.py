@@ -4,6 +4,7 @@ RN-10 y que la inscripción esté solvente (RN-09). Las cadenas de estado
 las pasa quien llama (`grading/services/report_card.py`), no se importa
 el modelo acá para mantener el dominio sin depender de Django."""
 
+from datetime import date
 from decimal import Decimal
 
 from .scoring import aprueba_curso, calcular_nota_final
@@ -19,14 +20,19 @@ def validar_aprobacion(*, estado_actual: str, estado_borrador: str) -> None:
 
 
 def validar_publicacion(
-    *, estado_actual: str, estado_aprobado: str, plazo_cumplido: bool, es_solvente: bool
+    *,
+    estado_actual: str,
+    estado_aprobado: str,
+    plazo_cumplido: bool,
+    es_solvente: bool,
+    fecha_habilitacion: date | None = None,
 ) -> None:
     if estado_actual != estado_aprobado:
         raise TransicionDeBoletinInvalida("Solo se puede publicar un boletín que ya fue aprobado.")
     if not plazo_cumplido:
+        desde = f" a partir del {fecha_habilitacion:%d/%m/%Y}" if fecha_habilitacion else ""
         raise TransicionDeBoletinInvalida(
-            "Todavía no se puede publicar el boletín: "
-            "aún no llega la fecha de habilitación de la unidad."
+            f"Todavía no se puede publicar el boletín: se habilita{desde}."
         )
     if not es_solvente:
         raise TransicionDeBoletinInvalida(

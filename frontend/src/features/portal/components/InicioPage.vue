@@ -4,8 +4,8 @@ import { computed, onMounted, ref, watch } from "vue";
 
 import { DIAS, PERIODOS } from "@/features/horarios/api/horariosApi";
 import { usePortalStore } from "@/features/portal/stores/portalStore";
-import { aFechaIso } from "@/shared/fechas";
-import { CargandoBloque, DayTabs, EmptyState, ErrorBanner, PageHeader, TagPill } from "@/shared/components";
+import { aFechaIso, fechaLegible } from "@/shared/fechas";
+import { AppButton, CargandoBloque, DayTabs, EmptyState, ErrorBanner, PageHeader, TagPill } from "@/shared/components";
 
 import { consultarCalendarioSemanal } from "../api/portalApi";
 import type { CalendarioSemanal } from "../api/portalApi";
@@ -26,14 +26,24 @@ const offsetLunes = diaSemanaHoy === 0 ? -6 : 1 - diaSemanaHoy;
 const lunes = new Date(hoy);
 lunes.setDate(hoy.getDate() + offsetLunes);
 
-const semana = DIAS.map((dia, indice) => {
-  const fecha = new Date(lunes);
-  fecha.setDate(lunes.getDate() + indice);
-  return {
-    valor: dia.valor,
-    etiqueta: `${dia.etiqueta.slice(0, 3).toLowerCase()} ${fecha.getDate()}`,
-    fechaIso: aFechaIso(fecha),
-  };
+// 0 = esta semana, -1 la anterior, 1 la siguiente…
+const semanasDeDiferencia = ref(0);
+
+const semana = computed(() =>
+  DIAS.map((dia, indice) => {
+    const fecha = new Date(lunes);
+    fecha.setDate(lunes.getDate() + indice + semanasDeDiferencia.value * 7);
+    return {
+      valor: dia.valor,
+      etiqueta: `${dia.etiqueta.slice(0, 3).toLowerCase()} ${fecha.getDate()}`,
+      fechaIso: aFechaIso(fecha),
+    };
+  }),
+);
+
+const rangoDeLaSemana = computed(() => {
+  const dias = semana.value;
+  return `${fechaLegible(dias[0].fechaIso)} al ${fechaLegible(dias[dias.length - 1].fechaIso)}`;
 });
 
 const diaElegido = ref(
@@ -48,7 +58,7 @@ interface FilaAgenda {
 }
 
 const agendaDelDia = computed<FilaAgenda[]>(() => {
-  const fechaIso = semana.find((d) => d.valor === diaElegido.value)?.fechaIso;
+  const fechaIso = semana.value.find((d) => d.valor === diaElegido.value)?.fechaIso;
   const bloques: FilaAgenda[] = calendario.value.schedule
     .filter((b) => b.day_of_week === diaElegido.value)
     .map((b) => ({
@@ -101,6 +111,19 @@ onMounted(cargar);
     <CargandoBloque v-else-if="cargando" />
 
     <template v-else>
+      <div class="inicio-page__semana">
+        <AppButton variante="discreto" compacto @click="semanasDeDiferencia--">‹ Anterior</AppButton>
+        <button
+          type="button"
+          class="inicio-page__rango"
+          :disabled="semanasDeDiferencia === 0"
+          @click="semanasDeDiferencia = 0"
+        >
+          {{ semanasDeDiferencia === 0 ? "Esta semana" : "Volver a esta semana" }}
+          <small>{{ rangoDeLaSemana }}</small>
+        </button>
+        <AppButton variante="discreto" compacto @click="semanasDeDiferencia++">Siguiente ›</AppButton>
+      </div>
       <DayTabs :dias="semana" v-model="diaElegido" />
 
       <EmptyState
@@ -125,6 +148,35 @@ onMounted(cargar);
 </template>
 
 <style scoped>
+.inicio-page__semana {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espacio-sm);
+  margin-bottom: var(--espacio-md);
+}
+
+.inicio-page__rango {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: none;
+  border: none;
+  color: var(--color-tinta);
+  font-size: var(--texto-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.inicio-page__rango:disabled {
+  cursor: default;
+}
+
+.inicio-page__rango small {
+  color: var(--color-tinta-suave);
+  font-weight: 400;
+}
+
 .inicio-page__convivencia {
   display: flex;
   align-items: center;

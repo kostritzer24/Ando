@@ -409,3 +409,26 @@ def test_rf09_solo_direccion_ve_la_vista_previa_acceso_no_autorizado():
     docente.force_authenticate(user=_docente())
 
     assert docente.get(f"/api/v1/report-cards/{boletin_id}/preview/").status_code == 403
+
+
+def test_rn03_un_curso_sin_notas_en_la_unidad_queda_en_blanco_y_no_cuenta_como_cero():
+    """Hallazgo C-022: el cuadro mostraba 0 y lo promediaba (y podía marcar R)."""
+    ciclo, seccion, (unidad,) = _seccion_con_unidades()
+    inscripcion = EnrollmentFactory(section=seccion, cycle=ciclo)
+    con_notas = TeacherAssignmentFactory(
+        section=seccion, cycle=ciclo, course=CourseFactory(name="Matemática")
+    )
+    TeacherAssignmentFactory(section=seccion, cycle=ciclo, course=CourseFactory(name="Arte"))
+    _examen(con_notas, unidad, inscripcion, 80)
+    client = APIClient()
+    client.force_authenticate(user=_direccion())
+    boletin_id = _generar(client, seccion, unidad)[0]["public_id"]
+
+    client.post(f"/api/v1/report-cards/{boletin_id}/approve/")
+
+    cursos = {
+        c["nombre"]: c for c in ReportCard.objects.get(public_id=boletin_id).contenido["cursos"]
+    }
+    assert cursos["Arte"]["unidades"] == [None, None, None, None]
+    assert cursos["Arte"]["promedio"] is None
+    assert cursos["Matemática"]["promedio"] == 80

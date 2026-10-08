@@ -150,6 +150,9 @@ CORS_ALLOWED_ORIGINS = [
     if origin.strip()
 ]
 CORS_ALLOW_CREDENTIALS = True
+# Sin esto el navegador oculta el nombre de archivo que el servidor sugiere al
+# descargar plantillas, boletines y reportes, y todos salían con un nombre genérico.
+CORS_EXPOSE_HEADERS = ["Content-Disposition"]
 
 # ---- Cookie del token de refresco (sección 14.1) --------------------------
 

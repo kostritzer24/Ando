@@ -100,6 +100,7 @@ def publicar_boletin(boletin: ReportCard, *, published_by) -> ReportCard:
         estado_aprobado=ReportCard.ESTADO_APROBADO,
         plazo_cumplido=plazo_cumplido,
         es_solvente=es_solvente,
+        fecha_habilitacion=boletin.unit.report_card_enabled_date,
     )
     boletin.status = ReportCard.ESTADO_PUBLICADO
     boletin.published_at = timezone.now()
@@ -189,7 +190,7 @@ def contenido_boletin(boletin: ReportCard) -> dict:
     cursos = []
     for asignacion in asignaciones:
         notas_por_unidad = {
-            numero: notas.get((asignacion.id, unidad.id), calcular_nota_unidad([]))
+            numero: notas.get((asignacion.id, unidad.id))  # sin notas: en blanco, no un 0
             for numero, unidad in unidades_visibles.items()
         }
         cursos.append({"nombre": asignacion.course.name, **armar_fila_cuadro(notas_por_unidad)})

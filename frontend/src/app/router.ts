@@ -424,6 +424,14 @@ const routes: RouteRecordRaw[] = [
     meta: { publica: true },
   },
   { path: "/", redirect: "/ingresar" },
+  {
+    // Cualquier otra dirección: con sesión, una página que lo explica; sin
+    // sesión, el guard de abajo manda a ingresar.
+    path: "/:rutaNoEncontrada(.*)*",
+    name: "no-encontrada",
+    component: () => import("@/features/auth/components/NoEncontradaPage.vue"),
+    meta: { requiereSesion: true },
+  },
 ];
 
 const router = createRouter({

@@ -180,12 +180,18 @@ onMounted(cargar);
           </tr>
         </thead>
         <tbody>
-          <tr v-for="periodo in PERIODOS" :key="periodo.numero">
+          <template v-for="periodo in PERIODOS" :key="periodo.numero">
+          <tr v-if="periodo.numero === 4" class="horario-grid__receso">
+            <td :colspan="DIAS.length + 1">Receso 10:00–10:40</td>
+          </tr>
+          <tr>
             <th class="horario-grid__hora">P{{ periodo.numero }}<br /><small>{{ periodo.horario }}</small></th>
             <td v-for="dia in DIAS" :key="dia.valor">
               <template v-if="bloqueEn(dia.valor, periodo.numero)">
                 <div class="horario-grid__celda horario-grid__celda--ocupada">
-                  {{ etiquetaBloque(bloqueEn(dia.valor, periodo.numero)!) }}
+                  <span class="horario-grid__nombre">
+                    {{ etiquetaBloque(bloqueEn(dia.valor, periodo.numero)!) }}
+                  </span>
                   <button
                     v-if="puedeEditar"
                     type="button"
@@ -208,6 +214,7 @@ onMounted(cargar);
               </button>
             </td>
           </tr>
+          </template>
         </tbody>
       </table>
       </div>
@@ -317,6 +324,20 @@ onMounted(cargar);
   color: var(--color-etiqueta-hoy-texto);
   text-align: left;
   line-height: 1.3;
+}
+
+.horario-grid__nombre {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.horario-grid__tabla tr.horario-grid__receso > td {
+  padding: var(--espacio-2xs);
+  background: var(--color-fondo);
+  color: var(--color-tinta-suave);
+  font-size: var(--texto-xs);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .horario-grid__libre {

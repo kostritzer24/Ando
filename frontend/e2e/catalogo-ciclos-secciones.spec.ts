@@ -45,7 +45,7 @@ test("Dirección crea un ciclo, agrega una unidad y ve las fechas calculadas; la
   const tablaUnidades = page.locator("table").nth(1);
   await expect(tablaUnidades.locator("tbody tr")).toHaveCount(1);
   // La fecha de entrega de notas (+15 días del cierre) la calcula el sistema.
-  await expect(tablaUnidades).toContainText(`${anio}-04-15`);
+  await expect(tablaUnidades).toContainText(`15/04/${anio}`);
 });
 
 test("Dirección crea una sección académica con maestro guía", async ({ page }) => {

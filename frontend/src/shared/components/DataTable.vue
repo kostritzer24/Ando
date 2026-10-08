@@ -2,6 +2,8 @@
 import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, Search } from "lucide-vue-next";
 import { computed, ref, useId, watch } from "vue";
 
+import { fechaLegible } from "@/shared/fechas";
+
 export interface ColumnaTabla<T = Record<string, unknown>> {
   clave: string;
   etiqueta: string;
@@ -61,7 +63,12 @@ const filasFiltradas = computed(() => {
   const termino = normalizar(busqueda.value.trim());
   if (!termino) return props.filas;
   return props.filas.filter((fila) =>
-    props.columnas.some((columna) => normalizar(textoDe(fila, columna)).includes(termino)),
+    props.columnas.some((columna) => {
+      const texto = textoDe(fila, columna);
+      return (
+        normalizar(texto).includes(termino) || normalizar(String(fechaLegible(texto))).includes(termino)
+      );
+    }),
   );
 });
 
@@ -164,7 +171,7 @@ function claveDe(fila: F, indice: number): string | number {
             :class="{ 'data-table__celda--completa': columna.completa }"
           >
             <slot :name="`celda-${columna.clave}`" :fila="fila">
-              {{ campo(fila, columna.clave) }}
+              {{ fechaLegible(campo(fila, columna.clave)) }}
             </slot>
           </td>
           <td v-if="$slots.acciones" class="data-table__col-acciones">
