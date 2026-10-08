@@ -164,3 +164,20 @@ def test_rf04_tallerista_no_puede_vincular_encargados_acceso_no_autorizado():
     )
 
     assert respuesta.status_code == 403
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("recurso", ["students", "guardians"])
+def test_hu02_delete_da_de_baja_logica_y_no_borra_la_fila(recurso):
+    """Hallazgo B-018: DELETE borraba de verdad estudiantes y encargados."""
+    rol = RoleFactory(name="Dirección", permissions={"estudiantes_encargados": "editar"})
+    direccion = UserFactory(role=rol)
+    registro = StudentFactory() if recurso == "students" else GuardianFactory()
+    client = APIClient()
+    client.force_authenticate(user=direccion)
+
+    respuesta = client.delete(f"/api/v1/{recurso}/{registro.public_id}/")
+
+    assert respuesta.status_code == 204
+    registro.refresh_from_db()
+    assert registro.is_active is False

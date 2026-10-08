@@ -7,7 +7,7 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
-from apps.core.api.mixins import RegistraAccesoMixin, ScopedQuerysetMixin
+from apps.core.api.mixins import BajaLogicaMixin, RegistraAccesoMixin, ScopedQuerysetMixin
 from apps.core.permissions import PermisoPorArea
 
 from ..models import Enrollment, Guardian, GuardianStudentLink, Student
@@ -42,7 +42,9 @@ _ROLES_SIN_ALCANCE_LIMITADO = {
 _ROLES_DOCENTES = {"Docente", "Docente con sección a cargo", "Tallerista"}
 
 
-class StudentViewSet(RegistraAccesoMixin, ScopedQuerysetMixin, viewsets.ModelViewSet):
+class StudentViewSet(
+    BajaLogicaMixin, RegistraAccesoMixin, ScopedQuerysetMixin, viewsets.ModelViewSet
+):
     """RF-03. El área depende de la acción: los datos generales usan
     'estudiantes_encargados', los sensibles usan 'datos_sensibles'
     (RNF-04) — nunca el mismo permiso para ambos."""
@@ -95,7 +97,7 @@ class StudentViewSet(RegistraAccesoMixin, ScopedQuerysetMixin, viewsets.ModelVie
         return Response(StudentSensitiveSerializer(estudiante).data)
 
 
-class GuardianViewSet(RegistraAccesoMixin, viewsets.ModelViewSet):
+class GuardianViewSet(BajaLogicaMixin, RegistraAccesoMixin, viewsets.ModelViewSet):
     """RF-03/RF-04. Los encargados no se filtran por objeto (solo
     Dirección/Administrador llegan hasta acá, según la matriz de
     permisos), pero los vínculos que exponen sí importan para
@@ -158,7 +160,9 @@ class GuardianViewSet(RegistraAccesoMixin, viewsets.ModelViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class EnrollmentViewSet(RegistraAccesoMixin, ScopedQuerysetMixin, viewsets.ModelViewSet):
+class EnrollmentViewSet(
+    BajaLogicaMixin, RegistraAccesoMixin, ScopedQuerysetMixin, viewsets.ModelViewSet
+):
     """RF-03. Mismo alcance por objeto que `StudentViewSet` sobre la
     misma área — una inscripción revela sección, ciclo y beca, así que
     no puede quedar sin filtrar solo porque el área es de solo lectura
