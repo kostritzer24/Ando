@@ -16,7 +16,11 @@ from apps.core.permissions import PermisoPorArea
 from apps.scheduling.models import TeacherAssignment
 
 from ..models import Attendance, Justification
-from ..services.attendance import FaltaEstadoOHoraDeLlegada, registrar_asistencia
+from ..services.attendance import (
+    AsistenciaYaRegistrada,
+    FaltaEstadoOHoraDeLlegada,
+    registrar_asistencia,
+)
 from ..services.justification import crear_justificacion, resolver_justificacion
 from ..services.template import SeccionNoEsDeTaller, generar_plantilla, procesar_plantilla
 from .serializers import (
@@ -90,7 +94,7 @@ class AttendanceViewSet(RegistraAccesoMixin, ScopedQuerysetMixin, viewsets.Model
                 status=datos.get("status"),
                 check_in_time=datos.get("check_in_time"),
             )
-        except FaltaEstadoOHoraDeLlegada as exc:
+        except (FaltaEstadoOHoraDeLlegada, AsistenciaYaRegistrada) as exc:
             raise ValidationError(str(exc)) from exc
         return Response(AttendanceSerializer(asistencia).data, status=status.HTTP_201_CREATED)
 
@@ -168,6 +172,10 @@ class AttendanceTemplateDownloadView(RegistraAccesoMixin, APIView):
     @extend_schema(responses={200: OpenApiTypes.BINARY})
     def get(self, request, section_public_id, fecha):
         section = get_object_or_404(Section, public_id=section_public_id)
+        if request.user.role.name in _ROLES_DOCENTES and not _seccion_asignada_al_docente(
+            request.user, section
+        ):
+            raise PermissionDenied("No tenés una asignación vigente en esa sección.")
         try:
             contenido = generar_plantilla(section=section)
         except SeccionNoEsDeTaller as exc:

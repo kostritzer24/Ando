@@ -181,3 +181,18 @@ def test_tallerista_no_puede_cargar_plantilla_de_una_seccion_ajena_acceso_no_aut
     )
 
     assert respuesta.status_code == 403
+
+
+@pytest.mark.django_db
+def test_rnf04_un_docente_sin_asignacion_no_descarga_la_nomina_de_un_taller():
+    """Hallazgo B-001: la descarga no revisaba la asignación (la subida sí)."""
+    rol = RoleFactory(name="Docente", permissions={"asistencia": "ver"})
+    docente = UserFactory(role=rol)
+    seccion, _ = _seccion_taller_con_estudiantes(2)
+
+    client = APIClient()
+    client.force_authenticate(user=docente)
+
+    respuesta = client.get(f"/api/v1/attendance/template/{seccion.public_id}/2026-02-03/")
+
+    assert respuesta.status_code == 403

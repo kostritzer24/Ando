@@ -170,3 +170,19 @@ def test_rnf06_registrar_asistencia_deja_bitacora():
     registro = AuditLog.objects.get(entity_name="attendance.Attendance")
     assert registro.user == direccion
     assert registro.new_value["status"] == "tarde"
+
+
+@pytest.mark.django_db
+def test_rf16_registrar_dos_veces_el_mismo_dia_responde_400_no_500():
+    """Hallazgo B-007: el doble clic rompía la restricción única con un 500."""
+    direccion = _direccion()
+    inscripcion = EnrollmentFactory()
+    client = APIClient()
+    client.force_authenticate(user=direccion)
+    datos = {"enrollment": str(inscripcion.public_id), "date": "2026-01-13", "status": "presente"}
+
+    assert client.post("/api/v1/attendance/", datos, format="json").status_code == 201
+    segunda = client.post("/api/v1/attendance/", datos, format="json")
+
+    assert segunda.status_code == 400
+    assert Attendance.objects.filter(enrollment=inscripcion).count() == 1

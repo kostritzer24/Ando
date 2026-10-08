@@ -13,6 +13,10 @@ class FaltaEstadoOHoraDeLlegada(Exception):
     pass
 
 
+class AsistenciaYaRegistrada(Exception):
+    pass
+
+
 @transaction.atomic
 def registrar_asistencia(
     *,
@@ -30,6 +34,11 @@ def registrar_asistencia(
         status = calcular_estado_por_hora_llegada(check_in_time)
     if not status:
         raise FaltaEstadoOHoraDeLlegada("Hay que indicar el estado o la hora de llegada.")
+    if Attendance.objects.filter(enrollment=enrollment, date=fecha).exists():
+        raise AsistenciaYaRegistrada(
+            "Ya hay asistencia registrada para ese estudiante en esa fecha; "
+            "corrígela en lugar de crearla de nuevo."
+        )
     asistencia = Attendance.objects.create(
         enrollment=enrollment,
         date=fecha,
