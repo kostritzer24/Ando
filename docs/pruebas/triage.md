@@ -13,6 +13,7 @@ Rama de trabajo: `fase-16-correcciones-pruebas`. Los commits citados son de esa 
 | Portal de familia | Solo la nota total por curso y unidad | `49bfa43`; la API ya no manda detalle por actividad ni docente |
 | Pagos | No se anulan ni se corrigen | D-014 cerrado sin cambios |
 | Estudiantes | Se pueden dar de baja | `49bfa43` |
+| Asistencia de taller | Es aparte de la de la mañana | Sin cambios: ya es por inscripción |
 | Boletines | Nada sale sin que Dirección lo revise y apruebe | `42d481b`: vista previa antes de aprobar |
 
 ## Resultado por hallazgo

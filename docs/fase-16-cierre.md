@@ -33,7 +33,9 @@ Además: textos de la interfaz sin códigos RN/RF y con tono neutro tipo Drive (
 
 ## Pendiente (decide el dueño o falta medir)
 
-A-003 (emitir documento sin bitácora), B-009, B-014, C-024 y vista "Notas por sección", D-003, D-006, D-008, D-011, D-013; la carrera de recargas en ráfaga de la sesión (K-1); las "cosas raras" de Gabriela listadas en el triage; si el taller registra asistencia aparte de la de la mañana.
+A-003 (emitir documento sin bitácora), B-009, B-014, C-024 y vista "Notas por sección", D-003, D-006, D-008, D-011, D-013; la carrera de recargas en ráfaga de la sesión (K-1); las "cosas raras" de Gabriela listadas en el triage.
+
+Decisión del dueño: la asistencia del taller es aparte de la de la mañana. Ya lo cumple el modelo (una asistencia por inscripción y día; el taller tiene su propia inscripción).
 
 ## Qué debe re-probar cada tester
 
