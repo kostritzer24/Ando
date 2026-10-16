@@ -16,9 +16,12 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from weasyprint import HTML
 
+from apps.grading.services.consolidado import consolidado_de_notas
+
 from ..domain.verification_code import generar_codigo_verificacion
 from ..models import IssuedDocument
 
+CLAVE_CIERRE_PENSUM = "cierre_pensum"
 _LOGO_PATH = Path(__file__).resolve().parent.parent / "assets" / "logo.png"
 
 
@@ -71,6 +74,8 @@ def emitir_documento(
         enrollment=enrollment, codigo=codigo, titulo=document_type.name.upper()
     )
     contexto["custom_text"] = custom_text
+    if document_type.template_key == CLAVE_CIERRE_PENSUM:
+        contexto["consolidado"] = consolidado_de_notas(enrollment.student)
 
     html = render_to_string(f"documents/{document_type.template_key}.html", contexto)
     pdf_bytes = HTML(string=html).write_pdf()
@@ -100,6 +105,12 @@ def emitir_documento_general(
         )
     if document_type.template_key == "carta_membretada" and not custom_text.strip():
         raise TipoDeDocumentoNoPermitido("La carta membretada necesita el texto que va a llevar.")
+    if document_type.template_key == CLAVE_CIERRE_PENSUM:
+        grado = enrollment.section.grade.lower()
+        if "quinto" not in grado or "bachiller" not in grado:
+            raise TipoDeDocumentoNoPermitido(
+                "El cierre de pensum solo se emite para estudiantes de quinto bachillerato."
+            )
     return emitir_documento(
         enrollment=enrollment,
         document_type=document_type,

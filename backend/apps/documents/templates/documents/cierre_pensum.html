@@ -1,0 +1,52 @@
+{% extends "documents/_base_documento.html" %}
+{% block cuerpo %}
+<style>
+  table.pensum { width: 100%; border-collapse: collapse; margin: 0 0 0.4cm; font-size: 9.5pt; }
+  table.pensum th, table.pensum td { border: 0.75pt solid #1a1a1a; padding: 0.1cm 0.15cm; text-align: center; }
+  table.pensum thead th { background: #e8f1f8; }
+  table.pensum td.curso { text-align: left; }
+  table.pensum tr.promedio td { background: #f3f3f3; font-weight: 700; }
+  .anio { font-weight: 800; margin: 0.5cm 0 0.15cm; page-break-after: avoid; }
+  .general { margin-top: 0.5cm; font-weight: 800; font-size: 12pt; text-align: right; }
+  .reprobado { color: #B3261E; font-weight: 700; }
+</style>
+<p>
+  La Dirección de El Patojismo — Centro Socioeducativo Lic. Magno Rudy Romero Arévalo
+  <strong>HACE CONSTAR</strong> que {{ estudiante_nombre }}, con código interno
+  {{ estudiante_codigo }}, cursó {{ grado_seccion }} y cierra el pensum de estudios, con el
+  siguiente consolidado de notas finales por curso y por año:
+</p>
+
+{% for anio in consolidado.anios %}
+  <div class="anio">Ciclo escolar {{ anio.ciclo_anio }} — {{ anio.grado }}</div>
+  <table class="pensum">
+    <thead>
+      <tr>
+        <th>Curso</th>
+        {% for numero in consolidado.numeros_unidad %}<th>U{{ numero }}</th>{% endfor %}
+        <th>Nota final</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for curso in anio.cursos %}
+      <tr>
+        <td class="curso">{{ curso.nombre }}</td>
+        {% for nota in curso.unidades %}<td>{% if nota is not None %}{{ nota|floatformat:"0" }}{% endif %}</td>{% endfor %}
+        <td{% if curso.aprobado is False %} class="reprobado"{% endif %}>{% if curso.promedio is not None %}{{ curso.promedio }}{% endif %}</td>
+      </tr>
+      {% endfor %}
+      <tr class="promedio">
+        <td class="curso" colspan="{{ consolidado.numeros_unidad|length|add:1 }}">Promedio del año {{ anio.ciclo_anio }}</td>
+        <td>{% if anio.promedio_anual is not None %}{{ anio.promedio_anual }}{% endif %}</td>
+      </tr>
+    </tbody>
+  </table>
+{% empty %}
+  <p>No hay notas registradas.</p>
+{% endfor %}
+
+{% if consolidado.promedio_general is not None %}
+<div class="general">Promedio general: {{ consolidado.promedio_general }}</div>
+{% endif %}
+<p>Se extiende la presente para los fines que al interesado convengan.</p>
+{% endblock %}

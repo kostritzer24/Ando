@@ -85,6 +85,7 @@ _TIPOS_DOCUMENTO = [
     ("Constancia de estudio", "constancia_estudio"),
     ("Constancia de buena conducta", "constancia_conducta"),
     ("Carta membretada", "carta_membretada"),
+    ("Cierre de pensum", "cierre_pensum"),
 ]
 
 _BECAS = [
