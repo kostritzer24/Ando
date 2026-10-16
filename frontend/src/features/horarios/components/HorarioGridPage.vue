@@ -5,19 +5,22 @@ import { computed, onMounted, reactive, ref } from "vue";
 import { assignmentsApi, listarUsuariosPorRoles } from "@/features/asignaciones/api/asignacionesApi";
 import { mensajeDelServidor } from "@/shared/api/errores";
 import { opcional } from "@/shared/api/opcional";
-import { AppButton, AppModal, CargandoBloque, ErrorBanner, FormSelect, PageHeader } from "@/shared/components";
+import { AppButton, AppModal, CargandoBloque, ErrorBanner, FormBuscador, FormSelect, PageHeader } from "@/shared/components";
 import { avisar } from "@/shared/composables/useAvisos";
 import { confirmar } from "@/shared/composables/useConfirmar";
 import { usePermisos } from "@/shared/permisos";
 import type { components } from "@/shared/types/api";
 import type { ScheduleBlock, TeacherAssignment } from "@/shared/types/models";
 
-import { DIAS, PERIODOS, scheduleBlocksApi } from "../api/horariosApi";
+import { descargarArchivo } from "@/features/pagos/api/pagosApi";
+import { descargarHorarioPdf } from "@/features/reportes/api/reportesApi";
+
+import { DIAS, PERIODOS, PERIODOS_TALLER, scheduleBlocksApi } from "../api/horariosApi";
 
 type Usuario = components["schemas"]["User"];
 
-// Armar el horario es "editar" en Horarios (Dirección); Coordinación y
-// Administrador ven la grilla sin los botones.
+// Armar el horario es "editar" en Horarios (Dirección); Coordinación ve la
+// grilla sin los botones.
 const permisos = usePermisos();
 const puedeEditar = computed(() => permisos.puedeEditar("horarios_calendario"));
 
@@ -50,10 +53,44 @@ function nombreDocente(teacherPublicId: string, respaldo = ""): string {
 }
 
 const misAsignaciones = computed(() =>
-  asignaciones.value.filter((a) => a.teacher === docenteElegido.value),
+  asignaciones.value.filter((a) => a.teacher === docenteElegido.value && a.is_active !== false),
 );
+
+// Los cursos de la jornada usan los períodos 1 a 6; los talleres, los 7 a 9
+// (la tarde). Cada persona ve la franja que le toca según sus asignaciones.
+const periodosVisibles = computed(() => {
+  const hayTaller = misAsignaciones.value.some((a) => a.section_type === "taller");
+  const hayJornada = misAsignaciones.value.some((a) => a.section_type !== "taller");
+  return [...(hayJornada || !hayTaller ? PERIODOS : []), ...(hayTaller ? PERIODOS_TALLER : [])];
+});
+
+const esTarde = (periodo: number): boolean => periodo >= 7;
+
+// Bloques vigentes (de asignaciones vigentes): los que de verdad ocupan celdas.
+const bloquesVigentes = computed(() => {
+  const vigentes = new Set(asignaciones.value.filter((a) => a.is_active !== false).map((a) => a.public_id));
+  return bloques.value.filter((b) => b.is_active !== false && vigentes.has(b.assignment));
+});
+
+function seccionOcupada(seccion: string, dia: string, periodo: number): boolean {
+  const deLaSeccion = new Set(
+    asignaciones.value.filter((a) => a.section === seccion).map((a) => a.public_id),
+  );
+  return bloquesVigentes.value.some(
+    (b) => deLaSeccion.has(b.assignment) && b.day_of_week === dia && b.period_number === periodo,
+  );
+}
+
+// Asignaciones de la persona que sí se pueden poner en esa celda: la franja
+// corresponde al tipo de curso y la sección no tiene ya otra clase a esa hora.
+function asignacionesLibresEn(dia: string, periodo: number) {
+  return misAsignaciones.value.filter(
+    (a) => (a.section_type === "taller") === esTarde(periodo) && !seccionOcupada(a.section, dia, periodo),
+  );
+}
+
 const opcionesAsignacion = computed(() =>
-  misAsignaciones.value.map((a) => ({
+  asignacionesLibresEn(celdaElegida.dia, celdaElegida.periodo).map((a) => ({
     valor: a.public_id,
     etiqueta: `${a.course_name} — ${a.section_grade} ${a.section_letter}`.trim(),
   })),
@@ -61,7 +98,7 @@ const opcionesAsignacion = computed(() =>
 
 function bloqueEn(dia: string, periodo: number): ScheduleBlock | undefined {
   const idsPropios = new Set(misAsignaciones.value.map((a) => a.public_id));
-  return bloques.value.find(
+  return bloquesVigentes.value.find(
     (b) => idsPropios.has(b.assignment) && b.day_of_week === dia && b.period_number === periodo,
   );
 }
@@ -104,11 +141,36 @@ const celdaElegida = reactive<{ dia: ScheduleBlock["day_of_week"] | ""; periodo:
   periodo: 0,
 });
 const asignacionParaCelda = ref("");
+// Para no repetir el mismo curso día por día: se puede marcar en qué otros
+// días va a la misma hora; solo se ofrecen los días en que la persona y la
+// sección están libres.
+const diasAdicionales = ref<string[]>([]);
+
+function diaLibrePara(dia: string, periodo: number, asignacionId: string): boolean {
+  const asignacion = misAsignaciones.value.find((a) => a.public_id === asignacionId);
+  if (!asignacion || bloqueEn(dia, periodo)) return false;
+  return !seccionOcupada(asignacion.section, dia, periodo);
+}
+
+const diasParaRepetir = computed(() =>
+  DIAS.filter(
+    (d) =>
+      d.valor !== celdaElegida.dia &&
+      diaLibrePara(d.valor, celdaElegida.periodo, asignacionParaCelda.value),
+  ),
+);
+
+function alternarDia(valor: string): void {
+  diasAdicionales.value = diasAdicionales.value.includes(valor)
+    ? diasAdicionales.value.filter((d) => d !== valor)
+    : [...diasAdicionales.value, valor];
+}
 
 function abrirCelda(dia: ScheduleBlock["day_of_week"], periodo: number): void {
   celdaElegida.dia = dia;
   celdaElegida.periodo = periodo;
   asignacionParaCelda.value = opcionesAsignacion.value[0]?.valor ?? "";
+  diasAdicionales.value = [];
   errorModal.value = "";
   modalAbierto.value = true;
 }
@@ -117,11 +179,14 @@ async function guardarBloque(): Promise<void> {
   guardando.value = true;
   errorModal.value = "";
   try {
-    await scheduleBlocksApi.crear({
-      assignment: asignacionParaCelda.value,
-      day_of_week: celdaElegida.dia as ScheduleBlock["day_of_week"],
-      period_number: celdaElegida.periodo,
-    });
+    const dias = [celdaElegida.dia, ...diasAdicionales.value.filter((d) => diasParaRepetir.value.some((x) => x.valor === d))];
+    for (const dia of dias) {
+      await scheduleBlocksApi.crear({
+        assignment: asignacionParaCelda.value,
+        day_of_week: dia as ScheduleBlock["day_of_week"],
+        period_number: celdaElegida.periodo,
+      });
+    }
     modalAbierto.value = false;
     await cargar();
   } catch (e) {
@@ -151,6 +216,20 @@ async function quitarBloque(bloque: ScheduleBlock): Promise<void> {
   }
 }
 
+const descargando = ref(false);
+async function descargarPdf(): Promise<void> {
+  if (!docenteElegido.value) return;
+  descargando.value = true;
+  try {
+    const { blob, nombreArchivo } = await descargarHorarioPdf({ teacher: docenteElegido.value });
+    descargarArchivo(blob, nombreArchivo);
+  } catch {
+    avisar("No se pudo generar el PDF. Inténtalo de nuevo.", "error");
+  } finally {
+    descargando.value = false;
+  }
+}
+
 onMounted(cargar);
 </script>
 
@@ -162,12 +241,21 @@ onMounted(cargar);
     <CargandoBloque v-else-if="cargando" />
 
     <template v-else>
-      <FormSelect
-        id="teacher"
-        etiqueta="Docente o tallerista"
-        :opciones="opcionesDocente"
-        v-model="docenteElegido"
-      />
+      <div class="horario-grid__barra">
+        <FormBuscador
+          id="teacher"
+          etiqueta="Docente o tallerista"
+          :opciones="opcionesDocente"
+          v-model="docenteElegido"
+        />
+        <AppButton v-if="docenteElegido" variante="secundario" :deshabilitado="descargando" @click="descargarPdf">
+          {{ descargando ? "Generando…" : "Descargar horario en PDF" }}
+        </AppButton>
+      </div>
+      <p v-if="puedeEditar && docenteElegido" class="horario-grid__ayuda">
+        <span class="horario-grid__muestra horario-grid__muestra--libre"></span> Libre: toca <strong>+</strong> para agregar una clase.
+        <span class="horario-grid__muestra horario-grid__muestra--bloqueada"></span> No disponible: la sección ya tiene otra clase a esa hora.
+      </p>
 
       <!-- Seis columnas no caben en un teléfono: la grilla se desliza de
            lado dentro de su marco, sin mover el resto de la página. -->
@@ -180,7 +268,7 @@ onMounted(cargar);
           </tr>
         </thead>
         <tbody>
-          <template v-for="periodo in PERIODOS" :key="periodo.numero">
+          <template v-for="periodo in periodosVisibles" :key="periodo.numero">
           <tr v-if="periodo.numero === 4" class="horario-grid__receso">
             <td :colspan="DIAS.length + 1">Receso 10:00–10:40</td>
           </tr>
@@ -204,10 +292,18 @@ onMounted(cargar);
                 </div>
               </template>
               <span v-else-if="!puedeEditar" class="horario-grid__libre">Libre</span>
+              <span
+                v-else-if="asignacionesLibresEn(dia.valor, periodo.numero).length === 0"
+                class="horario-grid__celda horario-grid__celda--bloqueada"
+                title="La sección ya tiene otra clase a esa hora"
+              >
+                No disponible
+              </span>
               <button
                 v-else
                 type="button"
                 class="horario-grid__celda horario-grid__celda--vacia"
+                aria-label="Agregar clase"
                 @click="abrirCelda(dia.valor, periodo.numero)"
               >
                 +
@@ -230,6 +326,17 @@ onMounted(cargar);
           :opciones="opcionesAsignacion"
           v-model="asignacionParaCelda"
         />
+        <fieldset v-if="diasParaRepetir.length > 0" class="horario-grid__repetir">
+          <legend>Repetir a la misma hora el</legend>
+          <label v-for="dia in diasParaRepetir" :key="dia.valor">
+            <input
+              type="checkbox"
+              :checked="diasAdicionales.includes(dia.valor)"
+              @change="alternarDia(dia.valor)"
+            />
+            {{ dia.etiqueta }}
+          </label>
+        </fieldset>
         <AppButton tipo="submit" :deshabilitado="guardando">
           {{ guardando ? "Guardando…" : "Guardar" }}
         </AppButton>
@@ -365,6 +472,72 @@ onMounted(cargar);
 .horario-grid__quitar svg {
   width: 1rem;
   height: 1rem;
+}
+
+.horario-grid__barra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--espacio-md);
+}
+
+.horario-grid__barra > :first-child {
+  flex: 1 1 18rem;
+  max-width: 28rem;
+}
+
+.horario-grid__ayuda {
+  margin: var(--espacio-sm) 0;
+  color: var(--color-tinta-suave);
+  font-size: var(--texto-sm);
+}
+
+.horario-grid__muestra {
+  display: inline-block;
+  width: 0.9rem;
+  height: 0.9rem;
+  margin: 0 0.25rem 0 var(--espacio-sm);
+  vertical-align: -0.1rem;
+  border-radius: 3px;
+}
+
+.horario-grid__muestra--libre {
+  background: var(--color-accion-suave);
+  border: 1px solid var(--color-accion);
+}
+
+.horario-grid__muestra--bloqueada {
+  background: repeating-linear-gradient(45deg, var(--color-linea), var(--color-linea) 3px, var(--color-fondo) 3px, var(--color-fondo) 6px);
+}
+
+.horario-grid__celda--bloqueada {
+  display: grid;
+  place-items: center;
+  background: repeating-linear-gradient(45deg, var(--color-fondo), var(--color-fondo) 6px, var(--color-hover) 6px, var(--color-hover) 12px);
+  color: var(--color-tinta-suave);
+  font-size: var(--texto-xs);
+  cursor: not-allowed;
+}
+
+.horario-grid__celda--vacia {
+  background: var(--color-accion-suave);
+  color: var(--color-accion);
+}
+
+.horario-grid__repetir {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espacio-sm) var(--espacio-lg);
+  margin: 0;
+  padding: var(--espacio-sm) var(--espacio-md);
+  border: 1px solid var(--color-linea);
+  border-radius: var(--radio-md);
+}
+
+.horario-grid__repetir label {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-xs);
 }
 
 .horario-grid__formulario {

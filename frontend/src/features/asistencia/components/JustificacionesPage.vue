@@ -5,7 +5,8 @@ import { useAuthStore } from "@/features/auth/stores/authStore";
 import { tiposJustificacionApi } from "@/features/catalogo/api/catalogoApi";
 import { enrollmentsApi, studentsApi } from "@/features/estudiantes/api/estudiantesApi";
 import { mensajeDelServidor } from "@/shared/api/errores";
-import { AppButton, AppModal, CampoArchivo, CargandoBloque, DataTable, EmptyState, ErrorBanner, FormSelect, PageHeader } from "@/shared/components";
+import { AppButton, AppModal, CampoArchivo, CargandoBloque, DataTable, EmptyState, ErrorBanner, FormBuscador, FormSelect, PageHeader } from "@/shared/components";
+import { fechaLegible } from "@/shared/fechas";
 import { usePermisos } from "@/shared/permisos";
 import type { Attendance, Enrollment, Justification, JustificationType, Student } from "@/shared/types/models";
 
@@ -20,7 +21,7 @@ import {
 const auth = useAuthStore();
 const puedeResolver = computed(() => auth.usuario?.role_name === "Dirección");
 // Registrar es "editar" en Asistencia (Dirección y docentes de la
-// sección); Coordinación y Administrador solo consultan.
+// sección); Coordinación solo consulta.
 const permisos = usePermisos();
 const puedeRegistrar = computed(() => permisos.puedeEditar("asistencia"));
 
@@ -46,12 +47,15 @@ function estudianteDeInscripcion(enrollmentPublicId: string): string {
 }
 
 function descripcionAsistencia(asistencia: Attendance): string {
-  return `${estudianteDeInscripcion(asistencia.enrollment)} — ${asistencia.date} — ${asistencia.status}`;
+  return `${estudianteDeInscripcion(asistencia.enrollment)} — ${fechaLegible(asistencia.date)}`;
 }
 
+// Solo se justifica una falta: el estudiante tiene que estar marcado como
+// ausente ese día, y la falta no puede tener ya una justificación.
+const asistenciasYaJustificadas = computed(() => new Set(justificaciones.value.map((j) => j.attendance)));
 const opcionesAsistencia = computed(() =>
   asistencias.value
-    .filter((a) => a.status === "ausente")
+    .filter((a) => a.status === "ausente" && !asistenciasYaJustificadas.value.has(a.public_id))
     .map((a) => ({ valor: a.public_id, etiqueta: descripcionAsistencia(a) })),
 );
 const opcionesTipo = computed(() =>
@@ -63,7 +67,8 @@ function nombreEstudianteDeJustificacion(justificacion: Justification): string {
   return asistencia ? estudianteDeInscripcion(asistencia.enrollment) : "—";
 }
 function fechaDeJustificacion(justificacion: Justification): string {
-  return asistencias.value.find((a) => a.public_id === justificacion.attendance)?.date ?? "—";
+  const fecha = asistencias.value.find((a) => a.public_id === justificacion.attendance)?.date;
+  return fecha ? String(fechaLegible(fecha)) : "—";
 }
 
 async function cargar(): Promise<void> {
@@ -141,7 +146,10 @@ onMounted(cargar);
 
 <template>
   <section class="justificaciones-page">
-    <PageHeader titulo="Justificaciones">
+    <PageHeader
+      titulo="Justificaciones"
+      descripcion="Para justificar una falta, primero marca al estudiante como ausente en Asistencia; después registra aquí la justificación. Dirección la aprueba o la rechaza."
+    >
       <template #acciones>
         <AppButton v-if="puedeRegistrar" @click="abrirNueva" :deshabilitado="cargando">Registrar justificación</AppButton>
       </template>
@@ -195,9 +203,10 @@ onMounted(cargar);
     <AppModal v-if="modalAbierto" titulo="Registrar justificación" @cerrar="modalAbierto = false">
       <ErrorBanner v-if="errorModal" :mensaje="errorModal" />
       <form class="justificaciones-page__formulario" @submit.prevent="guardar">
-        <FormSelect
+        <FormBuscador
           id="attendance"
           etiqueta="Falta a justificar"
+          placeholder="Escribe el nombre del estudiante"
           :opciones="opcionesAsistencia"
           v-model="formulario.attendance"
         />
@@ -222,7 +231,7 @@ onMounted(cargar);
           {{ guardando ? "Guardando…" : "Guardar" }}
         </AppButton>
         <p v-if="opcionesAsistencia.length === 0" class="justificaciones-page__nota">
-          No hay faltas o tardanzas propias sin justificar todavía.
+          No hay faltas sin justificar. Primero marca al estudiante como ausente en Asistencia.
         </p>
       </form>
     </AppModal>

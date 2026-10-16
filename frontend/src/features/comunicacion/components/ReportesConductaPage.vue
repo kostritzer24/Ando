@@ -3,7 +3,7 @@ import { computed, onMounted, reactive, ref } from "vue";
 
 import { articulosConvivenciaApi } from "@/features/catalogo/api/catalogoApi";
 import { enrollmentsApi, studentsApi } from "@/features/estudiantes/api/estudiantesApi";
-import { AppButton, AppModal, CargandoBloque, DataTable, EmptyState, ErrorBanner, FormField, FormSelect, PageHeader } from "@/shared/components";
+import { AppButton, AppModal, CargandoBloque, DataTable, EmptyState, ErrorBanner, FormBuscador, FormField, FormSelect, PageHeader } from "@/shared/components";
 import type { ConductReport, ConductRuleArticle, Enrollment, Student } from "@/shared/types/models";
 
 import { conductReportsApi, crearReporteConducta, descargarReporteConducta } from "../api/comunicacionApi";
@@ -43,7 +43,7 @@ const opcionesInscripcion = computed(() =>
   inscripciones.value.map((i) => {
     const estudiante = estudiantes.value.find((e) => e.public_id === i.student);
     const nombre = estudiante ? `${estudiante.first_name} ${estudiante.last_name}` : "—";
-    return { valor: i.public_id, etiqueta: `${nombre} — ${i.section_grade} ${i.section_letter ?? ""}`.trimEnd() };
+    return { valor: i.public_id, etiqueta: `${nombre} — ${`${i.section_grade} ${i.section_letter ?? ""}`.trimEnd()}${i.cycle_year ? ` (${i.cycle_year})` : ""}` };
   }),
 );
 
@@ -204,7 +204,7 @@ onMounted(cargar);
     <AppModal v-if="modalAbierto" titulo="Registrar reporte de conducta" amplio @cerrar="modalAbierto = false">
       <form class="reportes-conducta-page__formulario" @submit.prevent="guardar">
         <ErrorBanner v-if="errorGuardado" :mensaje="errorGuardado" />
-        <FormSelect
+        <FormBuscador
           id="enrollment"
           etiqueta="Estudiante"
           :opciones="opcionesInscripcion"

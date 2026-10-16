@@ -2,7 +2,7 @@
 import { computed, onMounted, reactive, ref } from "vue";
 
 import { mensajeDelServidor } from "@/shared/api/errores";
-import { AppButton, AppModal, CargandoBloque, DataTable, EmptyState, ErrorBanner, FormField, PageHeader } from "@/shared/components";
+import { AppButton, AppModal, CargandoBloque, DataTable, EmptyState, ErrorBanner, FormBuscador, FormField, PageHeader } from "@/shared/components";
 import { usePermisos } from "@/shared/permisos";
 import type { Guardian, GuardianStudentLinkRead, Student } from "@/shared/types/models";
 
@@ -40,6 +40,12 @@ const formularioNuevo = reactive({
 const encargadoExpandido = ref<string | null>(null);
 const vinculos = ref<GuardianStudentLinkRead[]>([]);
 const cargandoVinculos = ref(false);
+const opcionesEstudiante = computed(() =>
+  estudiantes.value.map((e) => ({
+    valor: e.public_id,
+    etiqueta: `${e.first_name} ${e.last_name} (${e.internal_code})`,
+  })),
+);
 const formularioVinculo = reactive({ student: "", relationship: "", is_primary: false });
 const guardandoVinculo = ref(false);
 
@@ -199,12 +205,13 @@ onMounted(cargar);
         </ul>
 
         <form v-if="puedeEditar" class="encargados-page__formulario-vinculo" @submit.prevent="agregarVinculo(encargado)">
-          <select v-model="formularioVinculo.student" required>
-            <option value="" disabled>Elige un estudiante</option>
-            <option v-for="estudiante in estudiantes" :key="estudiante.public_id" :value="estudiante.public_id">
-              {{ estudiante.first_name }} {{ estudiante.last_name }} ({{ estudiante.internal_code }})
-            </option>
-          </select>
+          <FormBuscador
+            id="vinculo-estudiante"
+            etiqueta="Estudiante"
+            placeholder="Escribe el nombre o el código"
+            :opciones="opcionesEstudiante"
+            v-model="formularioVinculo.student"
+          />
           <input v-model="formularioVinculo.relationship" placeholder="Parentesco (Madre, Padre, …)" required />
           <label class="encargados-page__checkbox">
             <input type="checkbox" v-model="formularioVinculo.is_primary" />

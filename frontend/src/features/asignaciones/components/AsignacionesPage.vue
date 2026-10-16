@@ -3,7 +3,7 @@ import { computed, onMounted, reactive, ref } from "vue";
 
 import { cursosApi, seccionesApi } from "@/features/catalogo/api/catalogoApi";
 import { mensajeDelServidor } from "@/shared/api/errores";
-import { AppButton, AppModal, CargandoBloque, DataTable, EmptyState, ErrorBanner, FormSelect, PageHeader } from "@/shared/components";
+import { AppButton, AppModal, CargandoBloque, DataTable, EmptyState, ErrorBanner, FormBuscador, FormSelect, PageHeader } from "@/shared/components";
 import { usePermisos } from "@/shared/permisos";
 import { avisar } from "@/shared/composables/useAvisos";
 import { confirmar } from "@/shared/composables/useConfirmar";
@@ -55,7 +55,10 @@ const docentesDisponibles = computed(() => {
 const opcionesSeccion = computed(() =>
   secciones.value.map((s) => ({
     valor: s.public_id,
-    etiqueta: `${s.grade} ${s.letter}`.trim() + (s.type === "taller" ? " (taller)" : ""),
+    etiqueta:
+      `${s.grade} ${s.letter}`.trim() +
+      (s.cycle_year ? ` (${s.cycle_year})` : "") +
+      (s.type === "taller" ? " · taller" : ""),
   })),
 );
 const opcionesCurso = computed(() =>
@@ -70,7 +73,7 @@ const opcionesDocente = computed(() =>
 
 function nombreSeccion(id: string): string {
   const s = secciones.value.find((s) => s.public_id === id);
-  return s ? `${s.grade} ${s.letter}`.trim() : "—";
+  return s ? `${`${s.grade} ${s.letter}`.trim()}${s.cycle_year ? ` (${s.cycle_year})` : ""}` : "—";
 }
 function nombreCurso(id: string): string {
   return cursos.value.find((c) => c.public_id === id)?.name ?? "—";
@@ -192,7 +195,7 @@ onMounted(cargar);
     <AppModal v-if="modalAbierto" titulo="Agregar asignación" @cerrar="modalAbierto = false">
       <ErrorBanner v-if="errorModal" :mensaje="errorModal" />
       <form class="asignaciones-page__formulario" @submit.prevent="guardar">
-        <FormSelect id="section" etiqueta="Sección" :opciones="opcionesSeccion" v-model="formulario.section" />
+        <FormBuscador id="section" etiqueta="Sección" :opciones="opcionesSeccion" v-model="formulario.section" />
         <FormSelect
           id="course"
           etiqueta="Curso"
@@ -200,7 +203,7 @@ onMounted(cargar);
           v-model="formulario.course"
           :placeholder="formulario.section ? 'Elige un curso' : 'Elige primero una sección'"
         />
-        <FormSelect
+        <FormBuscador
           id="teacher"
           etiqueta="Docente o tallerista"
           :opciones="opcionesDocente"

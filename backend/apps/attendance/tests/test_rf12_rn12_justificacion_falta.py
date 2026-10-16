@@ -275,3 +275,35 @@ def test_rn12_una_justificacion_resuelta_no_se_puede_resolver_otra_vez():
 
     with pytest.raises(JustificacionInvalida):
         resolver_justificacion(justificacion, aprobar=False, resolved_by=usuario)
+
+
+@pytest.mark.django_db
+def test_rf12_el_documento_se_descarga_con_su_tipo_y_un_nombre_con_extension(settings, tmp_path):
+    settings.MEDIA_ROOT = tmp_path
+    rol = RoleFactory(name="Dirección", permissions={"asistencia": "editar"})
+    asistencia = AttendanceFactory(status=Attendance.ESTADO_AUSENTE)
+    tipo = JustificationType.objects.create(name="Constancia médica", requires_document=True)
+    client = APIClient()
+    client.force_authenticate(user=UserFactory(role=rol))
+    creada = client.post(
+        "/api/v1/justifications/",
+        {
+            "attendance": str(asistencia.public_id),
+            "justification_type": str(tipo.public_id),
+            "reason_detail": "Consulta médica.",
+            "supporting_document": SimpleUploadedFile(
+                "constancia.pdf", b"%PDF-1.4 prueba", content_type="application/pdf"
+            ),
+        },
+        format="multipart",
+    )
+
+    descarga = client.get(f"/api/v1/justifications/{creada.data['public_id']}/document/")
+
+    assert descarga.status_code == 200
+    assert descarga["Content-Type"] == "application/pdf"
+    assert ".pdf" in descarga["Content-Disposition"]
+    assert (
+        "Justificación" in descarga["Content-Disposition"]
+        or "Justificacion" in descarga["Content-Disposition"]
+    )

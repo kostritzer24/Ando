@@ -26,6 +26,13 @@ export const DIAS = [
   { valor: "viernes", etiqueta: "Viernes" },
 ] as const;
 
+// Franja de la tarde, solo para talleres: tres períodos de 40 minutos.
+export const PERIODOS_TALLER = [
+  { numero: 7, horario: "13:30–14:10" },
+  { numero: 8, horario: "14:10–14:50" },
+  { numero: 9, horario: "14:50–15:30" },
+] as const;
+
 // RN-13: seis períodos de 40 minutos, receso entre el 3 y el 4.
 export const PERIODOS = [
   { numero: 1, horario: "8:00–8:40" },

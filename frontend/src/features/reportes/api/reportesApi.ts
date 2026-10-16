@@ -1,4 +1,5 @@
 import { http } from "@/app/http";
+import { nombreDeArchivo } from "@/shared/api/descargas";
 
 export type FilaReporte = Record<string, unknown>;
 
@@ -128,12 +129,6 @@ export async function consultarReporte(
   return data.results;
 }
 
-function nombreDeArchivo(headers: Record<string, unknown>, porOmision: string): string {
-  const disposicion = String(headers["content-disposition"] ?? "");
-  const coincidencia = /filename="?([^"]+)"?/.exec(disposicion);
-  return coincidencia?.[1] ?? porOmision;
-}
-
 export async function descargarReportePdf(
   ruta: string,
   params: Record<string, string>,
@@ -158,4 +153,40 @@ export interface Metricas {
 export async function consultarMetricas(): Promise<Metricas> {
   const { data } = await http.get<Metricas>("/reports/metrics/");
   return data;
+}
+
+export interface HorarioEnCuadricula {
+  titulo: string;
+  subtitulo: string;
+  dias: { clave: string; etiqueta: string }[];
+  receso: { inicio: string; fin: string };
+  periodos: {
+    numero: number;
+    inicio: string;
+    fin: string;
+    receso_antes: boolean;
+    celdas: Record<string, { curso: string; detalle: string } | null>;
+  }[];
+}
+
+/** El horario de un grado (`section`) o de una persona (`teacher`) como
+ * cuadrícula de días × períodos. */
+export async function consultarHorarioEnCuadricula(
+  sujeto: { section: string } | { teacher: string },
+): Promise<HorarioEnCuadricula> {
+  const { data } = await http.get<HorarioEnCuadricula>("/reports/schedule-grid/", { params: sujeto });
+  return data;
+}
+
+export async function descargarHorarioPdf(
+  sujeto: { section: string } | { teacher: string },
+): Promise<{ blob: Blob; nombreArchivo: string }> {
+  const respuesta = await http.get("/reports/schedule-grid/", {
+    params: { ...sujeto, export: "pdf" },
+    responseType: "blob",
+  });
+  return {
+    blob: respuesta.data as Blob,
+    nombreArchivo: nombreDeArchivo(respuesta.headers, "horario.pdf"),
+  };
 }

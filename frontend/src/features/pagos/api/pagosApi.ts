@@ -1,4 +1,5 @@
 import { http } from "@/app/http";
+import { nombreDeArchivo } from "@/shared/api/descargas";
 import { crearRecursoCrud } from "@/shared/api/resource";
 import type { IssuedDocument, Payment, ReportCard } from "@/shared/types/models";
 
@@ -16,12 +17,6 @@ export interface EstadoSolvencia {
 export async function consultarSolvencia(enrollmentPublicId: string): Promise<EstadoSolvencia> {
   const { data } = await http.get<EstadoSolvencia>(`/solvency/${enrollmentPublicId}/`);
   return data;
-}
-
-function nombreDeArchivo(headers: Record<string, unknown>, porOmision: string): string {
-  const disposicion = String(headers["content-disposition"] ?? "");
-  const coincidencia = /filename="?([^"]+)"?/.exec(disposicion);
-  return coincidencia?.[1] ?? porOmision;
 }
 
 export async function emitirConstanciaSolvencia(

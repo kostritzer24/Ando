@@ -1,12 +1,20 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from "vue";
 
+import { assignmentsApi } from "@/features/asignaciones/api/asignacionesApi";
 import { ciclosApi, seccionesApi, unidadesApi } from "@/features/catalogo/api/catalogoApi";
-import { AppButton, CargandoBloque, DataTable, EmptyState, ErrorBanner, FormSelect, PageHeader } from "@/shared/components";
+import HorarioCuadricula from "@/features/horarios/components/HorarioCuadricula.vue";
+import { AppButton, CargandoBloque, DataTable, EmptyState, ErrorBanner, FormBuscador, FormSelect, PageHeader } from "@/shared/components";
 import type { GradingUnit, SchoolCycle, Section } from "@/shared/types/models";
 
-import { REPORTES, consultarReporte, descargarReportePdf } from "../api/reportesApi";
-import type { FilaReporte } from "../api/reportesApi";
+import {
+  REPORTES,
+  consultarHorarioEnCuadricula,
+  consultarReporte,
+  descargarHorarioPdf,
+  descargarReportePdf,
+} from "../api/reportesApi";
+import type { FilaReporte, HorarioEnCuadricula } from "../api/reportesApi";
 import { descargarArchivo } from "@/features/pagos/api/pagosApi";
 
 const cargandoBase = ref(true);
@@ -23,7 +31,10 @@ const filtros = reactive({ cycle: "", section: "", unit: "" });
 const opcionesReporte = REPORTES.map((r) => ({ valor: r.ruta, etiqueta: r.titulo }));
 const opcionesCiclo = computed(() => ciclos.value.map((c) => ({ valor: c.public_id, etiqueta: String(c.year) })));
 const opcionesSeccion = computed(() =>
-  secciones.value.map((s) => ({ valor: s.public_id, etiqueta: `${s.grade} ${s.letter ?? ""}`.trimEnd() })),
+  secciones.value.map((s) => ({
+    valor: s.public_id,
+    etiqueta: `${`${s.grade} ${s.letter ?? ""}`.trimEnd()}${s.cycle_year ? ` (${s.cycle_year})` : ""}`,
+  })),
 );
 const opcionesUnidad = computed(() => unidades.value.map((u) => ({ valor: u.public_id, etiqueta: `Unidad ${u.number}` })));
 
@@ -86,6 +97,65 @@ async function descargar(): Promise<void> {
   }
 }
 
+// El reporte de horarios no es una lista: se muestra como la cuadrícula de
+// la semana (días × períodos), de un grado o de una persona, y se baja igual.
+const esHorario = computed(() => rutaElegida.value === "schedules");
+const horarioDe = ref<"grado" | "persona">("grado");
+const horarioSeccion = ref("");
+const horarioPersona = ref("");
+const personasConClases = ref<{ valor: string; etiqueta: string }[]>([]);
+const horario = ref<HorarioEnCuadricula | null>(null);
+const cargandoHorario = ref(false);
+const descargandoHorario = ref(false);
+
+function sujetoDelHorario(): { section: string } | { teacher: string } | null {
+  if (horarioDe.value === "grado") return horarioSeccion.value ? { section: horarioSeccion.value } : null;
+  return horarioPersona.value ? { teacher: horarioPersona.value } : null;
+}
+
+async function cargarPersonasConClases(): Promise<void> {
+  const vistas = new Map<string, string>();
+  for (const a of (await assignmentsApi.listar()).results) {
+    if (a.is_active !== false) vistas.set(a.teacher, a.teacher_name ?? a.teacher);
+  }
+  personasConClases.value = [...vistas].map(([valor, etiqueta]) => ({ valor, etiqueta }));
+}
+
+async function consultarHorario(): Promise<void> {
+  const sujeto = sujetoDelHorario();
+  horario.value = null;
+  if (!sujeto) return;
+  cargandoHorario.value = true;
+  error.value = "";
+  try {
+    horario.value = await consultarHorarioEnCuadricula(sujeto);
+  } catch {
+    error.value = "No se pudo consultar el horario. Inténtalo de nuevo.";
+  } finally {
+    cargandoHorario.value = false;
+  }
+}
+
+async function descargarHorario(): Promise<void> {
+  const sujeto = sujetoDelHorario();
+  if (!sujeto) return;
+  descargandoHorario.value = true;
+  error.value = "";
+  try {
+    const { blob, nombreArchivo } = await descargarHorarioPdf(sujeto);
+    descargarArchivo(blob, nombreArchivo);
+  } catch {
+    error.value = "No se pudo generar el PDF. Inténtalo de nuevo.";
+  } finally {
+    descargandoHorario.value = false;
+  }
+}
+
+watch([horarioDe, horarioSeccion, horarioPersona], consultarHorario);
+watch(esHorario, async (activo) => {
+  if (activo && personasConClases.value.length === 0) await cargarPersonasConClases();
+});
+
 watch(rutaElegida, () => {
   filtros.cycle = "";
   filtros.section = "";
@@ -111,21 +181,21 @@ onMounted(async () => {
       <div class="reportes-page__filtros">
         <FormSelect id="reporte" etiqueta="Reporte" :opciones="opcionesReporte" v-model="rutaElegida" />
         <FormSelect
-          v-if="reporte.filtros.includes('cycle')"
+          v-if="!esHorario && reporte.filtros.includes('cycle')"
           id="cycle"
           etiqueta="Ciclo (opcional)"
           :opciones="[{ valor: '', etiqueta: 'Todos los ciclos' }, ...opcionesCiclo]"
           v-model="filtros.cycle"
         />
         <FormSelect
-          v-if="reporte.filtros.includes('section')"
+          v-if="!esHorario && reporte.filtros.includes('section')"
           id="section"
           etiqueta="Sección (opcional)"
           :opciones="[{ valor: '', etiqueta: 'Todas las secciones' }, ...opcionesSeccion]"
           v-model="filtros.section"
         />
         <FormSelect
-          v-if="reporte.filtros.includes('unit')"
+          v-if="!esHorario && reporte.filtros.includes('unit')"
           id="unit"
           etiqueta="Unidad (opcional)"
           :opciones="[{ valor: '', etiqueta: 'Todas las unidades' }, ...opcionesUnidad]"
@@ -133,6 +203,47 @@ onMounted(async () => {
         />
       </div>
 
+      <template v-if="esHorario">
+        <div class="reportes-page__filtros">
+          <FormSelect
+            id="horario-de"
+            etiqueta="Ver el horario de"
+            :opciones="[
+              { valor: 'grado', etiqueta: 'Un grado' },
+              { valor: 'persona', etiqueta: 'Un docente o tallerista' },
+            ]"
+            v-model="horarioDe"
+          />
+          <FormBuscador
+            v-if="horarioDe === 'grado'"
+            id="horario-seccion"
+            etiqueta="Grado y sección"
+            :opciones="opcionesSeccion"
+            v-model="horarioSeccion"
+          />
+          <FormBuscador
+            v-else
+            id="horario-persona"
+            etiqueta="Persona"
+            :opciones="personasConClases"
+            v-model="horarioPersona"
+          />
+        </div>
+        <div class="reportes-page__acciones">
+          <AppButton variante="secundario" :deshabilitado="!horario || descargandoHorario" @click="descargarHorario">
+            {{ descargandoHorario ? "Generando…" : "Descargar PDF" }}
+          </AppButton>
+        </div>
+        <CargandoBloque v-if="cargandoHorario" />
+        <EmptyState
+          v-else-if="!horario"
+          titulo="Elige un grado o una persona"
+          descripcion="El horario se muestra como la cuadrícula de la semana."
+        />
+        <HorarioCuadricula v-else :horario="horario" />
+      </template>
+
+      <template v-else>
       <div class="reportes-page__acciones">
         <AppButton :deshabilitado="cargandoFilas" @click="consultar">
           {{ cargandoFilas ? "Consultando…" : "Consultar" }}
@@ -149,6 +260,7 @@ onMounted(async () => {
         descripcion="No hay registros para los filtros elegidos."
       />
       <DataTable v-else class="reportes-page__tabla" :columnas="reporte.columnas" :filas="filas" />
+      </template>
     </template>
   </section>
 </template>

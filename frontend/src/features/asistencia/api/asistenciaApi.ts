@@ -46,15 +46,30 @@ export async function resolverJustificacion(
   return data;
 }
 
+const EXTENSION_POR_TIPO: Record<string, string> = {
+  "application/pdf": ".pdf",
+  "image/jpeg": ".jpg",
+  "image/png": ".png",
+};
+
 export async function descargarDocumentoJustificacion(
   justificationPublicId: string,
 ): Promise<{ blob: Blob; nombreArchivo: string }> {
   const respuesta = await http.get(`/justifications/${justificationPublicId}/document/`, {
     responseType: "blob",
   });
+  const blob = respuesta.data as Blob;
   const disposicion = String(respuesta.headers["content-disposition"] ?? "");
-  const coincidencia = /filename="?([^"]+)"?/.exec(disposicion);
-  return { blob: respuesta.data as Blob, nombreArchivo: coincidencia?.[1] ?? "documento" };
+  // Se prefiere el nombre completo en UTF-8 (con acentos); si la cabecera
+  // no llega, el nombre de respaldo lleva la extensión que corresponde al
+  // tipo del archivo — sin extensión ninguna aplicación lo abre.
+  const utf8 = /filename\*=UTF-8''([^;]+)/i.exec(disposicion);
+  const simple = /filename="?([^";]+)"?/.exec(disposicion);
+  const extension = EXTENSION_POR_TIPO[blob.type] ?? "";
+  return {
+    blob,
+    nombreArchivo: utf8 ? decodeURIComponent(utf8[1]) : (simple?.[1] ?? `Justificación${extension}`),
+  };
 }
 
 export async function descargarPlantillaAsistencia(

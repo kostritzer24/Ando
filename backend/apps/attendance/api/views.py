@@ -1,3 +1,8 @@
+import mimetypes
+import os
+import unicodedata
+from urllib.parse import quote
+
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from drf_spectacular.types import OpenApiTypes
@@ -161,11 +166,23 @@ class JustificationViewSet(RegistraAccesoMixin, ScopedQuerysetMixin, viewsets.Mo
         justificacion = self.get_object()
         if not justificacion.supporting_document:
             raise ValidationError("Esta justificación no tiene documento de respaldo.")
-        nombre_archivo = justificacion.supporting_document.name.split("/")[-1]
+        original = justificacion.supporting_document.name.split("/")[-1]
+        extension = os.path.splitext(original)[1].lower()
+        estudiante = justificacion.attendance.enrollment.student
+        nombre_archivo = (
+            f"Justificación - {estudiante.nombre_completo()} - "
+            f"{justificacion.attendance.date:%d-%m-%Y}{extension}"
+        )
+        tipo_contenido = mimetypes.guess_type(original)[0] or "application/octet-stream"
+        ascii_ = unicodedata.normalize("NFKD", nombre_archivo).encode("ascii", "ignore").decode()
         return HttpResponse(
             justificacion.supporting_document.read(),
-            content_type="application/octet-stream",
-            headers={"Content-Disposition": f'attachment; filename="{nombre_archivo}"'},
+            content_type=tipo_contenido,
+            headers={
+                "Content-Disposition": (
+                    f"attachment; filename=\"{ascii_}\"; filename*=UTF-8''{quote(nombre_archivo)}"
+                )
+            },
         )
 
 
