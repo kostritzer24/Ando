@@ -50,12 +50,15 @@ def test_rf02_direccion_administra_cada_catalogo(ruta, payload):
     client = APIClient()
     client.force_authenticate(user=direccion)
 
+    # Algún catálogo llega con filas de migración (p. ej. el tipo "Cierre de
+    # pensum"): se compara contra lo que había antes de crear.
+    antes = client.get(ruta).data["count"]
     respuesta_crear = client.post(ruta, payload, format="json")
     assert respuesta_crear.status_code == 201
 
     respuesta_listar = client.get(ruta)
     assert respuesta_listar.status_code == 200
-    assert respuesta_listar.data["count"] == 1
+    assert respuesta_listar.data["count"] == antes + 1
 
 
 @pytest.mark.django_db

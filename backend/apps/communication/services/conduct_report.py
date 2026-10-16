@@ -1,4 +1,8 @@
+from django.db import transaction
+from django.utils import timezone
+
 from apps.catalog.models import ConductRuleArticle
+from apps.core.services import registrar_cambio
 
 from ..models import ConductReport, ConductReportArticle
 
@@ -15,6 +19,31 @@ def crear_reporte(*, guide_teacher, article_ids: list[int] | None = None, **dato
                 for article_id in article_ids
             ]
         )
+    return reporte
+
+
+class ReporteYaPublicado(Exception):
+    pass
+
+
+@transaction.atomic
+def publicar_reporte(reporte: ConductReport, *, published_by) -> ConductReport:
+    """Igual que los boletines: el reporte nace en borrador, Dirección lo
+    revisa y al publicarlo la familia ya puede verlo."""
+    if reporte.status == ConductReport.ESTADO_PUBLICADO:
+        raise ReporteYaPublicado("Este reporte ya está publicado.")
+    reporte.status = ConductReport.ESTADO_PUBLICADO
+    reporte.published_at = timezone.now()
+    reporte.published_by = published_by
+    reporte.save(update_fields=["status", "published_at", "published_by", "updated_at"])
+    registrar_cambio(
+        usuario=published_by,
+        entidad_nombre="communication.ConductReport",
+        entidad_id=reporte.id,
+        accion="actualizar",
+        valor_anterior={"status": ConductReport.ESTADO_BORRADOR},
+        valor_nuevo={"status": ConductReport.ESTADO_PUBLICADO},
+    )
     return reporte
 
 

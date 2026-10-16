@@ -22,7 +22,12 @@ from ..services.buzon import (
     marcar_leido,
     responder_mensaje,
 )
-from ..services.conduct_report import contenido_reporte, crear_reporte
+from ..services.conduct_report import (
+    ReporteYaPublicado,
+    contenido_reporte,
+    crear_reporte,
+    publicar_reporte,
+)
 from .serializers import (
     AnnouncementSerializer,
     ConductReportCreateSerializer,
@@ -140,11 +145,25 @@ class ConductReportViewSet(
         if user.role.name == "Docente":
             return queryset.filter(enrollment__section_id__in=_secciones_a_cargo_o_asignadas(user))
         if user.role.name == "Padre de familia":
+            # Como el boletín: la familia solo ve lo que Dirección publicó.
             return queryset.filter(
+                status=ConductReport.ESTADO_PUBLICADO,
                 enrollment__student__guardian_links__guardian__user=user,
                 enrollment__student__guardian_links__is_active=True,
             ).distinct()
         return queryset.none()
+
+    @action(detail=True, methods=["post"], url_path="publish")
+    def publish(self, request, public_id=None):
+        """POST /conduct-reports/{public_id}/publish/ — solo Dirección."""
+        if request.user.role.name != ROL_DIRECCION:
+            raise PermissionDenied("Solo Dirección publica los reportes de conducta.")
+        reporte = self.get_object()
+        try:
+            publicar_reporte(reporte, published_by=request.user)
+        except ReporteYaPublicado as exc:
+            raise ValidationError(str(exc)) from exc
+        return Response(ConductReportSerializer(reporte).data)
 
     def create(self, request, *args, **kwargs):
         serializer = ConductReportCreateSerializer(data=request.data)

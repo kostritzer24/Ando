@@ -82,11 +82,25 @@ class ConductReport(BaseModel):
         (OTRA_SANCION, "Otra"),
     ]
 
+    ESTADO_BORRADOR = "borrador"
+    ESTADO_PUBLICADO = "publicado"
+    ESTADOS = [(ESTADO_BORRADOR, "Borrador"), (ESTADO_PUBLICADO, "Publicado")]
+
     enrollment = models.ForeignKey(
         Enrollment,
         verbose_name="inscripción",
         on_delete=models.PROTECT,
         related_name="conduct_reports",
+    )
+    status = models.CharField("estado", max_length=20, choices=ESTADOS, default=ESTADO_BORRADOR)
+    published_at = models.DateTimeField("fecha de publicación", null=True, blank=True)
+    published_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name="publicado por",
+        on_delete=models.PROTECT,
+        related_name="conduct_reports_published",
+        null=True,
+        blank=True,
     )
     report_date = models.DateField("fecha")
     severity = models.CharField("tipo de falta", max_length=20, choices=GRAVEDADES)

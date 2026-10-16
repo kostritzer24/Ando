@@ -58,9 +58,17 @@ class ConductReportSerializer(serializers.ModelSerializer):
             "guide_teacher",
             "direction_member",
             "articles",
+            "status",
+            "published_at",
             "is_active",
         ]
-        read_only_fields = ["public_id", "guide_teacher", "direction_member"]
+        read_only_fields = [
+            "public_id",
+            "guide_teacher",
+            "direction_member",
+            "status",
+            "published_at",
+        ]
 
 
 class ConductReportCreateSerializer(serializers.Serializer):

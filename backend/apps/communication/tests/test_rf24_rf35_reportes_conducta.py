@@ -117,6 +117,7 @@ def test_rf35_la_familia_solo_ve_los_reportes_de_su_propio_hijo():
 
     ConductReport.objects.create(
         enrollment=inscripcion_hijo,
+        status="publicado",
         guide_teacher=guia,
         report_date="2026-03-10",
         severity="leve",
@@ -127,6 +128,7 @@ def test_rf35_la_familia_solo_ve_los_reportes_de_su_propio_hijo():
     )
     ConductReport.objects.create(
         enrollment=EnrollmentFactory(student=ajeno, section=SectionFactory()),
+        status="publicado",
         guide_teacher=guia,
         report_date="2026-03-10",
         severity="leve",
@@ -231,3 +233,64 @@ def test_rf24_un_docente_asignado_a_la_seccion_registra_un_reporte_y_firma_el():
 
     assert respuesta.status_code == 201
     assert respuesta.data["guide_teacher"] == docente.username
+
+
+def _reporte_en_borrador(seccion, guia, estudiante):
+    inscripcion = EnrollmentFactory(student=estudiante, section=seccion, cycle=seccion.cycle)
+    return ConductReport.objects.create(
+        enrollment=inscripcion,
+        guide_teacher=guia,
+        report_date="2026-03-10",
+        severity="leve",
+        incident_description="...",
+        immediate_actions="...",
+        sanction_type="llamado_verbal",
+        commitments="...",
+    )
+
+
+def _familia_de(estudiante):
+    rol = RoleFactory(name="Padre de familia", permissions={"reportes_conducta": "ver"})
+    usuario = UserFactory(role=rol)
+    vincular_encargado_estudiante(
+        guardian=GuardianFactory(user=usuario), student=estudiante, relationship="Madre"
+    )
+    return usuario
+
+
+def test_rf35_el_reporte_nace_en_borrador_y_la_familia_no_lo_ve_hasta_que_se_publica():
+    seccion = SectionFactory()
+    guia = _guia_de(seccion)
+    hijo = StudentFactory()
+    reporte = _reporte_en_borrador(seccion, guia, hijo)
+    familia = _familia_de(hijo)
+
+    client = APIClient()
+    client.force_authenticate(user=familia)
+    assert reporte.status == "borrador"
+    assert client.get("/api/v1/conduct-reports/").data["count"] == 0
+    assert (
+        client.get(f"/api/v1/conduct-reports/{reporte.public_id}/download/").status_code == 404
+    )
+
+    direccion = APIClient()
+    direccion.force_authenticate(user=_direccion())
+    respuesta = direccion.post(f"/api/v1/conduct-reports/{reporte.public_id}/publish/")
+
+    assert respuesta.status_code == 200
+    assert respuesta.data["status"] == "publicado"
+    assert client.get("/api/v1/conduct-reports/").data["count"] == 1
+
+
+def test_rf35_solo_direccion_publica_un_reporte_acceso_no_autorizado():
+    seccion = SectionFactory()
+    guia = _guia_de(seccion)
+    reporte = _reporte_en_borrador(seccion, guia, StudentFactory())
+
+    client = APIClient()
+    client.force_authenticate(user=guia)
+    respuesta = client.post(f"/api/v1/conduct-reports/{reporte.public_id}/publish/")
+
+    assert respuesta.status_code == 403
+    reporte.refresh_from_db()
+    assert reporte.status == "borrador"
