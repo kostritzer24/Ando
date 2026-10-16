@@ -23,7 +23,9 @@ def test_rn08_solvente_cuando_estan_pagados_todos_los_meses_del_periodo():
 
     resultado = calcular_solvencia(enrollment=inscripcion, hasta=date(2026, 2, 15))
 
-    assert resultado == {"solvente": True, "tiene_beca": False, "meses_pendientes": []}
+    assert resultado["solvente"] is True
+    assert resultado["tiene_beca"] is False
+    assert resultado["meses_pendientes"] == []
 
 
 @pytest.mark.django_db
@@ -47,7 +49,12 @@ def test_rn08_con_beca_es_solvente_sin_pagos():
 
     resultado = calcular_solvencia(enrollment=inscripcion, hasta=date(2026, 6, 1))
 
-    assert resultado == {"solvente": True, "tiene_beca": True, "meses_pendientes": []}
+    assert resultado == {
+        "solvente": True,
+        "tiene_beca": True,
+        "meses_pendientes": [],
+        "inscripcion_pagada": True,
+    }
 
 
 @pytest.mark.django_db
@@ -65,14 +72,12 @@ def test_rf07_registrar_pago_deja_rastro_en_la_bitacora_rnf06():
             "enrollment": str(inscripcion.public_id),
             "period_month": 3,
             "period_year": 2026,
-            "amount": "150.00",
             "payment_date": "2026-03-05",
-            "receipt_number": "R-00001",
         },
     )
 
     assert respuesta.status_code == 201, respuesta.data
-    pago = Payment.objects.get(receipt_number="R-00001")
+    pago = Payment.objects.get(public_id=respuesta.data["public_id"])
     assert AuditLog.objects.filter(
         entity_name="Payment", entity_id=pago.id, action="crear"
     ).exists()
@@ -94,9 +99,7 @@ def test_rf07_no_se_puede_registrar_dos_pagos_del_mismo_mes():
             "enrollment": str(inscripcion.public_id),
             "period_month": 4,
             "period_year": 2026,
-            "amount": "150.00",
             "payment_date": "2026-04-05",
-            "receipt_number": "R-2",
         },
     )
 

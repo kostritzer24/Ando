@@ -16,6 +16,7 @@ class PaymentSerializer(serializers.ModelSerializer):
         fields = [
             "public_id",
             "enrollment",
+            "concept",
             "period_month",
             "period_year",
             "amount",
@@ -23,4 +24,8 @@ class PaymentSerializer(serializers.ModelSerializer):
             "receipt_number",
             "recorded_by",
         ]
-        read_only_fields = ["public_id", "recorded_by"]
+        read_only_fields = ["public_id", "recorded_by", "amount", "receipt_number"]
+        extra_kwargs = {"period_month": {"required": False}, "period_year": {"required": False}}
+        # La unicidad (un pago por mes, una inscripción por ciclo) la valida
+        # el servicio, con un mensaje en español.
+        validators: list = []

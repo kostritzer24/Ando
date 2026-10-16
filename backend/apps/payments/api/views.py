@@ -13,7 +13,7 @@ from apps.students.models import Enrollment
 
 from ..models import Payment
 from ..services.certificate import EstudianteInsolvente, emitir_constancia_solvencia
-from ..services.payment import registrar_pago
+from ..services.payment import PagoInvalido, registrar_pago
 from ..services.solvency import calcular_solvencia
 from .serializers import PaymentSerializer
 
@@ -70,9 +70,12 @@ class PaymentViewSet(
         return queryset.none()
 
     def perform_create(self, serializer):
-        serializer.instance = registrar_pago(
-            recorded_by=self.request.user, **serializer.validated_data
-        )
+        try:
+            serializer.instance = registrar_pago(
+                recorded_by=self.request.user, **serializer.validated_data
+            )
+        except PagoInvalido as exc:
+            raise ValidationError(str(exc)) from exc
 
 
 class SolvencyView(RegistraAccesoMixin, APIView):
@@ -89,6 +92,7 @@ class SolvencyView(RegistraAccesoMixin, APIView):
                     "solvente": {"type": "boolean"},
                     "tiene_beca": {"type": "boolean"},
                     "meses_pendientes": {"type": "array", "items": {"type": "array"}},
+                    "inscripcion_pagada": {"type": "boolean"},
                 },
             }
         }

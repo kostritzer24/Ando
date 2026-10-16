@@ -45,6 +45,9 @@ class TeacherAssignmentSerializer(serializers.ModelSerializer):
             "is_active",
         ]
         read_only_fields = ["public_id"]
+        # El mensaje genérico de DRF habla de «teacher, course, section,
+        # cycle»; la unicidad la valida el servicio, con un texto claro.
+        validators: list = []
 
 
 class ScheduleBlockSerializer(serializers.ModelSerializer):
@@ -56,6 +59,7 @@ class ScheduleBlockSerializer(serializers.ModelSerializer):
         model = ScheduleBlock
         fields = ["public_id", "assignment", "day_of_week", "period_number", "is_active"]
         read_only_fields = ["public_id"]
+        validators: list = []
 
 
 class CalendarEventSerializer(serializers.ModelSerializer):

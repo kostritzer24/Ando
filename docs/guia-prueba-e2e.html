@@ -1,0 +1,453 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Misión Patojismo</title>
+<style>
+:root{
+  --bg:#faf6ef; --card:#ffffff; --ink:#1f2937; --mute:#6b7280; --line:#e8e1d3;
+  --brand:#d9480f; --brand-soft:#fff0e6; --ok:#2f9e44; --ok-soft:#e6f6ea; --bad:#c92a2a; --bad-soft:#fdeaea;
+  --gold:#f59f00; --shadow:0 1px 2px rgba(0,0,0,.06),0 4px 14px rgba(0,0,0,.05);
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#16130f; --card:#201c16; --ink:#f3ede2; --mute:#a39a89; --line:#34302a;
+  --brand:#ff8a4c; --brand-soft:#3a2418; --ok:#51cf66; --ok-soft:#1b2e20; --bad:#ff6b6b; --bad-soft:#3a1d1d; --gold:#ffc53d; --shadow:none}
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:860px;margin:0 auto;padding:0 16px 120px}
+header.hero{padding:28px 0 12px}
+.hero h1{margin:0;font-size:clamp(26px,5vw,38px);letter-spacing:-.02em}
+.hero p{margin:6px 0 0;color:var(--mute)}
+/* barra fija */
+.hud{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);margin:0 -16px;padding:10px 16px}
+.hud-row{display:flex;align-items:center;gap:12px;max-width:860px;margin:0 auto}
+.rank{font-weight:700;white-space:nowrap}
+.bar{flex:1;height:12px;background:var(--line);border-radius:99px;overflow:hidden}
+.bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--brand),var(--gold));border-radius:99px;transition:width .4s}
+.pct{font-variant-numeric:tabular-nums;color:var(--mute);font-size:14px;white-space:nowrap}
+/* mapa */
+.map{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0 8px}
+.pin{border:1px solid var(--line);background:var(--card);border-radius:99px;padding:6px 12px;font-size:14px;cursor:pointer;color:var(--ink);text-decoration:none;display:flex;gap:6px;align-items:center}
+.pin.done{background:var(--ok-soft);border-color:var(--ok)}
+.pin:hover{border-color:var(--brand)}
+/* capítulos */
+.lvl{background:var(--card);border:1px solid var(--line);border-radius:16px;margin:16px 0;box-shadow:var(--shadow);overflow:hidden}
+.lvl>summary{list-style:none;cursor:pointer;padding:16px 18px;display:flex;gap:14px;align-items:center}
+.lvl>summary::-webkit-details-marker{display:none}
+.ico{font-size:28px;line-height:1}
+.lvl h2{margin:0;font-size:19px}
+.lvl .sub{color:var(--mute);font-size:14px}
+.lvl .cnt{margin-left:auto;font-variant-numeric:tabular-nums;font-size:14px;color:var(--mute);white-space:nowrap}
+.lvl.done{border-color:var(--ok)}
+.lvl.done .cnt{color:var(--ok);font-weight:700}
+.body{padding:0 18px 18px}
+.who{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:var(--brand-soft);border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:14px}
+.who code{background:var(--card);border:1px solid var(--line)}
+code{font:13px ui-monospace,Menlo,Consolas,monospace;background:var(--brand-soft);padding:1px 6px;border-radius:6px}
+.step{display:flex;gap:12px;padding:12px 0;border-top:1px dashed var(--line)}
+.step:first-of-type{border-top:0}
+.step input[type=checkbox]{appearance:none;flex:none;width:26px;height:26px;border:2px solid var(--line);border-radius:8px;margin-top:2px;cursor:pointer;display:grid;place-content:center;background:var(--card);transition:.15s}
+.step input[type=checkbox]:checked{background:var(--ok);border-color:var(--ok)}
+.step input[type=checkbox]:checked::after{content:"✓";color:#fff;font-weight:800;font-size:16px}
+.step.fail input[type=checkbox]{border-color:var(--bad)}
+.txt{flex:1;min-width:0}
+.do{font-weight:600}
+.exp{color:var(--mute);font-size:14.5px;margin-top:2px}
+.exp b{color:var(--ok)}
+.step.done .do{text-decoration:line-through;text-decoration-color:var(--mute);color:var(--mute)}
+.tools{display:flex;gap:6px;margin-top:6px}
+.mini{font-size:12.5px;border:1px solid var(--line);background:transparent;color:var(--mute);border-radius:8px;padding:2px 8px;cursor:pointer}
+.mini:hover{color:var(--bad);border-color:var(--bad)}
+.note{display:none;margin-top:8px}
+.note.on{display:block}
+.note textarea{width:100%;min-height:60px;border:1px solid var(--bad);background:var(--bad-soft);color:var(--ink);border-radius:10px;padding:8px;font:inherit;font-size:14px}
+.tip{margin-top:6px;font-size:13.5px;background:var(--brand-soft);border-left:3px solid var(--brand);padding:6px 10px;border-radius:0 8px 8px 0}
+.boss{border:2px solid var(--gold)}
+.cmd{position:relative;background:#1b1b1b;color:#f1e9d8;border-radius:12px;padding:12px 14px;margin:8px 0;font:13px/1.55 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;overflow-x:auto}
+.cmd button{position:absolute;top:8px;right:8px;background:#3a3a3a;color:#fff;border:0;border-radius:8px;padding:3px 9px;font-size:12px;cursor:pointer}
+.cmd small{display:block;color:#a89f8d;margin-bottom:4px}
+.known{font-size:14.5px}
+.known li{margin:6px 0}
+button.big{background:var(--brand);color:#fff;border:0;border-radius:12px;padding:12px 18px;font:inherit;font-weight:700;cursor:pointer}
+button.big.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.report{width:100%;min-height:200px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;padding:12px;font:13px/1.5 ui-monospace,Menlo,monospace;margin-top:10px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,40px);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:14px;opacity:0;transition:.3s;z-index:50;font-weight:600;max-width:90vw;text-align:center}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.ctrls{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+@media (max-width:520px){.lvl>summary{padding:14px}.body{padding:0 14px 14px}.ico{font-size:24px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <h1>🎓 Misión Patojismo</h1>
+  <p>Vas a vivir un año escolar completo en una tarde: inscribes, das clase, calificas, cobras, entregas boletines y ves todo desde la casa de una familia. Si cada casilla queda en verde, el sistema está listo para entregarse.</p>
+</header>
+
+<div class="hud"><div class="hud-row">
+  <div class="rank" id="rank">🌱 Aprendiz</div>
+  <div class="bar"><i id="barfill"></i></div>
+  <div class="pct" id="pct">0 / 0</div>
+</div></div>
+
+<nav class="map" id="map" aria-label="Mapa de niveles"></nav>
+
+<div class="ctrls">
+  <button class="big ghost" id="expandAll">Abrir todo</button>
+  <button class="big ghost" id="collapseAll">Cerrar todo</button>
+  <button class="big ghost" id="resetAll">Reiniciar progreso</button>
+</div>
+
+<main id="levels"></main>
+
+<section class="lvl" style="padding:18px">
+  <h2>📋 Tu informe final</h2>
+  <p class="sub">Cada casilla donde pulsaste 🐞 queda aquí con tu nota. Cópialo y pégalo en Claude Code para que lo corrija.</p>
+  <div class="ctrls"><button class="big" id="genReport">Generar informe</button><button class="big ghost" id="copyReport">Copiar</button></div>
+  <textarea class="report" id="report" readonly placeholder="Aquí aparecerá el informe…"></textarea>
+</section>
+
+<section class="lvl" style="padding:18px">
+  <h2>🧊 Esto ya se sabe (no es un hallazgo nuevo)</h2>
+  <p class="sub">Pendientes documentados en <code>docs/pruebas/triage.md</code>. Si te topas con alguno, anótalo igual como "conocido"; la decisión es tuya como dueño.</p>
+  <ul class="known">
+    <li><b>Emitir un documento no aparece en la Bitácora</b> (A-003).</li>
+    <li><b>Un docente no ve los eventos que otro docente de su sección publicó</b> (B-009).</li>
+    <li><b>La pérdida de derecho por falta sin justificar no se ve en pantalla</b> (B-014).</li>
+    <li><b>No se puede despublicar un boletín</b> (C-024) y no existe la vista "Notas por sección" para Dirección.</li>
+    <li><b>Los mensajes del buzón no distinguen entre hijos</b>, solo la sección (D-003).</li>
+    <li><b>Los pagos no tienen tope de monto</b> (D-006).</li>
+    <li><b>Aprobar un cambio de nota podría tardar</b> (D-008, sin medir): cronométralo y anótalo.</li>
+    <li>Fecha de entrega pasada al diseñar actividad y reportes sin filtro por fechas (D-011, D-013).</li>
+    <li>RF-30 (puntos que faltan para aprobar) no existe: es lo único del portal de familia sin construir.</li>
+    <li>Recargar la página muchas veces seguidas puede sacarte de la sesión (K-1). Recarga con calma.</li>
+  </ul>
+</section>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ========== CONTENIDO ========== */
+const U = "CambiaEstaClave2026";
+const LEVELS = [
+{
+  id:"n0", ico:"🛠️", t:"Nivel 0 · Prepara el escenario", sub:"10 minutos. Se hace una sola vez.",
+  who:null,
+  cmds:[
+    {c:"cd \"/Users/gabrielrosales/Documents/mariano galvez/semestre X/Ando/backend\"\nsource .venv/bin/activate\nexport DYLD_LIBRARY_PATH=/opt/homebrew/lib\nrm -f db.sqlite3 && python manage.py migrate && python manage.py seed_demo\npython manage.py runserver 8000", s:"Terminal 1 · Backend (base limpia + datos de demostración)"},
+    {c:"cd \"/Users/gabrielrosales/Documents/mariano galvez/semestre X/Ando/frontend\"\nnpm run dev", s:"Terminal 2 · Frontend"},
+  ],
+  steps:[
+    {d:"Abre http://localhost:5173 (no 127.0.0.1)", e:"Ves la pantalla de ingreso con el logo del centro.", tip:"Usa siempre «localhost»: la cookie de sesión no funciona con 127.0.0.1."},
+    {d:"Abre una ventana de incógnito adicional", e:"Servirá para tener dos roles a la vez (por ejemplo docente y Dirección)."},
+    {d:"Ten a mano el DevTools (F12) → pestañas Consola y Red", e:"Durante TODA la prueba: la consola sin rojo y en Red ningún 500.", tip:"Un 403 o 404 está bien si el sistema debía negar algo. Un 500 siempre es un bug."},
+  ],
+  note:"Contraseña de todos los usuarios: "+U
+},
+{
+  id:"n1", ico:"🚪", t:"Nivel 1 · La puerta de entrada", sub:"Acceso, sesión y 404",
+  who:"Cualquiera · sin sesión",
+  steps:[
+    {d:"Entra con usuario «dir.demo» y contraseña incorrecta", e:"Mensaje claro en español: «Usuario o contraseña incorrectos». No se queda cargando."},
+    {d:"Repite con un usuario que no existe", e:"El MISMO mensaje que el anterior (no revela si el usuario existe)."},
+    {d:"Deja los campos vacíos y pulsa Entrar", e:"Avisa qué falta, sin error técnico."},
+    {d:"Entra bien como dir.demo", e:"Caes en el portal administrativo, con menú agrupado y tu nombre/rol visibles."},
+    {d:"Recarga la página (F5), una sola vez", e:"Sigues dentro, sin volver al login."},
+    {d:"Cierra sesión y pulsa «Atrás» del navegador", e:"No se ve contenido protegido; te manda al ingreso."},
+    {d:"Escribe en la barra: localhost:5173/loquesea", e:"Página 404 amable, con salida de regreso. Nada en blanco."},
+    {d:"Con sesión iniciada, abre /ingresar a mano", e:"Te redirige a tu portal, no muestra el login."},
+  ]
+},
+{
+  id:"n2", ico:"🏫", t:"Nivel 2 · Dirección arma la escuela", sub:"Datos maestros, ciclos y secciones",
+  who:"Usuario <code>dir.demo</code>",
+  steps:[
+    {d:"Menú Administración → Datos maestros", e:"Ves los catálogos: ciclos, secciones, cursos, tipos de actividad, de justificación, de documento, becas y artículos de convivencia."},
+    {d:"Abre Ciclos", e:"Ciclo 2026 activo con sus 4 unidades y fechas coherentes (sin cruces)."},
+    {d:"Edita una unidad y ponle fecha de fin ANTES de la de inicio", e:"Se rechaza con un motivo claro y entendible."},
+    {d:"Abre Secciones", e:"Primero A y B, Segundo, Tercero, Cuarto bach., Quinto bach. y Taller de panadería."},
+    {d:"Crea un curso nuevo llamado «Robótica»", e:"Aparece en la lista sin recargar."},
+    {d:"Intenta crear otro curso con el mismo nombre", e:"Se rechaza explicando que ya existe."},
+    {d:"Da de baja el curso «Robótica»", e:"Desaparece de la lista activa (baja lógica) y no se ofrece más en los selectores."},
+    {d:"Entra como coord.demo (otra ventana) y revisa Datos maestros", e:"Puede VER pero no hay botones de crear/editar/borrar.", tip:"Coordinación es solo lectura casi en todo."},
+  ]
+},
+{
+  id:"n3", ico:"📝", t:"Nivel 3 · Llega una familia nueva", sub:"Inscripción, encargado y cuenta familiar",
+  who:"Usuario <code>dir.demo</code>",
+  steps:[
+    {d:"Estudiantes → Inscribir. Crea «Pedro Ajú Chávez», nacido el 3/3/2012, sección Segundo básico", e:"Se crea con código interno único. Aparece en la lista."},
+    {d:"Intenta ponerle una fecha de nacimiento futura", e:"Se rechaza con mensaje claro."},
+    {d:"Al inscribir, llena los datos de salud (alergia: «Penicilina»)", e:"Se guardan en el mismo paso y se ven en el expediente."},
+    {d:"Abre el expediente de Pedro", e:"Datos generales y sensibles visibles para Dirección.", tip:"Después, entra como coord.demo: no debe ver los datos de salud."},
+    {d:"Encargados → crear «Rosa Chávez» con usuario nuevo (ej. «rosa.chavez») y contraseña provisional", e:"Se crea el encargado junto con su cuenta familiar."},
+    {d:"Vincula a Rosa con Pedro (parentesco Madre, principal)", e:"El vínculo aparece; «Ver vínculos» muestra la relación."},
+    {d:"Entra como rosa.chavez con la contraseña provisional", e:"Te obliga a cambiar la contraseña antes de seguir."},
+    {d:"En el cambio de contraseña, usa la MISMA contraseña provisional", e:"Se rechaza (debe ser distinta)."},
+    {d:"Pon una contraseña nueva válida", e:"Entras al portal de familia y ves a Pedro."},
+    {d:"Dirección → Asignaciones: asigna al docente «docente.demo» el curso Ciencias naturales en Segundo básico", e:"Se crea. Si repites exactamente lo mismo, se rechaza por duplicado."},
+    {d:"Intenta asignar un tallerista a un curso académico", e:"Se rechaza: el tipo de persona y de curso no coinciden."},
+  ]
+},
+{
+  id:"n4", ico:"🗓️", t:"Nivel 4 · El horario y el calendario", sub:"Seis períodos de 40 min y un receso",
+  who:"Usuario <code>dir.demo</code>",
+  steps:[
+    {d:"Horarios → elige Segundo básico y arma Matemática el lunes, período 2", e:"Se guarda y se ve en la grilla, con el receso visible entre períodos."},
+    {d:"Intenta poner OTRO curso en ese mismo día y período para la misma sección", e:"Se rechaza por cruce, con motivo."},
+    {d:"Intenta poner al mismo docente en dos secciones a la misma hora", e:"Se rechaza por cruce de docente."},
+    {d:"Calendario → crea un evento con fecha de fin antes del inicio", e:"Se rechaza."},
+    {d:"Crea un evento válido de la semana próxima", e:"Aparece en el calendario."},
+    {d:"Entra como docente.demo → Mi horario", e:"Ve solo SU horario, de solo lectura."},
+    {d:"En el calendario como docente, intenta editar un evento que no es tuyo", e:"No te deja (solo Dirección edita todo)."},
+  ]
+},
+{
+  id:"n5", ico:"🧑‍🏫", t:"Nivel 5 · Un día de clases", sub:"Asistencia y justificaciones",
+  who:"Usuarios <code>guia.demo</code> / <code>docente.demo</code> / <code>tallerista.demo</code> / <code>dir.demo</code>",
+  steps:[
+    {d:"Como docente.demo → Asistencia. Elige Segundo básico y la fecha de hoy", e:"Aparecen los estudiantes. Solo hay Presente / Ausente / Justificado: sin «tarde» ni hora.", tip:"Si hoy es sábado o domingo, el sistema debe rechazar la fecha: ¡eso ya es una prueba!"},
+    {d:"Marca a un estudiante Ausente y guarda", e:"Se guarda; al recargar la misma fecha, sigue marcado."},
+    {d:"Intenta tomar asistencia en una fecha futura", e:"Se rechaza con motivo."},
+    {d:"Guarda la asistencia dos veces el mismo día", e:"No duplica registros; ni error 500."},
+    {d:"Registra una justificación para el ausente (tipo Motivo familiar)", e:"Queda «pendiente»."},
+    {d:"Intenta registrar otra justificación para la misma falta", e:"Se rechaza por repetida."},
+    {d:"Como dir.demo → Justificaciones: resuelve la pendiente", e:"Solo Dirección resuelve. Al intentar resolverla de nuevo, no se deja."},
+    {d:"Como tallerista.demo → Asistencia del taller de panadería", e:"La asistencia del taller es aparte de la de la mañana (solo ve su taller)."},
+    {d:"Tallerista → Plantilla de talleres → descargar", e:"Descarga un archivo con nombre descriptivo (no «plantilla.xlsx» genérico). Ábrelo en Excel."},
+    {d:"Entra como docente.demo e intenta descargar la plantilla de taller", e:"No debe poder: no tiene asignación de taller (se espera un rechazo)."},
+  ]
+},
+{
+  id:"n6", ico:"📊", t:"Nivel 6 · Las notas", sub:"Diseñar, capturar, corregir, autorizar",
+  who:"Usuarios <code>docente.demo</code> y <code>dir.demo</code>",
+  steps:[
+    {d:"Docente → Diseñar unidad (Matemática · Segundo básico · Unidad 1). Agrega 4 pruebas cortas de 10 puntos", e:"El contador en vivo muestra «40 de 100 puntos usados».", tip:"Usa fechas de entrega dentro de la Unidad 1 (enero–febrero 2026)."},
+    {d:"Agrega un Examen de unidad de 60 puntos", e:"Contador en «100 de 100»."},
+    {d:"Intenta agregar una tarea más de 5 puntos", e:"Se rechaza: la unidad no puede pasar de 100 puntos."},
+    {d:"Capturar notas → elige una prueba corta y escribe 8 a un estudiante", e:"Se guarda y se muestra como nota vigente."},
+    {d:"Escribe 15 en una prueba de 10 puntos", e:"Se rechaza: no puede pasar del máximo."},
+    {d:"Pulsa «Solicitar corrección» en esa nota; propón 9 con motivo", e:"Queda en «Mis solicitudes» como pendiente."},
+    {d:"Como dir.demo → Modificaciones de notas → Aprobar (CRONOMETRA cuánto tarda)", e:"Pide confirmar y dice que el punteo real se conserva. La solicitud sale de pendientes.", tip:"Antes se reportó que tardaba ~1 min (D-008). Anota el tiempo real."},
+    {d:"Docente → Plantilla de notas: descarga la plantilla, llena unas notas en Excel y súbela", e:"Muestra una vista previa de DOS pasos antes de confirmar."},
+    {d:"Sube un archivo que NO sea Excel (una foto o un PDF)", e:"Mensaje entendible, no técnico."},
+    {d:"Entra como pagos.demo y trata de abrir /administrativo/notas/modificaciones", e:"No te deja ver nada (sin permiso)."},
+  ]
+},
+{
+  id:"n7", ico:"💰", t:"Nivel 7 · Pagos y solvencia", sub:"Quién está al día y quién no",
+  who:"Usuario <code>pagos.demo</code>",
+  steps:[
+    {d:"Pagos y solvencia → elige a María Ximena Pérez", e:"«Al día con sus pagos». El botón de constancia está activo."},
+    {d:"Emite la constancia de solvencia", e:"Descarga un PDF con logo, nombre del centro y QR. Dos líneas en blanco para firma y sello. SIN firma digital.", tip:"Ábrelo y revisa que no esté cortado y los datos sean correctos."},
+    {d:"Elige a Ana Lucía Con (sin pagos)", e:"«No está solvente», lista de meses pendientes y la constancia BLOQUEADA."},
+    {d:"Registra un pago de enero 2026 por Q150.00 con recibo «PRUEBA-001»", e:"Aparece en la tabla de pagos, con fecha legible (dd/mm/aaaa) y monto en Q."},
+    {d:"Haz doble clic rápido en «Registrar pago» con otro recibo", e:"No se duplica el pago."},
+    {d:"Elige a Juan Carlos López (becado)", e:"Se muestra solvente por beca."},
+    {d:"Elige a Diego Ramírez (le falta el mes más reciente)", e:"Insolvente con un solo mes pendiente."},
+    {d:"Usa los filtros de la tabla de pagos (sección y búsqueda)", e:"La lista se filtra bien."},
+    {d:"Descarga el reporte de estudiantes insolventes", e:"PDF correcto, con solo datos de pagos."},
+    {d:"Intenta anular o editar un pago", e:"No existe esa opción: los pagos no se anulan (decisión tuya)."},
+  ]
+},
+{
+  id:"n8", ico:"📄", t:"Nivel 8 · Documentos y verificación QR", sub:"Constancias, cartas y su autenticidad",
+  who:"Usuarios <code>dir.demo</code> y <code>pagos.demo</code>",
+  steps:[
+    {d:"Dirección → Documentos → emite una Constancia de estudio de María Ximena", e:"Se descarga el PDF y aparece en la bandeja de documentos emitidos."},
+    {d:"Emite una Carta membretada con texto libre", e:"PDF con el texto, membrete y espacio para firma a mano."},
+    {d:"Verifica que «Constancia de solvencia» NO sea opción en este formulario", e:"No aparece (tiene su propio camino en Pagos)."},
+    {d:"Descarga otra vez un documento desde la bandeja", e:"El archivo tiene un nombre claro (tipo + estudiante)."},
+    {d:"Abre el QR del PDF con tu celular (o copia el código a /verificar/<código>)", e:"Página pública que confirma que el documento es auténtico, sin pedir sesión."},
+    {d:"Prueba un código inventado: /verificar/abc123", e:"Dice que no es válido, sin error técnico."},
+    {d:"Entra como pagos.demo → Documentos", e:"NO ve el formulario de emitir; solo ve constancias de solvencia."},
+  ]
+},
+{
+  id:"n9", ico:"🧾", t:"Nivel 9 · Boletines", sub:"Generar → revisar → aprobar → publicar",
+  who:"Usuario <code>dir.demo</code>",
+  steps:[
+    {d:"Boletines → Segundo básico · Unidad 1 → Generar", e:"Se crean los boletines en «Borrador»."},
+    {d:"Pulsa «Ver boletín» (vista previa) de un estudiante ANTES de aprobar", e:"Se abre el PDF para revisar. Un curso sin notas muestra «—» y no cuenta en el promedio."},
+    {d:"Aprueba y luego publica los boletines de Segundo básico", e:"Pasan por los estados Aprobado → Publicado."},
+    {d:"Intenta publicar el boletín de un estudiante insolvente (sección Tercero básico: Ana Lucía)", e:"Se bloquea con un mensaje que explica el motivo (solvencia o plazo), con fechas."},
+    {d:"Entra como familia.demo → Notas → descarga el boletín publicado de María Ximena", e:"Se descarga el PDF del boletín."},
+    {d:"Como familia, revisa que NO haya detalle por actividad ni historial de modificaciones", e:"Solo la nota total por curso y unidad."},
+  ]
+},
+{
+  id:"n10", ico:"📣", t:"Nivel 10 · Avisos y conducta", sub:"Comunicación de la escuela hacia la familia",
+  who:"Usuarios <code>dir.demo</code>, <code>guia.demo</code>, <code>familia.demo</code>",
+  steps:[
+    {d:"Dirección → Avisos → publica un aviso para TODOS", e:"Aparece en la cartelera."},
+    {d:"Publica otro solo para la sección Segundo básico", e:"Aparece solo en esa sección."},
+    {d:"Entra como familia.demo → Avisos", e:"Ve el aviso de todos y el de Segundo básico (sus hijos están ahí)."},
+    {d:"Como guia.demo → Reportes de conducta: registra uno a un estudiante de TU sección con un artículo del código", e:"Se guarda y puedes descargar el PDF con el formato del centro."},
+    {d:"Intenta registrar un reporte a un estudiante de otra sección", e:"No puedes: solo tu sección."},
+    {d:"Familia → Convivencia", e:"La familia ve únicamente los reportes de SU hijo."},
+    {d:"Como docente.demo intenta abrir /operativo/avisos", e:"Puede ver avisos, pero NO crear (los publica Dirección)."},
+  ]
+},
+{
+  id:"n11", ico:"📱", t:"Nivel 11 · Visto desde casa", sub:"El portal de la familia, como en el celular",
+  who:"Usuario <code>familia.demo</code> · en el navegador activa vista móvil (F12 → icono de celular → 375 px)",
+  steps:[
+    {d:"Entra como familia.demo", e:"Eliges entre dos hijos (María Ximena y Juan Carlos). Nada de scroll horizontal."},
+    {d:"Inicio: calendario semanal de entrada", e:"Se ve el horario de clases del día; hay botones para cambiar de semana."},
+    {d:"Cambia de hijo con el selector", e:"Todo se actualiza al hijo elegido."},
+    {d:"Notas", e:"Solo nota total por curso y unidad; un curso sin notas muestra «—», no 0."},
+    {d:"Asistencia", e:"Muestra la mañana y también el taller, por separado."},
+    {d:"Pagos", e:"Solvencia de cada hijo y botón de constancia SOLO si está solvente."},
+    {d:"Intenta abrir /administrativo/usuarios a mano", e:"Te niega el acceso; no se ve nada."},
+    {d:"Abre el menú inferior y revisa que todo sea tocable con el pulgar", e:"Botones grandes, texto legible, tildes y ñ bien."},
+    {d:"Entra con una cuenta de familia sin hijos vinculados (crea una nueva sin vínculo)", e:"Mensaje que explica qué pasa, no «cargando» eterno."},
+  ]
+},
+{
+  id:"n12", ico:"✉️", t:"Nivel 12 · El buzón", sub:"Mensajes entre familia y escuela (¡hazlo cerca del final!)",
+  who:"Usuarios <code>familia.demo</code>, <code>guia.demo</code>, <code>dir.demo</code>",
+  steps:[
+    {d:"Familia → Buzón: escribe un mensaje normal a la sección de Segundo básico", e:"Se envía y aparece en el hilo."},
+    {d:"Como guia.demo (o Dirección) → Buzón: responde", e:"La respuesta aparece en el hilo de la familia."},
+    {d:"Intenta responder como docente.demo (sin ser maestro guía)", e:"No puedes: solo el guía de la sección o Dirección."},
+    {d:"🔥 AL FINAL: como familia, escribe un mensaje con una grosería (también prueba cambiando letras por números)", e:"El sistema lo detecta y bloquea tu cuenta temporalmente, explicándolo.", tip:"Esto bloquea a familia.demo por 24 h. Hazlo último, o reinicia la base de datos después."},
+    {d:"Intenta enviar otro mensaje mientras estás bloqueado", e:"No se envía."},
+  ]
+},
+{
+  id:"n13", ico:"🛡️", t:"Nivel 13 · Administración y control", sub:"Usuarios, bitácora, reportes y permisos",
+  who:"Usuarios <code>admin.demo</code> y <code>dir.demo</code>",
+  steps:[
+    {d:"admin.demo → Usuarios: crea un usuario Docente nuevo", e:"Se crea; su primer ingreso exige cambiar contraseña."},
+    {d:"Desactiva ese usuario e intenta entrar con él", e:"No puede ingresar."},
+    {d:"admin.demo → Bitácora", e:"Ves tus acciones recientes: quién, cuándo y en qué pantalla.", tip:"Debe haber huellas de notas, asistencia y creación de usuarios. Los documentos aún no (conocido)."},
+    {d:"Revisa con admin.demo que NO puedas editar datos de salud de un estudiante", e:"Los puede ver pero no editar."},
+    {d:"dir.demo → Reportes: abre los 8 reportes uno por uno", e:"Cada uno carga, filtra por ciclo/sección/unidad y baja en PDF correcto."},
+    {d:"Compara las cifras del reporte de matrícula con la lista de estudiantes", e:"Los números coinciden (incluyendo a Pedro que inscribiste)."},
+    {d:"Métricas", e:"Dos porcentajes semanales, sin datos personales."},
+    {d:"Recorre el menú de CADA rol y compáralo con la matriz de docs/permisos-roles.md", e:"Nadie ve pantallas de más ni de menos.", tip:"Pagos solo ve pagos y sus documentos; Coordinación todo en solo lectura; Tallerista nunca ve notas."},
+    {d:"Cuenta → cambia tu contraseña con la actual equivocada", e:"Mensaje claro; no cambia."},
+  ]
+},
+{
+  id:"n14", ico:"👑", t:"Jefe final · Dar de baja y cerrar", sub:"Que todo cuadre al terminar",
+  boss:true,
+  who:"Usuario <code>dir.demo</code>",
+  steps:[
+    {d:"Da de baja a Pedro Ajú", e:"Se retiran sus inscripciones; deja de aparecer en listas activas. El expediente no se borra de verdad."},
+    {d:"Intenta ver a Pedro con la cuenta de Rosa", e:"Ya no aparece como estudiante activo (o se explica el estado)."},
+    {d:"Repasa la consola y la pestaña Red de TODO lo que hiciste", e:"Cero errores rojos y cero 500 en toda la prueba."},
+    {d:"Repite lo esencial en vista móvil (375 px)", e:"Anota lo que se vea apretado o cortado."},
+    {d:"Revisa que no haya ningún texto en inglés, «undefined», «null» ni IDs largos a la vista", e:"Todo en español y con tono neutro."},
+  ]
+}
+];
+
+/* ========== ESTADO ========== */
+const KEY="patojismo-guia-v1";
+let st={}; try{st=JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}};
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const toast=m=>{const t=$("#toast");t.textContent=m;t.classList.add("on");clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove("on"),2600)};
+
+/* ========== RENDER ========== */
+const main=$("#levels"), mapEl=$("#map");
+LEVELS.forEach(L=>{
+  const det=document.createElement("details");
+  det.className="lvl"+(L.boss?" boss":""); det.id=L.id;
+  let h=`<summary><span class="ico">${L.ico}</span><div><h2>${esc(L.t)}</h2><div class="sub">${esc(L.sub)}</div></div><span class="cnt" data-cnt="${L.id}"></span></summary><div class="body">`;
+  if(L.who) h+=`<div class="who">👤 ${L.who}</div>`;
+  if(L.note) h+=`<div class="tip">${esc(L.note)}</div>`;
+  (L.cmds||[]).forEach((c,i)=>{h+=`<div class="cmd"><small>${esc(c.s)}</small><button data-copy="${L.id}-${i}">Copiar</button>${esc(c.c)}</div>`});
+  L.steps.forEach((s,i)=>{
+    const id=`${L.id}.${i}`;
+    h+=`<div class="step" data-id="${id}"><input type="checkbox" aria-label="Completado"><div class="txt"><div class="do">${esc(s.d)}</div><div class="exp"><b>Debe pasar:</b> ${esc(s.e)}</div>${s.tip?`<div class="tip">💡 ${esc(s.tip)}</div>`:""}<div class="tools"><button class="mini" data-bug="${id}">🐞 No pasó</button></div><div class="note"><textarea placeholder="¿Qué viste en realidad? (pantalla, mensaje, qué esperabas)"></textarea></div></div></div>`;
+  });
+  det.innerHTML=h+"</div>";
+  main.appendChild(det);
+  const a=document.createElement("a"); a.className="pin"; a.href="#"+L.id; a.dataset.pin=L.id; a.innerHTML=`${L.ico} <span>${L.t.split("·")[0].trim()}</span>`;
+  a.onclick=e=>{e.preventDefault();det.open=true;det.scrollIntoView({behavior:"smooth",block:"start"})};
+  mapEl.appendChild(a);
+});
+document.querySelectorAll("[data-copy]").forEach(b=>b.onclick=()=>{
+  const [lid,i]=b.dataset.copy.split("-"); const L=LEVELS.find(x=>x.id===lid);
+  navigator.clipboard.writeText(L.cmds[i].c).then(()=>toast("Comando copiado ✔"),()=>toast("No se pudo copiar"));
+});
+
+function applyState(){
+  let done=0,total=0;
+  document.querySelectorAll(".step").forEach(el=>{
+    const id=el.dataset.id, s=st[id]||{};
+    const cb=el.querySelector("input"); cb.checked=!!s.ok;
+    el.classList.toggle("done",!!s.ok); el.classList.toggle("fail",!!s.bug);
+    const n=el.querySelector(".note"), ta=n.querySelector("textarea");
+    n.classList.toggle("on",!!s.bug); if(s.bug && ta!==document.activeElement) ta.value=s.note||"";
+    el.querySelector("[data-bug]").textContent=s.bug?"🐞 Anotado (quitar)":"🐞 No pasó";
+  });
+  LEVELS.forEach(L=>{
+    const t=L.steps.length, d=L.steps.filter((_,i)=>(st[`${L.id}.${i}`]||{}).ok).length;
+    total+=t; done+=d;
+    const el=document.getElementById(L.id); const full=d===t;
+    el.classList.toggle("done",full);
+    document.querySelector(`[data-cnt="${L.id}"]`).textContent=full?"✅ completo":`${d}/${t}`;
+    document.querySelector(`[data-pin="${L.id}"]`).classList.toggle("done",full);
+  });
+  const p=total?Math.round(done/total*100):0;
+  $("#barfill").style.width=p+"%"; $("#pct").textContent=`${done} / ${total} · ${p}%`;
+  const ranks=[[0,"🌱 Aprendiz"],[15,"📒 Secretario"],[35,"🧑‍🏫 Docente"],[60,"📋 Coordinador"],[85,"🎓 Director"],[100,"👑 Listo para entregar"]];
+  $("#rank").textContent=[...ranks].reverse().find(r=>p>=r[0])[1];
+}
+function setStep(id,patch){st[id]={...(st[id]||{}),...patch};save();applyState()}
+
+let lastFull=new Set(JSON.parse(sessionStorage.getItem("lf")||"[]"));
+document.addEventListener("change",e=>{
+  const el=e.target.closest(".step"); if(!el||e.target.type!=="checkbox")return;
+  setStep(el.dataset.id,{ok:e.target.checked});
+  LEVELS.forEach(L=>{
+    const full=L.steps.every((_,i)=>(st[`${L.id}.${i}`]||{}).ok);
+    if(full&&!lastFull.has(L.id)){lastFull.add(L.id);toast(`🎉 ¡${L.t.split("·")[0].trim()} superado!`)}
+    if(!full)lastFull.delete(L.id);
+  });
+  sessionStorage.setItem("lf",JSON.stringify([...lastFull]));
+});
+document.addEventListener("click",e=>{
+  const b=e.target.closest("[data-bug]"); if(!b)return;
+  const id=b.dataset.bug, s=st[id]||{};
+  if(s.bug){setStep(id,{bug:false,note:""})} else {setStep(id,{bug:true,ok:false}); setTimeout(()=>b.closest(".txt").querySelector("textarea").focus(),50)}
+});
+document.addEventListener("input",e=>{
+  if(e.target.tagName!=="TEXTAREA"||!e.target.closest(".step"))return;
+  const id=e.target.closest(".step").dataset.id; st[id]={...(st[id]||{}),note:e.target.value}; save();
+});
+
+$("#expandAll").onclick=()=>document.querySelectorAll("details.lvl").forEach(d=>d.open=true);
+$("#collapseAll").onclick=()=>document.querySelectorAll("details.lvl").forEach(d=>d.open=false);
+$("#resetAll").onclick=()=>{if(confirm("¿Borrar todo tu progreso y tus notas?")){st={};save();lastFull=new Set();applyState();toast("Progreso reiniciado")}};
+
+function buildReport(){
+  const out=[], fecha=new Date().toLocaleDateString("es-GT");
+  let ok=0,total=0,bugs=0;
+  LEVELS.forEach(L=>L.steps.forEach((s,i)=>{
+    total++; const x=st[`${L.id}.${i}`]||{}; if(x.ok)ok++;
+    if(x.bug){bugs++;out.push(`- [${L.t.split("·")[0].trim()}] ${s.d}\n  Esperado: ${s.e}\n  Pasó: ${x.note||"(sin nota)"}`)}
+  }));
+  const pend=[]; LEVELS.forEach(L=>L.steps.forEach((s,i)=>{const x=st[`${L.id}.${i}`]||{}; if(!x.ok&&!x.bug)pend.push(`${L.t.split("·")[0].trim()}: ${s.d}`)}));
+  let r=`# Informe de prueba e2e (${fecha})\nCompletados: ${ok}/${total} · Fallos anotados: ${bugs}\n\n`;
+  r+=bugs?`## Fallos\n${out.join("\n")}\n`:`## Fallos\nNinguno anotado 🎉\n`;
+  if(pend.length) r+=`\n## Sin probar (${pend.length})\n${pend.slice(0,40).map(x=>"- "+x).join("\n")}\n`;
+  return r;
+}
+$("#genReport").onclick=()=>{$("#report").value=buildReport();toast("Informe generado")};
+$("#copyReport").onclick=()=>{const v=$("#report").value||buildReport();$("#report").value=v;navigator.clipboard.writeText(v).then(()=>toast("Informe copiado ✔"),()=>toast("Selecciona y copia a mano"))};
+
+applyState();
+document.getElementById("n0").open=true;
+</script>
+</body>
+</html>

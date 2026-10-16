@@ -17,8 +17,8 @@ from ..domain.day_structure import PeriodoInvalido
 from ..domain.teacher_assignment import AsignacionInvalida, validar_asignacion
 from ..models import CalendarEvent, ScheduleBlock, TeacherAssignment
 from ..services.calendar_event import crear_evento
-from ..services.schedule_block import CruceDeHorario, crear_bloque
-from ..services.teacher_assignment import crear_asignacion
+from ..services.schedule_block import CruceDeHorario, crear_bloque, validar_bloque
+from ..services.teacher_assignment import crear_asignacion, dar_de_baja_asignacion
 from .serializers import (
     CalendarEventSerializer,
     ScheduleBlockSerializer,
@@ -67,6 +67,9 @@ class TeacherAssignmentViewSet(RegistraAccesoMixin, ScopedQuerysetMixin, viewset
         except AsignacionInvalida as exc:
             raise ValidationError({"course": str(exc)}) from exc
 
+    def perform_destroy(self, instance):
+        dar_de_baja_asignacion(instance)
+
     def perform_update(self, serializer):
         # Cambiar el docente, el curso o la sección vuelve a exigir las
         # mismas reglas que al crear (ADR-0001).
@@ -83,6 +86,22 @@ class TeacherAssignmentViewSet(RegistraAccesoMixin, ScopedQuerysetMixin, viewset
             )
         except AsignacionInvalida as exc:
             raise ValidationError({"course": str(exc)}) from exc
+        repetida = TeacherAssignment.objects.filter(
+            teacher=docente,
+            course=curso,
+            section=seccion,
+            cycle=datos.get("cycle", instancia.cycle),
+            is_active=True,
+        ).exclude(pk=instancia.pk)
+        if repetida.exists():
+            raise ValidationError(
+                {
+                    "course": (
+                        f"{docente.nombre_completo()} ya tiene asignado {curso.name} "
+                        "en esa sección."
+                    )
+                }
+            )
         serializer.save()
 
 
@@ -105,6 +124,26 @@ class ScheduleBlockViewSet(RegistraAccesoMixin, ScopedQuerysetMixin, viewsets.Mo
             serializer.instance = crear_bloque(**serializer.validated_data)
         except (PeriodoInvalido, CruceDeHorario) as exc:
             raise ValidationError(str(exc)) from exc
+
+    def perform_update(self, serializer):
+        # Mover un bloque a otra celda pasa por las mismas reglas que crearlo.
+        instancia = serializer.instance
+        datos = serializer.validated_data
+        if datos.get("is_active", instancia.is_active):
+            try:
+                validar_bloque(
+                    assignment=datos.get("assignment", instancia.assignment),
+                    day_of_week=datos.get("day_of_week", instancia.day_of_week),
+                    period_number=datos.get("period_number", instancia.period_number),
+                    excluir=instancia,
+                )
+            except (PeriodoInvalido, CruceDeHorario) as exc:
+                raise ValidationError(str(exc)) from exc
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        instance.is_active = False
+        instance.save(update_fields=["is_active", "updated_at"])
 
 
 class CalendarEventViewSet(RegistraAccesoMixin, ScopedQuerysetMixin, viewsets.ModelViewSet):
@@ -176,9 +215,7 @@ class MyScheduleView(RegistraAccesoMixin, APIView):
     )
     def get(self, request):
         if request.user.role.name not in _ROLES_DOCENTES:
-            raise PermissionDenied(
-                "Este horario es solo para docentes, maestros guía y talleristas."
-            )
+            raise PermissionDenied("Este horario es solo para docentes y talleristas.")
         bloques = ScheduleBlock.objects.filter(
             assignment__teacher=request.user, is_active=True
         ).select_related("assignment__course", "assignment__section")

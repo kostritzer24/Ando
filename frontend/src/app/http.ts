@@ -28,6 +28,19 @@ interface PeticionReintentable extends InternalAxiosRequestConfig {
 
 let refrescoEnCurso: Promise<string> | null = null;
 
+// La cookie de refresco es una sola por navegador: si en otra ventana se
+// entra con otro usuario, esa cookie cambia de dueño y la renovación del
+// token de ESTA ventana la convertiría, sin avisar, en el otro usuario
+// (de ahí los 403 «sin permiso» que se arreglaban recargando). Tras
+// renovar se confirma que la persona sigue siendo la misma; si no, el
+// store reconstruye la sesión y la pantalla vuelve al inicio.
+type AlRenovarSesion = (accesoNuevo: string) => Promise<boolean>;
+let alRenovarSesion: AlRenovarSesion | null = null;
+
+export function alRenovarElToken(manejador: AlRenovarSesion): void {
+  alRenovarSesion = manejador;
+}
+
 http.interceptors.response.use(
   (respuesta) => respuesta,
   async (error) => {
@@ -47,8 +60,11 @@ http.interceptors.response.use(
       if (!refrescoEnCurso) {
         refrescoEnCurso = http
           .post<{ access: string }>("/auth/refresh/")
-          .then((respuesta) => {
+          .then(async (respuesta) => {
             fijarTokenDeAcceso(respuesta.data.access);
+            if (alRenovarSesion && !(await alRenovarSesion(respuesta.data.access))) {
+              throw new Error("La sesión cambió en otra ventana.");
+            }
             return respuesta.data.access;
           })
           .finally(() => {

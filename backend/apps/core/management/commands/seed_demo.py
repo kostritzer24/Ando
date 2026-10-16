@@ -14,7 +14,6 @@ no se crea un comando nuevo por cada fase. Vive en `core` (no en
 """
 
 from datetime import date
-from decimal import Decimal
 
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
@@ -89,8 +88,7 @@ _TIPOS_DOCUMENTO = [
 ]
 
 _BECAS = [
-    ("Beca completa", "Cubre el 100 % de la mensualidad."),
-    ("Beca parcial", "Cubre el 50 % de la mensualidad."),
+    ("Beca completa", "Cubre el 100 % de la mensualidad y la inscripción."),
 ]
 
 # Del formato real docs/reporte.docx (ADR-0006). Dos incisos comparten a
@@ -349,16 +347,15 @@ class Command(BaseCommand):
 
         def _pagar(inscripcion, meses_a_pagar):
             for anio, mes in meses_a_pagar:
-                receipt = f"DEMO-{inscripcion.student.internal_code}-{anio}{mes:02d}"
-                if Payment.objects.filter(receipt_number=receipt).exists():
+                if Payment.objects.filter(
+                    enrollment=inscripcion, period_year=anio, period_month=mes
+                ).exists():
                     continue
                 registrar_pago(
                     enrollment=inscripcion,
                     period_month=mes,
                     period_year=anio,
-                    amount=Decimal("150.00"),
                     payment_date=date(anio, mes, 1),
-                    receipt_number=receipt,
                     recorded_by=usuario_pagos,
                 )
 

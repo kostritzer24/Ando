@@ -13,11 +13,25 @@ class Payment(BaseModel):
     calcula a partir de estos registros en `payments/domain/solvency.py`,
     nunca se guarda como un campo aparte que podría desincronizarse."""
 
+    CONCEPTO_MENSUALIDAD = "mensualidad"
+    CONCEPTO_INSCRIPCION = "inscripcion"
+    CONCEPTOS = [
+        (CONCEPTO_MENSUALIDAD, "Mensualidad"),
+        (CONCEPTO_INSCRIPCION, "Inscripción"),
+    ]
+
     enrollment = models.ForeignKey(
         Enrollment, verbose_name="inscripción", on_delete=models.PROTECT, related_name="payments"
     )
+    concept = models.CharField(
+        "concepto", max_length=20, choices=CONCEPTOS, default=CONCEPTO_MENSUALIDAD
+    )
     period_month = models.PositiveSmallIntegerField(
-        "mes", validators=[MinValueValidator(1), MaxValueValidator(12)], help_text="1 a 12."
+        "mes",
+        validators=[MinValueValidator(1), MaxValueValidator(12)],
+        help_text="1 a 12. Vacío en la inscripción, que es anual.",
+        null=True,
+        blank=True,
     )
     period_year = models.PositiveIntegerField("año")
     amount = models.DecimalField(
@@ -43,6 +57,12 @@ class Payment(BaseModel):
             ),
             models.UniqueConstraint(
                 fields=["enrollment", "period_year", "period_month"], name="pago_unico_por_mes"
+            ),
+            # La inscripción se paga una sola vez por inscripción (ciclo).
+            models.UniqueConstraint(
+                fields=["enrollment"],
+                condition=models.Q(concept="inscripcion"),
+                name="inscripcion_unica_por_inscripcion",
             ),
         ]
 

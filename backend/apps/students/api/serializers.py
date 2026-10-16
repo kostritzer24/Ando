@@ -8,13 +8,22 @@ from apps.catalog.models import Scholarship, SchoolCycle, Section
 
 from ..models import Enrollment, Guardian, GuardianStudentLink, Student
 
+EDAD_MINIMA = 4
+EDAD_MAXIMA = 25
+
 
 def validar_fecha_de_nacimiento(value):
     hoy = timezone.localdate()
     if value > hoy:
         raise serializers.ValidationError("La fecha de nacimiento no puede ser futura.")
-    if value < hoy - timedelta(days=365 * 100):
-        raise serializers.ValidationError("La fecha de nacimiento no es válida: revisa el año.")
+    if value > hoy - timedelta(days=365 * EDAD_MINIMA):
+        raise serializers.ValidationError(
+            f"La fecha de nacimiento no es válida: tendría menos de {EDAD_MINIMA} años."
+        )
+    if value < hoy - timedelta(days=366 * EDAD_MAXIMA):
+        raise serializers.ValidationError(
+            f"La fecha de nacimiento no es válida: el estudiante tendría más de {EDAD_MAXIMA} años."
+        )
     return value
 
 
@@ -120,6 +129,9 @@ class EnrollmentSerializer(serializers.ModelSerializer):
     section_grade = serializers.CharField(source="section.grade", read_only=True)
     section_letter = serializers.CharField(source="section.letter", read_only=True)
     section_type = serializers.CharField(source="section.type", read_only=True)
+    # Año del ciclo de la sección: dos «Segundo básico A» de años distintos
+    # se distinguen en los selectores.
+    cycle_year = serializers.IntegerField(source="cycle.year", read_only=True)
     # Para listar una sección (capturar notas) sin descargar además todos
     # los estudiantes del centro solo para poner nombres.
     student_name = serializers.CharField(source="student.nombre_completo", read_only=True)
@@ -137,6 +149,7 @@ class EnrollmentSerializer(serializers.ModelSerializer):
             "section_letter",
             "section_type",
             "cycle",
+            "cycle_year",
             "scholarship",
             "status",
             "enrolled_at",
@@ -147,3 +160,6 @@ class EnrollmentSerializer(serializers.ModelSerializer):
         # estado (retiro, graduación, traslado) no están en el alcance de
         # RF-03 todavía.
         read_only_fields = ["public_id", "status"]
+        # La unicidad estudiante+ciclo+sección la valida el servicio (que
+        # también reactiva una inscripción dada de baja).
+        validators: list = []

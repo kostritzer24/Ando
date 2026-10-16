@@ -12,8 +12,10 @@ from apps.core.permissions import PermisoPorArea
 
 from ..models import Enrollment, Guardian, GuardianStudentLink, Student
 from ..services.enrollment import (
+    CambioDeSeccionInvalido,
     YaInscritoEnEsaSeccion,
     YaTieneSeccionAcademicaEnEsteCiclo,
+    cambiar_seccion,
     inscribir_estudiante,
 )
 from ..services.guardian import RolDeUsuarioInvalido, crear_encargado
@@ -219,3 +221,21 @@ class EnrollmentViewSet(
             serializer.instance = inscribir_estudiante(**serializer.validated_data)
         except (YaInscritoEnEsaSeccion, YaTieneSeccionAcademicaEnEsteCiclo) as exc:
             raise ValidationError({"student": str(exc)}) from exc
+
+    def perform_update(self, serializer):
+        # Cambiar de grado o de taller es mover esta misma inscripción, no
+        # crear otra; el estudiante y el ciclo no cambian.
+        instancia = serializer.instance
+        datos = serializer.validated_data
+        if "student" in datos and datos["student"] != instancia.student:
+            raise ValidationError(
+                {"student": "No se puede cambiar el estudiante de una inscripción."}
+            )
+        if "cycle" in datos and datos["cycle"] != instancia.cycle:
+            raise ValidationError({"cycle": "No se puede cambiar el ciclo de una inscripción."})
+        try:
+            if "section" in datos:
+                cambiar_seccion(enrollment=instancia, section=datos["section"])
+        except CambioDeSeccionInvalido as exc:
+            raise ValidationError({"section": str(exc)}) from exc
+        serializer.save()

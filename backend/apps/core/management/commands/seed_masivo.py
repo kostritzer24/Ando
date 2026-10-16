@@ -251,9 +251,7 @@ class Command(BaseCommand):
                     enrollment=inscripcion,
                     period_month=mes,
                     period_year=anio,
-                    amount=Decimal("150.00"),
                     payment_date=date(anio, mes, 1),
-                    receipt_number=f"MAS-{inscripcion.student.internal_code}-{anio}{mes:02d}",
                     recorded_by=self.docentes_demo["pagos"],
                 )
                 pagos += 1
