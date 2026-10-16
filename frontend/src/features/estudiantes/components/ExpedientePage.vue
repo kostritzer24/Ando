@@ -7,17 +7,18 @@ import { usePermisos } from "@/shared/permisos";
 import type { Student, StudentSensitive } from "@/shared/types/models";
 
 import { actualizarDatosSensibles, obtenerDatosSensibles, studentsApi } from "../api/estudiantesApi";
+import InscripcionesPanel from "./InscripcionesPanel.vue";
 
 const route = useRoute();
 const publicId = route.params.publicId as string;
 
 // docs/permisos-roles.md: "Estudiantes y encargados (datos generales)"
 // es E solo para Dirección — el resto de roles que llegan a esta
-// pantalla (Coordinación, Administrador, ...) la ven de solo lectura.
+// pantalla (Coordinación, ...) la ven de solo lectura.
 const permisos = usePermisos();
 const puedeEditarGeneral = computed(() => permisos.puedeEditar("estudiantes_encargados"));
 // "Datos sensibles" es más angosto todavía (RNF-04): Dirección edita,
-// Administrador solo consulta (y esa consulta queda en AccessLog), el
+// quien solo consulta lo hace con registro en AccessLog, el
 // resto de roles ni siquiera debería pedirle esto al backend.
 const alcanceDatosSensibles = computed<"editar" | "ver" | "ninguno">(() => {
   const nivel = permisos.nivel("datos_sensibles");
@@ -148,6 +149,8 @@ onMounted(async () => {
           {{ guardandoGeneral ? "Guardando…" : "Guardar" }}
         </AppButton>
       </form>
+
+      <InscripcionesPanel :student-public-id="publicId" :puede-editar="puedeEditarGeneral" />
 
       <section v-if="alcanceDatosSensibles !== 'ninguno'" class="expediente-page__sensibles">
         <h2>Datos sensibles</h2>

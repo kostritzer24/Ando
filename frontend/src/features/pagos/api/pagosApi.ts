@@ -10,6 +10,7 @@ export interface EstadoSolvencia {
   solvente: boolean;
   tiene_beca: boolean;
   meses_pendientes: [number, number][];
+  inscripcion_pagada: boolean;
 }
 
 export async function consultarSolvencia(enrollmentPublicId: string): Promise<EstadoSolvencia> {

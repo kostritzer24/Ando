@@ -13,6 +13,7 @@ urlpatterns = [
         name="report-insolvent-students",
     ),
     path("reports/schedules/", views.SchedulesReportView.as_view(), name="report-schedules"),
+    path("reports/schedule-grid/", views.ScheduleGridView.as_view(), name="report-schedule-grid"),
     path(
         "reports/enrolled-students/",
         views.EnrolledStudentsView.as_view(),

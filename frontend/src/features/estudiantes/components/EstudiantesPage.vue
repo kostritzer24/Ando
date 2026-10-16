@@ -51,11 +51,16 @@ const columnas: ColumnaTabla<Student>[] = [
   { clave: "birth_date", etiqueta: "Nacimiento" },
 ];
 
+// Al inscribir se elige el grado; los talleres se agregan después desde el
+// expediente, sin volver a registrar al estudiante. El año distingue
+// secciones iguales de ciclos distintos.
 const opcionesSeccion = computed(() =>
-  secciones.value.map((s) => ({
-    valor: s.public_id,
-    etiqueta: `${s.grade} ${s.letter}`.trim() + (s.type === "taller" ? " (taller)" : ""),
-  })),
+  secciones.value
+    .filter((s) => s.type === "academica")
+    .map((s) => ({
+      valor: s.public_id,
+      etiqueta: `${s.grade} ${s.letter}`.trim() + (s.cycle_year ? ` (${s.cycle_year})` : ""),
+    })),
 );
 const opcionesBeca = computed(() => [
   { valor: "", etiqueta: "Ninguna" },
@@ -91,7 +96,7 @@ function abrirNuevo(): void {
   formulario.birth_date = "";
   formulario.address = "";
   formulario.previous_institution = "";
-  formulario.section = secciones.value[0]?.public_id ?? "";
+  formulario.section = opcionesSeccion.value[0]?.valor ?? "";
   formulario.scholarship = "";
   formulario.health_notes = "";
   formulario.socioeconomic_notes = "";
@@ -218,7 +223,7 @@ onMounted(cargar);
           etiqueta="Institución anterior"
           v-model="formulario.previous_institution"
         />
-        <FormSelect id="section" etiqueta="Sección" :opciones="opcionesSeccion" v-model="formulario.section" />
+        <FormSelect id="section" etiqueta="Grado y sección" :opciones="opcionesSeccion" v-model="formulario.section" />
         <FormSelect id="scholarship" etiqueta="Beca" :opciones="opcionesBeca" v-model="formulario.scholarship" />
         <template v-if="puedeDatosSensibles">
           <FormField id="health_notes" etiqueta="Datos de salud (opcional)" multilinea v-model="formulario.health_notes" />

@@ -560,18 +560,16 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * @description RF-24/RF-35. `guide_teacher` es siempre el maestro guía de la
-         *     sección de la inscripción (quien firma), no necesariamente quien
-         *     llena el formulario — Dirección también puede registrar un reporte
-         *     de una sección que no es la suya.
+         * @description RF-24/RF-35. `guide_teacher` es el docente que firma: quien levanta
+         *     el reporte, o el docente a cargo de la sección si lo registra
+         *     Dirección.
          */
         get: operations["v1_conduct_reports_list"];
         put?: never;
         /**
-         * @description RF-24/RF-35. `guide_teacher` es siempre el maestro guía de la
-         *     sección de la inscripción (quien firma), no necesariamente quien
-         *     llena el formulario — Dirección también puede registrar un reporte
-         *     de una sección que no es la suya.
+         * @description RF-24/RF-35. `guide_teacher` es el docente que firma: quien levanta
+         *     el reporte, o el docente a cargo de la sección si lo registra
+         *     Dirección.
          */
         post: operations["v1_conduct_reports_create"];
         delete?: never;
@@ -588,10 +586,9 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * @description RF-24/RF-35. `guide_teacher` es siempre el maestro guía de la
-         *     sección de la inscripción (quien firma), no necesariamente quien
-         *     llena el formulario — Dirección también puede registrar un reporte
-         *     de una sección que no es la suya.
+         * @description RF-24/RF-35. `guide_teacher` es el docente que firma: quien levanta
+         *     el reporte, o el docente a cargo de la sección si lo registra
+         *     Dirección.
          */
         get: operations["v1_conduct_reports_retrieve"];
         put?: never;
@@ -1617,14 +1614,14 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * @description RF-25/RF-37. Un hilo es del encargado que lo empezó — lo ven él, el
-         *     maestro guía de la sección y Dirección (HU-25/HU-37).
+         * @description RF-25/RF-37. Un hilo es del encargado que lo empezó — lo ven él, los
+         *     docentes de la sección y Dirección (HU-25/HU-37).
          */
         get: operations["v1_messages_list"];
         put?: never;
         /**
-         * @description RF-25/RF-37. Un hilo es del encargado que lo empezó — lo ven él, el
-         *     maestro guía de la sección y Dirección (HU-25/HU-37).
+         * @description RF-25/RF-37. Un hilo es del encargado que lo empezó — lo ven él, los
+         *     docentes de la sección y Dirección (HU-25/HU-37).
          */
         post: operations["v1_messages_create"];
         delete?: never;
@@ -1641,8 +1638,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * @description RF-25/RF-37. Un hilo es del encargado que lo empezó — lo ven él, el
-         *     maestro guía de la sección y Dirección (HU-25/HU-37).
+         * @description RF-25/RF-37. Un hilo es del encargado que lo empezó — lo ven él, los
+         *     docentes de la sección y Dirección (HU-25/HU-37).
          */
         get: operations["v1_messages_retrieve"];
         put?: never;
@@ -1663,8 +1660,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * @description RF-25/RF-37. Un hilo es del encargado que lo empezó — lo ven él, el
-         *     maestro guía de la sección y Dirección (HU-25/HU-37).
+         * @description RF-25/RF-37. Un hilo es del encargado que lo empezó — lo ven él, los
+         *     docentes de la sección y Dirección (HU-25/HU-37).
          */
         post: operations["v1_messages_reply_create"];
         delete?: never;
@@ -2086,6 +2083,27 @@ export interface paths {
          *     PDF (no es un listado, es un par de porcentajes agregados).
          */
         get: operations["v1_reports_metrics_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/schedule-grid/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description GET /reports/schedule-grid/?section=<id> | ?teacher=<id> — el horario
+         *     de un grado o de una persona en cuadrícula (días × períodos), en JSON
+         *     o, con `?export=pdf`, listo para imprimir.
+         */
+        get: operations["v1_reports_schedule_grid_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2736,6 +2754,12 @@ export interface components {
             contrasena_nueva: string;
         };
         /**
+         * @description * `mensualidad` - Mensualidad
+         *     * `inscripcion` - Inscripción
+         * @enum {string}
+         */
+        ConceptEnum: "mensualidad" | "inscripcion";
+        /**
          * @description RF-24/RF-35. `articles` es de solo lectura (los nombres de los
          *     artículos marcados); para elegirlos al crear se manda `article_ids`,
          *     ver `ConductReportCreateSerializer`.
@@ -2862,6 +2886,7 @@ export interface components {
             readonly section_type: string;
             /** Format: uuid */
             cycle: string;
+            readonly cycle_year: number;
             /** Format: uuid */
             scholarship?: string | null;
             /** Estado */
@@ -3129,6 +3154,8 @@ export interface components {
             /** Format: uuid */
             readonly public_id: string;
             readonly sender: string;
+            readonly sender_name: string;
+            readonly sender_role: string;
             /** Format: uuid */
             section: string;
             /** Asunto */
@@ -3759,6 +3786,7 @@ export interface components {
             readonly section_type?: string;
             /** Format: uuid */
             cycle?: string;
+            readonly cycle_year?: number;
             /** Format: uuid */
             scholarship?: string | null;
             /** Estado */
@@ -3903,6 +3931,7 @@ export interface components {
             readonly public_id?: string;
             /** Format: uuid */
             cycle?: string;
+            readonly cycle_year?: number;
             /** Grado */
             grade?: string;
             /** Letra */
@@ -4001,28 +4030,30 @@ export interface components {
             readonly public_id: string;
             /** Format: uuid */
             enrollment: string;
+            /** Concepto */
+            concept?: components["schemas"]["ConceptEnum"];
             /**
              * Mes
-             * @description 1 a 12.
+             * @description 1 a 12. Vacío en la inscripción, que es anual.
              */
-            period_month: number;
+            period_month?: number | null;
             /**
              * Año
              * Format: int64
              */
-            period_year: number;
+            period_year?: number;
             /**
              * Monto
              * Format: decimal
              */
-            amount: string;
+            readonly amount: string;
             /**
              * Fecha de pago
              * Format: date
              */
             payment_date: string;
             /** Número de recibo */
-            receipt_number: string;
+            readonly receipt_number: string;
             readonly recorded_by: string;
         };
         ReportCard: {
@@ -4163,6 +4194,7 @@ export interface components {
             readonly public_id: string;
             /** Format: uuid */
             cycle: string;
+            readonly cycle_year: number;
             /** Grado */
             grade: string;
             /** Letra */
@@ -7895,6 +7927,24 @@ export interface operations {
             };
         };
     };
+    v1_reports_schedule_grid_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     v1_reports_schedules_retrieve: {
         parameters: {
             query?: never;
@@ -8436,6 +8486,7 @@ export interface operations {
                         solvente?: boolean;
                         tiene_beca?: boolean;
                         meses_pendientes?: unknown[][];
+                        inscripcion_pagada?: boolean;
                     };
                 };
             };

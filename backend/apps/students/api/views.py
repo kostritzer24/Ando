@@ -199,6 +199,13 @@ class EnrollmentViewSet(
             except ValueError as exc:
                 raise ValidationError({"section": "No es un identificador válido."}) from exc
             queryset = queryset.filter(section__public_id=seccion)
+        estudiante = self.request.query_params.get("student")
+        if estudiante:
+            try:
+                uuid.UUID(estudiante)
+            except ValueError as exc:
+                raise ValidationError({"student": "No es un identificador válido."}) from exc
+            queryset = queryset.filter(student__public_id=estudiante)
         return queryset
 
     def scope_queryset(self, queryset, user):

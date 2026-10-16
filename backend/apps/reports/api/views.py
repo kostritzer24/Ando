@@ -1,4 +1,5 @@
 from django.http import HttpResponse
+from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -13,8 +14,9 @@ from ..selectors.grades_summary import resumen_notas
 from ..selectors.insolvent_students import estudiantes_insolventes
 from ..selectors.issued_documents import documentos_emitidos
 from ..selectors.metrics import metricas_semanales
+from ..selectors.schedule_grid import SujetoNoEncontrado, horario_en_cuadricula
 from ..selectors.schedules import resumen_horarios
-from ..services.pdf_table import render_tabla_pdf
+from ..services.pdf_table import render_horario_pdf, render_tabla_pdf
 
 
 class ReporteBaseView(RegistraAccesoMixin, APIView):
@@ -140,6 +142,33 @@ class SchedulesReportView(ReporteBaseView):
 
     def obtener_filas(self, request) -> list[dict]:
         return resumen_horarios(section_id=request.query_params.get("section"))
+
+
+class ScheduleGridView(RegistraAccesoMixin, APIView):
+    """GET /reports/schedule-grid/?section=<id> | ?teacher=<id> — el horario
+    de un grado o de una persona en cuadrícula (días × períodos), en JSON
+    o, con `?export=pdf`, listo para imprimir."""
+
+    permission_classes = [PermisoPorArea]
+    area = "reportes_institucionales"
+
+    def get(self, request):
+        seccion = request.query_params.get("section")
+        persona = request.query_params.get("teacher")
+        if bool(seccion) == bool(persona):
+            raise ValidationError("Indica una sección o una persona, no las dos.")
+        try:
+            horario = horario_en_cuadricula(section_id=seccion, teacher_id=persona)
+        except SujetoNoEncontrado as exc:
+            raise NotFound(str(exc)) from exc
+        if request.query_params.get("export") == "pdf":
+            nombre = horario["titulo"].replace("Horario de ", "Horario - ")
+            return HttpResponse(
+                render_horario_pdf(horario=horario),
+                content_type="application/pdf",
+                headers={"Content-Disposition": f'attachment; filename="{nombre}.pdf"'},
+            )
+        return Response(horario)
 
 
 class EnrolledStudentsView(ReporteBaseView):

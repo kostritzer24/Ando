@@ -2,7 +2,9 @@
 import { computed, onMounted, reactive, ref, watch } from "vue";
 
 import { enrollmentsApi, studentsApi } from "@/features/estudiantes/api/estudiantesApi";
-import { AppButton, CargandoBloque, DataTable, ErrorBanner, FormField, FormSelect, PageHeader } from "@/shared/components";
+import { mensajeDelServidor } from "@/shared/api/errores";
+import { AppButton, CargandoBloque, DataTable, ErrorBanner, FormBuscador, FormField, FormSelect, PageHeader } from "@/shared/components";
+import { hoyIso } from "@/shared/fechas";
 import { usePermisos } from "@/shared/permisos";
 import type { Enrollment, Payment, Student } from "@/shared/types/models";
 
@@ -42,13 +44,37 @@ const errorEmision = ref("");
 const descargandoReporte = ref(false);
 
 const anioActual = new Date().getFullYear();
+// El monto y el número de recibo los pone el sistema: mensualidad de Q100
+// en básico y Q150 en bachillerato, inscripción de Q200 por ciclo.
+const CUOTA_BASICO = 100;
+const CUOTA_BACHILLERATO = 150;
+const CUOTA_INSCRIPCION = 200;
+
+const OPCIONES_CONCEPTO = [
+  { valor: "mensualidad", etiqueta: "Mensualidad" },
+  { valor: "inscripcion", etiqueta: "Inscripción del ciclo" },
+];
+
 const formulario = reactive({
-  period_month: "1",
+  concept: "mensualidad",
+  period_month: String(new Date().getMonth() + 1),
   period_year: String(anioActual),
-  amount: "",
-  payment_date: "",
-  receipt_number: "",
+  payment_date: hoyIso(),
 });
+
+const inscripcionActual = computed(() =>
+  inscripciones.value.find((i) => i.public_id === inscripcionElegida.value),
+);
+
+const montoAPagar = computed(() => {
+  if (formulario.concept === "inscripcion") return CUOTA_INSCRIPCION;
+  const grado = (inscripcionActual.value?.section_grade ?? "").toLowerCase();
+  return grado.includes("bachiller") ? CUOTA_BACHILLERATO : CUOTA_BASICO;
+});
+
+function enQuetzales(monto: number | string): string {
+  return `Q${Number(monto).toFixed(2)}`;
+}
 
 // Con decenas de estudiantes, elegir de una lista plana es lento: se puede
 // acotar por sección y buscar por nombre o código.
@@ -56,7 +82,8 @@ const filtroSeccion = ref("");
 const busqueda = ref("");
 
 function etiquetaSeccion(i: Enrollment): string {
-  return `${i.section_grade ?? ""} ${i.section_letter ?? ""}`.trim();
+  const nombre = `${i.section_grade ?? ""} ${i.section_letter ?? ""}`.trim();
+  return i.cycle_year ? `${nombre} (${i.cycle_year})` : nombre;
 }
 
 const opcionesSeccion = computed(() => {
@@ -102,7 +129,11 @@ async function cargar(): Promise<void> {
       enrollmentsApi.listar(),
       studentsApi.listar(),
     ]);
-    inscripciones.value = inscripcionesResp.results.filter((i) => i.status === "activo");
+    // Solo la inscripción de grado se cobra: la de taller es del mismo
+    // estudiante y no genera pagos (antes aparecía repetido en la lista).
+    inscripciones.value = inscripcionesResp.results.filter(
+      (i) => i.status === "activo" && i.is_active !== false && i.section_type === "academica",
+    );
     estudiantes.value = estudiantesResp.results;
     inscripcionElegida.value = opcionesInscripcion.value[0]?.valor ?? "";
   } catch {
@@ -138,20 +169,18 @@ async function registrarPago(): Promise<void> {
   guardando.value = true;
   errorPago.value = "";
   try {
+    const esInscripcion = formulario.concept === "inscripcion";
     await paymentsApi.crear({
       enrollment: inscripcionElegida.value,
-      period_month: Number(formulario.period_month),
-      period_year: Number(formulario.period_year),
-      amount: formulario.amount,
+      concept: formulario.concept,
+      ...(esInscripcion
+        ? {}
+        : { period_month: Number(formulario.period_month), period_year: Number(formulario.period_year) }),
       payment_date: formulario.payment_date,
-      receipt_number: formulario.receipt_number,
     } as Partial<Payment>);
-    formulario.amount = "";
-    formulario.payment_date = "";
-    formulario.receipt_number = "";
     await cargarDetalle();
-  } catch {
-    errorPago.value = "No se pudo registrar el pago. Revisa los datos (el recibo debe ser único) e inténtalo de nuevo.";
+  } catch (e) {
+    errorPago.value = mensajeDelServidor(e, "No se pudo registrar el pago. Revisa los datos e inténtalo de nuevo.");
   } finally {
     guardando.value = false;
   }
@@ -208,7 +237,7 @@ onMounted(async () => {
       <div class="pagos-page__selector">
         <FormSelect id="filtro-seccion" etiqueta="Sección" :opciones="opcionesSeccion" v-model="filtroSeccion" />
         <FormField id="busqueda-estudiante" etiqueta="Buscar estudiante" v-model="busqueda" />
-        <FormSelect
+        <FormBuscador
           id="inscripcion"
           etiqueta="Estudiante"
           :opciones="opcionesInscripcion"
@@ -227,6 +256,9 @@ onMounted(async () => {
             <p v-if="solvencia.tiene_beca" class="pagos-page__solvencia-titulo">Solvente por beca.</p>
             <p v-else-if="solvencia.solvente" class="pagos-page__solvencia-titulo">Al día con sus pagos.</p>
             <p v-else class="pagos-page__solvencia-titulo">No está solvente.</p>
+            <p v-if="!solvencia.tiene_beca && !solvencia.inscripcion_pagada">
+              La inscripción del ciclo (Q200.00) está pendiente.
+            </p>
             <p v-if="!solvencia.tiene_beca && solvencia.meses_pendientes.length > 0">
               Meses pendientes:
               {{ solvencia.meses_pendientes.map(([anio, mes]) => `${nombreMes(mes)} ${anio}`).join(", ") }}
@@ -246,17 +278,21 @@ onMounted(async () => {
         <div class="pagos-page__paneles" :class="{ 'pagos-page__paneles--uno': !puedeRegistrar }">
           <section v-if="puedeRegistrar" class="pagos-page__panel" aria-labelledby="titulo-registrar">
             <h2 id="titulo-registrar">Registrar pago</h2>
-            <form class="pagos-page__formulario" @submit.prevent="registrarPago">
+            <p v-if="solvencia.tiene_beca" class="pagos-page__vacio">
+              Este estudiante tiene beca completa y no genera cobros.
+            </p>
+            <form v-else class="pagos-page__formulario" @submit.prevent="registrarPago">
               <ErrorBanner v-if="errorPago" :mensaje="errorPago" />
-              <div class="pagos-page__dos-columnas">
+              <FormSelect id="concept" etiqueta="Concepto" :opciones="OPCIONES_CONCEPTO" v-model="formulario.concept" />
+              <div v-if="formulario.concept === 'mensualidad'" class="pagos-page__dos-columnas">
                 <FormSelect id="period_month" etiqueta="Mes" :opciones="opcionesMes" v-model="formulario.period_month" />
                 <FormField id="period_year" etiqueta="Año" tipo="number" v-model="formulario.period_year" />
               </div>
-              <div class="pagos-page__dos-columnas">
-                <FormField id="amount" etiqueta="Monto (Q)" tipo="number" step="0.01" inputmode="decimal" v-model="formulario.amount" />
-                <FormField id="payment_date" etiqueta="Fecha de pago" tipo="date" v-model="formulario.payment_date" />
-              </div>
-              <FormField id="receipt_number" etiqueta="Número de recibo" v-model="formulario.receipt_number" />
+              <FormField id="payment_date" etiqueta="Fecha de pago" tipo="date" v-model="formulario.payment_date" />
+              <p class="pagos-page__monto">
+                Monto a cobrar: <strong>{{ enQuetzales(montoAPagar) }}</strong>
+                <small>El número de recibo se genera solo al registrar el pago.</small>
+              </p>
               <AppButton tipo="submit" bloque :deshabilitado="guardando">
                 {{ guardando ? "Guardando…" : "Registrar pago" }}
               </AppButton>
@@ -269,13 +305,17 @@ onMounted(async () => {
             <DataTable
               v-else
               :columnas="[
-                { clave: 'mes', etiqueta: 'Mes' },
+                { clave: 'concepto', etiqueta: 'Concepto' },
                 { clave: 'period_year', etiqueta: 'Año' },
-                { clave: 'amount', etiqueta: 'Monto' },
+                { clave: 'monto', etiqueta: 'Monto' },
                 { clave: 'payment_date', etiqueta: 'Fecha de pago' },
                 { clave: 'receipt_number', etiqueta: 'Recibo' },
               ]"
-              :filas="pagos.map((p) => ({ ...p, mes: nombreMes(p.period_month) }))"
+              :filas="pagos.map((p) => ({
+                ...p,
+                concepto: p.concept === 'inscripcion' ? 'Inscripción' : nombreMes(p.period_month ?? 0),
+                monto: enQuetzales(p.amount),
+              }))"
               :por-pagina="12"
             />
           </section>
@@ -366,6 +406,17 @@ onMounted(async () => {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: var(--espacio-md);
+}
+
+.pagos-page__monto {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-2xs);
+  margin: 0;
+}
+
+.pagos-page__monto small {
+  color: var(--color-tinta-suave);
 }
 
 .pagos-page__vacio {

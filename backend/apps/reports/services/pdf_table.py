@@ -6,6 +6,12 @@ from django.utils import timezone
 from weasyprint import HTML
 
 
+def render_horario_pdf(*, horario: dict) -> bytes:
+    """Horario en cuadrícula (días × períodos) de una sección o persona."""
+    contexto = {**horario, "generado_el": timezone.localtime().strftime("%d/%m/%Y %H:%M")}
+    return HTML(string=render_to_string("reports/horario.html", contexto)).write_pdf()
+
+
 def render_tabla_pdf(*, titulo: str, columnas: list[tuple[str, str]], filas: list[dict]) -> bytes:
     """`columnas` es una lista de (clave, etiqueta) — la clave indexa cada
     fila del reporte, la etiqueta es lo que se ve en el encabezado."""

@@ -128,3 +128,7 @@ def test_rf11_familia_ve_sus_documentos_emitidos_y_puede_volver_a_descargarlos()
     descarga = client_familia.get(f"/api/v1/documents/{documento.public_id}/download/")
     assert descarga.status_code == 200
     assert descarga.content[:4] == b"%PDF"
+    # El archivo se llama «tipo - estudiante», no con el código de verificación.
+    assert "Constancia de estudio" in descarga["Content-Disposition"]
+    assert mi_hijo.nombre_completo().split()[0] in descarga["Content-Disposition"]
+    assert documento.verification_code not in descarga["Content-Disposition"]

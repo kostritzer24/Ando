@@ -1,0 +1,58 @@
+{% load reports_extras %}
+<!DOCTYPE html>
+<html lang="es-GT">
+<head>
+<meta charset="utf-8">
+<style>
+  @page { size: letter landscape; margin: 1.6cm; }
+  body { font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; color: #1a1a1a; font-size: 10pt; }
+  .membrete { border-bottom: 2pt solid #1C6EA4; padding-bottom: 0.3cm; margin-bottom: 0.5cm; }
+  .membrete .nombre { font-weight: 800; font-size: 12pt; color: #1C6EA4; }
+  h1 { font-size: 14pt; font-weight: 800; margin: 0 0 0.1cm; }
+  .meta { color: #555; font-size: 9pt; margin: 0 0 0.5cm; }
+  table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+  th, td { border: 0.5pt solid #b8c4cf; padding: 0.2cm 0.25cm; vertical-align: top; }
+  th { background: #eaf2f8; color: #1C6EA4; font-size: 9pt; text-align: center; }
+  th.hora { width: 2.6cm; text-align: left; }
+  td { height: 1.35cm; }
+  td.hora { background: #f6f8fa; font-weight: 700; font-size: 9pt; }
+  td.hora small { display: block; font-weight: 400; color: #555; }
+  .curso { font-weight: 700; }
+  .detalle { color: #555; font-size: 8.5pt; }
+  tr.receso td { background: #fff4d6; text-align: center; font-size: 8.5pt; height: 0.7cm; font-weight: 700; color: #7a5b00; }
+</style>
+</head>
+<body>
+  <div class="membrete">
+    <div class="nombre">El Patojismo — Centro Socioeducativo Lic. Magno Rudy Romero Arévalo</div>
+  </div>
+  <h1>{{ titulo }}</h1>
+  <p class="meta">{{ subtitulo }} · Generado el {{ generado_el }}</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th class="hora">Período</th>
+        {% for dia in dias %}<th>{{ dia.etiqueta }}</th>{% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for periodo in periodos %}
+        {% if periodo.receso_antes %}
+        <tr class="receso"><td colspan="{{ dias|length|add:1 }}">Receso {{ receso.inicio }}–{{ receso.fin }}</td></tr>
+        {% endif %}
+        <tr>
+          <td class="hora">P{{ periodo.numero }}<small>{{ periodo.inicio }}–{{ periodo.fin }}</small></td>
+          {% for dia in dias %}
+            {% with celda=periodo.celdas|lookup:dia.clave %}
+            <td>
+              {% if celda %}<div class="curso">{{ celda.curso }}</div><div class="detalle">{{ celda.detalle }}</div>{% endif %}
+            </td>
+            {% endwith %}
+          {% endfor %}
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</body>
+</html>

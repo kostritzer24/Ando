@@ -1,3 +1,7 @@
+import re
+import unicodedata
+from urllib.parse import quote
+
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from drf_spectacular.types import OpenApiTypes
@@ -15,6 +19,24 @@ from apps.core.permissions import PermisoPorArea
 from ..models import IssuedDocument
 from ..services.issuance import TipoDeDocumentoNoPermitido, emitir_documento_general
 from .serializers import DocumentIssueSerializer, IssuedDocumentSerializer
+
+
+def _nombre_de_archivo(documento) -> str:
+    """«Constancia de estudio - Ana López.pdf»: tipo + estudiante, no el
+    código de verificación."""
+    estudiante = documento.enrollment.student
+    nombre = f"{documento.document_type.name} - {estudiante.nombre_completo()}.pdf"
+    # Sin separadores de ruta ni comillas, que romperían la cabecera.
+    return re.sub(r'[\\/:*?"<>|\r\n]', "", nombre)
+
+
+def _disposicion(documento) -> str:
+    """Cabecera con nombre ASCII de respaldo y el nombre real en UTF-8
+    (RFC 5987), para que los acentos lleguen bien a cualquier navegador."""
+    nombre = _nombre_de_archivo(documento)
+    ascii_ = unicodedata.normalize("NFKD", nombre).encode("ascii", "ignore").decode()
+    return f"attachment; filename=\"{ascii_}\"; filename*=UTF-8''{quote(nombre)}"
+
 
 _ROLES_SIN_ALCANCE_LIMITADO = {"Dirección", "Coordinación"}
 ROL_DIRECCION = "Dirección"
@@ -68,7 +90,7 @@ class DocumentIssueView(RegistraAccesoMixin, APIView):
             contenido,
             content_type="application/pdf",
             headers={
-                "Content-Disposition": f'attachment; filename="{documento.verification_code}.pdf"'
+                "Content-Disposition": f'attachment; filename="{_nombre_de_archivo(documento)}"'
             },
         )
 
@@ -98,7 +120,7 @@ class IssuedDocumentViewSet(
             contenido,
             content_type="application/pdf",
             headers={
-                "Content-Disposition": f'attachment; filename="{documento.verification_code}.pdf"'
+                "Content-Disposition": f'attachment; filename="{_nombre_de_archivo(documento)}"'
             },
         )
 

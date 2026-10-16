@@ -11,6 +11,7 @@ export { default as DataTable } from "./DataTable.vue";
 export { default as DayTabs } from "./DayTabs.vue";
 export { default as EmptyState } from "./EmptyState.vue";
 export { default as ErrorBanner } from "./ErrorBanner.vue";
+export { default as FormBuscador } from "./FormBuscador.vue";
 export { default as FormField } from "./FormField.vue";
 export { default as FormSelect } from "./FormSelect.vue";
 export { default as ListRow } from "./ListRow.vue";
