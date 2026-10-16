@@ -23,7 +23,14 @@ STORAGES = {
     },
 }
 
-# HTTPS y cookies seguras (sección 14.4)
+# Detrás del proxy de Render el servidor ve HTTP; el proxy avisa por esta
+# cabecera que la petición original fue HTTPS (sin ella, el redireccionamiento
+# a HTTPS entraría en bucle).
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+# HTTPS y cookies seguras (sección 14.4). La comprobación de salud de la
+# plataforma llega por la red interna y no se redirige.
+SECURE_REDIRECT_EXEMPT = [r"^healthz/?$"]
 SECURE_SSL_REDIRECT = True
 SECURE_HSTS_SECONDS = 60 * 60 * 24 * 365
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True

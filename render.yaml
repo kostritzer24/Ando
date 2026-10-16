@@ -1,0 +1,50 @@
+# Despliegue gratuito en Render. Un solo origen para el navegador: el sitio
+# estático reenvía /api/* al backend, así la cookie de sesión (SameSite=Strict)
+# es de primera parte y no hace falta CORS.
+#
+# La base de datos y el almacenamiento de archivos son de Neon (ver
+# docs/desarrollo-local.md); los secretos se piden al crear el Blueprint.
+services:
+  - type: web
+    name: patojismo-api
+    runtime: docker
+    plan: free
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /healthz
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALLOWED_HOSTS
+        value: patojismo-api.onrender.com,patojismo-portal.onrender.com
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://patojismo-portal.onrender.com
+      - key: FRONTEND_URL
+        value: https://patojismo-portal.onrender.com
+      # De Neon (.env.local): usar la conexión directa (DATABASE_URL_UNPOOLED).
+      - key: DATABASE_URL
+        sync: false
+      - key: AWS_ENDPOINT_URL_S3
+        sync: false
+      - key: AWS_REGION
+        sync: false
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_STORAGE_BUCKET_NAME
+        value: justificaciones
+
+  - type: web
+    name: patojismo-portal
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /api/*
+        destination: https://patojismo-api.onrender.com/api/*
+      - type: rewrite
+        source: /*
+        destination: /index.html

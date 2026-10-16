@@ -163,3 +163,18 @@ python manage.py runserver 8000
 - Con `AWS_ENDPOINT_URL_S3` definido, los archivos subidos y los PDF emitidos van al bucket; sin él, a `backend/media/`. El bucket es privado: la descarga siempre pasa por la API.
 - Las pruebas (`pytest`) no usan Neon: corren con SQLite en memoria y disco local.
 - `seed_demo` carga datos ficticios: no ejecutarlo en la base de producción real.
+
+## Despliegue gratuito en Render
+
+`render.yaml` (raíz) define dos servicios gratuitos:
+
+- **patojismo-api**: el backend Django en Docker (la imagen instala Pango para los PDF). Al arrancar aplica las migraciones. Usa la base y el bucket de Neon.
+- **patojismo-portal**: el frontend como sitio estático. Reenvía `/api/*` al backend, de modo que el navegador ve **un solo origen**: la cookie de sesión (`SameSite=Strict`) funciona y no hace falta CORS.
+
+Pasos (los hace una persona con acceso al panel de Render):
+
+1. En Render: **New → Blueprint**, elegir el repositorio y la rama.
+2. Cuando pida los secretos, copiar desde `.env.local` (no se versionan): `DATABASE_URL` ← el valor de `DATABASE_URL_UNPOOLED`; `AWS_ENDPOINT_URL_S3`, `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`.
+3. Si los nombres `patojismo-api` / `patojismo-portal` ya están ocupados en Render, cambiarlos en `render.yaml` (en `name`, en `ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS`, `FRONTEND_URL` y en el `destination` de la regla `/api/*`).
+
+Límites del plan gratuito: el backend se duerme tras ~15 minutos sin tráfico (la primera petición tarda ~1 minuto en despertarlo) y no hay `pre-deploy`; los archivos van a Neon, porque el disco de Render es efímero. La base de Neon trae los datos de `seed_demo`: vaciarla antes de usar datos reales.

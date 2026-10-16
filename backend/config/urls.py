@@ -1,7 +1,15 @@
+from django.http import HttpResponse
 from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
+
+def healthz(request):
+    """Comprobación de salud para la plataforma de despliegue."""
+    return HttpResponse("ok")
+
+
 urlpatterns = [
+    path("healthz", healthz),
     path("api/v1/", include("apps.accounts.api.urls")),
     path("api/v1/", include("apps.core.api.urls")),
     path("api/v1/", include("apps.catalog.api.urls")),
