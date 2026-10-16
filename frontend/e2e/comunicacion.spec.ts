@@ -173,6 +173,7 @@ test("buzón y RN-16: la familia escribe, el docente responde, y el lenguaje ina
   await expect(page.getByRole("heading", { name: "Avisos" })).toBeVisible();
   await expect(page.getByText("Sí, hay una actividad especial.")).toBeVisible();
 
+  await page.getByText("Escribir un mensaje nuevo").click();
   await page.locator("#subject").fill("Otra consulta");
   await page.locator("#content").fill("El maestro es un idiota");
   await page.getByRole("button", { name: "Enviar" }).click();
