@@ -24,7 +24,23 @@ http.interceptors.request.use((config) => {
 
 interface PeticionReintentable extends InternalAxiosRequestConfig {
   _reintentada?: boolean;
+  _intentosTransitorios?: number;
 }
+
+// En Render (plan gratuito) y Neon el servidor "duerme" tras un rato sin
+// uso: la primera lectura llega sin respuesta o con 502/503/504 y la misma
+// petición funciona segundos después (antes se arreglaba recargando la
+// página). Las lecturas se reintentan solas; las escrituras nunca, para no
+// duplicar nada.
+const MAX_REINTENTOS_TRANSITORIOS = 3;
+const ESTADOS_TRANSITORIOS = new Set([502, 503, 504]);
+
+function esFalloTransitorio(error: { response?: { status: number }; code?: string }): boolean {
+  if (!error.response) return error.code !== "ERR_CANCELED";
+  return ESTADOS_TRANSITORIOS.has(error.response.status);
+}
+
+const esperar = (ms: number): Promise<void> => new Promise((resolver) => setTimeout(resolver, ms));
 
 let refrescoEnCurso: Promise<string> | null = null;
 
@@ -45,6 +61,17 @@ http.interceptors.response.use(
   (respuesta) => respuesta,
   async (error) => {
     const peticionOriginal = error.config as PeticionReintentable | undefined;
+    if (
+      peticionOriginal &&
+      peticionOriginal.method?.toLowerCase() === "get" &&
+      esFalloTransitorio(error) &&
+      (peticionOriginal._intentosTransitorios ?? 0) < MAX_REINTENTOS_TRANSITORIOS
+    ) {
+      const intento = (peticionOriginal._intentosTransitorios ?? 0) + 1;
+      peticionOriginal._intentosTransitorios = intento;
+      await esperar(1000 * intento);
+      return http(peticionOriginal);
+    }
     // Un 401 del login no es un token vencido: son credenciales malas o una
     // cuenta bloqueada, y la pantalla necesita ese mensaje, no el del
     // intento de renovación que lo reemplazaba.
