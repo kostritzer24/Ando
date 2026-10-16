@@ -17,6 +17,7 @@ MIDDLEWARE = [  # noqa: F405
 ]
 
 STORAGES = {
+    **STORAGES,  # noqa: F405
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },

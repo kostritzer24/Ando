@@ -143,3 +143,23 @@ npm run e2e
 ```
 
 Si cambiaste algo en el backend que afecte el contrato de la API (un campo nuevo, un endpoint nuevo), regenerá los tipos de TypeScript del frontend contra el backend local corriendo: `cd frontend && npm run types:generate`. Los tipos no se escriben a mano (sección 12.3 del prompt maestro).
+
+
+## Neon (base de datos y archivos)
+
+El proyecto usa Neon para Postgres y para el almacenamiento de objetos (S3 compatible). La infraestructura se declara en `neon.ts` (bucket privado `justificaciones`) y se aplica con `neon deploy`, que escribe las variables en `.env.local` (ignorado por git).
+
+Para correr el backend contra Neon desde `backend/`:
+
+```bash
+set -a && source ../.env.local && set +a
+export DATABASE_URL="$DATABASE_URL_UNPOOLED"   # conexión directa para migrate y seed
+export DYLD_LIBRARY_PATH=/opt/homebrew/lib      # solo macOS (WeasyPrint)
+python manage.py migrate && python manage.py seed_demo
+python manage.py runserver 8000
+```
+
+- Para la aplicación en marcha se usa `DATABASE_URL` (con pooler); para `migrate` y tareas largas, `DATABASE_URL_UNPOOLED`.
+- Con `AWS_ENDPOINT_URL_S3` definido, los archivos subidos y los PDF emitidos van al bucket; sin él, a `backend/media/`. El bucket es privado: la descarga siempre pasa por la API.
+- Las pruebas (`pytest`) no usan Neon: corren con SQLite en memoria y disco local.
+- `seed_demo` carga datos ficticios: no ejecutarlo en la base de producción real.

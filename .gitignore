@@ -31,3 +31,4 @@ htmlcov/
 coverage/
 playwright-report/
 test-results/
+.neon

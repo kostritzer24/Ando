@@ -91,6 +91,30 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 # nunca por una URL servida directo desde MEDIA_ROOT.
 MEDIA_ROOT = BASE_DIR / "media"
 
+# Archivos subidos y PDF emitidos: en el almacenamiento de objetos de Neon
+# (compatible con S3) cuando hay credenciales; si no, en la carpeta local
+# `media/`. El bucket es privado: se lee siempre a través del backend, nunca
+# con una URL pública ni firmada entregada al navegador.
+if os.environ.get("AWS_ENDPOINT_URL_S3"):
+    _almacenamiento_de_archivos = {
+        "BACKEND": "storages.backends.s3.S3Storage",
+        "OPTIONS": {
+            "bucket_name": os.environ.get("AWS_STORAGE_BUCKET_NAME", "justificaciones"),
+            "endpoint_url": os.environ["AWS_ENDPOINT_URL_S3"],
+            "region_name": os.environ.get("AWS_REGION", "us-east-2"),
+            "default_acl": None,
+            "querystring_auth": False,
+            "file_overwrite": False,
+        },
+    }
+else:
+    _almacenamiento_de_archivos = {"BACKEND": "django.core.files.storage.FileSystemStorage"}
+
+STORAGES = {
+    "default": _almacenamiento_de_archivos,
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+}
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # ---- DRF ----------------------------------------------------------------
