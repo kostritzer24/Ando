@@ -3,21 +3,12 @@ import { computed, onMounted, ref, watch } from "vue";
 
 import { conductReportsApi } from "@/features/comunicacion/api/comunicacionApi";
 import { usePortalStore } from "@/features/portal/stores/portalStore";
-import { CargandoBloque, EmptyState, ErrorBanner, PageHeader, TagPill } from "@/shared/components";
+import { CargandoBloque, EmptyState, ErrorBanner, PageHeader } from "@/shared/components";
 import type { Attendance, ConductReport } from "@/shared/types/models";
 
 import { attendanceApi } from "../api/portalApi";
+import AsistenciaCalendario from "./AsistenciaCalendario.vue";
 
-const ETIQUETA_ESTADO: Record<string, string> = {
-  presente: "Presente",
-  ausente: "Ausente",
-  justificado: "Justificado",
-};
-const VARIANTE_ESTADO: Record<string, "taller" | "aviso" | "alerta"> = {
-  presente: "taller",
-  ausente: "alerta",
-  justificado: "aviso",
-};
 const ETIQUETA_GRAVEDAD: Record<string, string> = {
   leve: "Leve",
   grave: "Grave",
@@ -95,14 +86,7 @@ onMounted(cargar);
       />
       <div v-for="grupo in grupos" :key="grupo.etiqueta" class="asistencia-page__grupo">
         <h2>{{ grupo.etiqueta }}</h2>
-        <ul class="asistencia-page__lista">
-          <li v-for="registro in grupo.registros" :key="registro.public_id" class="asistencia-page__fila">
-            <span>{{ registro.date }}</span>
-            <TagPill :variante="VARIANTE_ESTADO[registro.status]">
-              {{ ETIQUETA_ESTADO[registro.status] }}
-            </TagPill>
-          </li>
-        </ul>
+        <AsistenciaCalendario :registros="grupo.registros" />
       </div>
 
       <h2>Reportes de conducta</h2>
@@ -129,19 +113,6 @@ onMounted(cargar);
   margin: var(--espacio-xl) 0 var(--espacio-sm);
 }
 
-.asistencia-page__lista {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.asistencia-page__fila {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--espacio-sm) 0;
-  border-bottom: 1px solid var(--color-linea);
-}
 
 .asistencia-page__reportes {
   list-style: none;
