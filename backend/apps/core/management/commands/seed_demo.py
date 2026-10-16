@@ -346,6 +346,15 @@ class Command(BaseCommand):
         meses = sorted(meses_del_periodo(inicio=ciclo.start_date, hasta=min(hoy, ciclo.end_date)))
 
         def _pagar(inscripcion, meses_a_pagar):
+            if not Payment.objects.filter(
+                enrollment=inscripcion, concept=Payment.CONCEPTO_INSCRIPCION
+            ).exists():
+                registrar_pago(
+                    enrollment=inscripcion,
+                    concept=Payment.CONCEPTO_INSCRIPCION,
+                    payment_date=ciclo.start_date,
+                    recorded_by=usuario_pagos,
+                )
             for anio, mes in meses_a_pagar:
                 if Payment.objects.filter(
                     enrollment=inscripcion, period_year=anio, period_month=mes

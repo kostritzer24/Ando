@@ -157,7 +157,7 @@ Diecisiete reglas acordadas con la dirección. Van en la capa de dominio, cada u
 | RN-05 | El punteo real de cada actividad se conserva siempre y una modificación requiere autorización de la dirección |
 | RN-06 | Las familias ven únicamente la nota final, sin el historial de modificaciones |
 | RN-07 | Una plantilla cargada después del cierre de la unidad se trata como solicitud de modificación |
-| RN-08 | Es solvente el estudiante que está al día con su mensualidad o que cuenta con beca |
+| RN-08 | Es solvente el estudiante que está al día con su mensualidad y tiene pagada la inscripción del ciclo (Q200), o que cuenta con beca completa |
 | RN-09 | La solvencia se verifica al cierre de cada unidad y del ciclo, y es requisito para entregar notas y habilitar el boletín |
 | RN-10 | Las notas se entregan quince días después del cierre de la unidad y el boletín se habilita en el portal una semana después de esa entrega |
 | RN-11 | ~~Pasados cinco minutos de las ocho el estudiante queda tarde~~ **Eliminada (oct 2026)**: no hay estado "tarde" ni hora de llegada; solo se marca la asistencia |

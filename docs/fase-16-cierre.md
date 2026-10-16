@@ -85,4 +85,4 @@ El equipo siguió `docs/guia-prueba-e2e.html` y anotó 23 fallos más los hallaz
 - **Contraseña provisional como definitiva:** el backend ya la rechazaba (`test_cambiar_la_contrasena_por_la_misma_se_rechaza`); probablemente se probó con un servidor sin la corrección de la fase anterior. Re-probar.
 - **Tallerista marcando asistencia de otro taller:** el backend ya lo impide por asignación (pruebas en `test_rf21...` y `test_rf16...`); probablemente se asignaron varios talleres a `tallerista.demo`. Re-probar con una base nueva.
 - **Horarios de la tarde:** decisión del dueño: los talleres van de 14:00 a 19:00; se modelaron como cinco períodos de una hora.
-- **Inscripción de Q200:** se registra como pago y se muestra pendiente, pero no vuelve insolvente al estudiante (RN-08 sigue hablando solo de mensualidad). Confirmar si debe bloquear la constancia.
+- **Inscripción de Q200:** decisión del dueño: sin la inscripción pagada el estudiante no es solvente (y no se emite la constancia), salvo beca completa.

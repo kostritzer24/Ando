@@ -246,6 +246,13 @@ class Command(BaseCommand):
                 inscripcion.scholarship = beca
                 inscripcion.save(update_fields=["scholarship"])
             a_pagar = {"al_dia": meses, "atrasado": meses[:2]}.get(perfil, [])
+            if a_pagar:
+                registrar_pago(
+                    enrollment=inscripcion,
+                    concept=Payment.CONCEPTO_INSCRIPCION,
+                    payment_date=self.ciclo.start_date,
+                    recorded_by=self.docentes_demo["pagos"],
+                )
             for anio, mes in a_pagar:
                 registrar_pago(
                     enrollment=inscripcion,

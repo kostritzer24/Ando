@@ -33,8 +33,17 @@ def calcular_solvencia(*, enrollment, hasta: date | None = None) -> dict:
         ).values_list("period_year", "period_month")
     )
     tiene_beca = enrollment.scholarship_id is not None
+    inscripcion_pagada = (
+        tiene_beca
+        or Payment.objects.filter(
+            enrollment=enrollment, concept=Payment.CONCEPTO_INSCRIPCION, is_active=True
+        ).exists()
+    )
     solvente = es_solvente(
-        tiene_beca=tiene_beca, meses_esperados=meses_esperados, meses_pagados=meses_pagados
+        tiene_beca=tiene_beca,
+        meses_esperados=meses_esperados,
+        meses_pagados=meses_pagados,
+        inscripcion_pagada=inscripcion_pagada,
     )
     # Con beca no hay meses "pendientes" que mostrarle a la familia — la
     # beca los cubre, aunque no haya un Payment registrado para esos
@@ -44,8 +53,5 @@ def calcular_solvencia(*, enrollment, hasta: date | None = None) -> dict:
         "solvente": solvente,
         "tiene_beca": tiene_beca,
         "meses_pendientes": sorted(meses_pendientes),
-        "inscripcion_pagada": tiene_beca
-        or Payment.objects.filter(
-            enrollment=enrollment, concept=Payment.CONCEPTO_INSCRIPCION, is_active=True
-        ).exists(),
+        "inscripcion_pagada": inscripcion_pagada,
     }

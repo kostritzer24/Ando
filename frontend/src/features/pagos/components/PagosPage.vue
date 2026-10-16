@@ -257,7 +257,7 @@ onMounted(async () => {
             <p v-else-if="solvencia.solvente" class="pagos-page__solvencia-titulo">Al día con sus pagos.</p>
             <p v-else class="pagos-page__solvencia-titulo">No está solvente.</p>
             <p v-if="!solvencia.tiene_beca && !solvencia.inscripcion_pagada">
-              La inscripción del ciclo (Q200.00) está pendiente.
+              Falta pagar la inscripción del ciclo (Q200.00).
             </p>
             <p v-if="!solvencia.tiene_beca && solvencia.meses_pendientes.length > 0">
               Meses pendientes:

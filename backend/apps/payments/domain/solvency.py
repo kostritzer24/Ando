@@ -23,8 +23,14 @@ def meses_del_periodo(*, inicio: date, hasta: date) -> set[tuple[int, int]]:
 
 
 def es_solvente(
-    *, tiene_beca: bool, meses_esperados: set[tuple[int, int]], meses_pagados: set[tuple[int, int]]
+    *,
+    tiene_beca: bool,
+    meses_esperados: set[tuple[int, int]],
+    meses_pagados: set[tuple[int, int]],
+    inscripcion_pagada: bool = True,
 ) -> bool:
+    """Sin beca, además de las mensualidades hay que tener pagada la
+    inscripción del ciclo (Q200)."""
     if tiene_beca:
         return True
-    return meses_esperados <= meses_pagados
+    return inscripcion_pagada and meses_esperados <= meses_pagados

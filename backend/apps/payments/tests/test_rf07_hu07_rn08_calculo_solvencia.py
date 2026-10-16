@@ -20,6 +20,9 @@ def test_rn08_solvente_cuando_estan_pagados_todos_los_meses_del_periodo():
     inscripcion = EnrollmentFactory(cycle=ciclo)
     PaymentFactory(enrollment=inscripcion, period_year=2026, period_month=1)
     PaymentFactory(enrollment=inscripcion, period_year=2026, period_month=2)
+    PaymentFactory(
+        enrollment=inscripcion, concept="inscripcion", period_month=None, period_year=2026
+    )
 
     resultado = calcular_solvencia(enrollment=inscripcion, hasta=date(2026, 2, 15))
 
@@ -154,3 +157,16 @@ def test_docente_no_alcanza_pagos_y_solvencia_acceso_no_autorizado():
     respuesta = client.get(f"/api/v1/solvency/{inscripcion.public_id}/")
 
     assert respuesta.status_code == 403
+
+
+@pytest.mark.django_db
+def test_rn08_sin_la_inscripcion_pagada_no_es_solvente_aunque_las_mensualidades_esten_al_dia():
+    ciclo = SchoolCycleFactory(start_date=date(2026, 1, 1), end_date=date(2026, 12, 31))
+    inscripcion = EnrollmentFactory(cycle=ciclo)
+    PaymentFactory(enrollment=inscripcion, period_year=2026, period_month=1)
+
+    resultado = calcular_solvencia(enrollment=inscripcion, hasta=date(2026, 1, 20))
+
+    assert resultado["solvente"] is False
+    assert resultado["inscripcion_pagada"] is False
+    assert resultado["meses_pendientes"] == []
