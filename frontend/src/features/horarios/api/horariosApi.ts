@@ -11,6 +11,7 @@ export interface BloqueHorarioPropio {
   period_number: number;
   course: string;
   section: string;
+  jornada: Jornada;
 }
 
 export async function obtenerMiHorario(): Promise<BloqueHorarioPropio[]> {
@@ -35,12 +36,96 @@ export const PERIODOS_TALLER = [
   { numero: 11, horario: "18:00–19:00" },
 ] as const;
 
-// RN-13: seis períodos de 40 minutos, receso entre el 3 y el 4.
-export const PERIODOS = [
-  { numero: 1, horario: "8:00–8:40" },
-  { numero: 2, horario: "8:40–9:20" },
-  { numero: 3, horario: "9:20–10:00" },
-  { numero: 4, horario: "10:40–11:20" },
-  { numero: 5, horario: "11:20–12:00" },
-  { numero: 6, horario: "12:00–12:40" },
-] as const;
+export type Jornada = "basicos" | "bachillerato";
+
+export const ETIQUETA_JORNADA: Record<Jornada, string> = {
+  basicos: "Básicos",
+  bachillerato: "Bachillerato",
+};
+
+/** Cuarto y quinto bachillerato siguen el horario de bachillerato; el resto
+ * (primero a tercero básico y los talleres) el de básicos. */
+export function jornadaDeGrado(grado: string): Jornada {
+  return grado.toLowerCase().includes("bachiller") ? "bachillerato" : "basicos";
+}
+
+// RN-13: seis períodos de 40 minutos de 8:00 a 12:40. Los dos horarios solo
+// difieren en dónde cae el receso: básicos 10:00–10:40, bachillerato 10:40–11:20.
+const HORARIO_JORNADA: Record<Jornada, Record<number, string>> = {
+  basicos: {
+    1: "8:00–8:40",
+    2: "8:40–9:20",
+    3: "9:20–10:00",
+    4: "10:40–11:20",
+    5: "11:20–12:00",
+    6: "12:00–12:40",
+  },
+  bachillerato: {
+    1: "8:00–8:40",
+    2: "8:40–9:20",
+    3: "9:20–10:00",
+    4: "10:00–10:40",
+    5: "11:20–12:00",
+    6: "12:00–12:40",
+  },
+};
+
+/** Receso de cada jornada y el período que lo sigue. */
+export const RECESO_JORNADA: Record<Jornada, { antesDe: number; horario: string }> = {
+  basicos: { antesDe: 4, horario: "10:00–10:40" },
+  bachillerato: { antesDe: 5, horario: "10:40–11:20" },
+};
+
+/** Hora de un período para una jornada; los talleres (7 a 11) no cambian. */
+export function horaDePeriodo(numero: number, jornada: Jornada = "basicos"): string {
+  const taller = PERIODOS_TALLER.find((p) => p.numero === numero);
+  return taller ? taller.horario : (HORARIO_JORNADA[jornada][numero] ?? "");
+}
+
+/** Períodos de la mañana con la hora del horario de básicos. */
+export const PERIODOS = [1, 2, 3, 4, 5, 6].map((numero) => ({
+  numero,
+  horario: HORARIO_JORNADA.basicos[numero]!,
+}));
+
+export interface FilaPeriodo {
+  numero: number;
+  horario: string;
+  /** Recesos que caen justo antes de este período (uno por jornada). */
+  recesos: string[];
+}
+
+/** Filas de la cuadrícula de una persona o sección: quien da clase en las
+ * dos jornadas ve las dos horas en cada período y los dos recesos. */
+export function filasDePeriodos(
+  jornadas: Jornada[],
+  opciones: { jornada: boolean; taller: boolean },
+): FilaPeriodo[] {
+  const activas: Jornada[] = jornadas.length > 0 ? jornadas : ["basicos"];
+  const mixto = activas.length > 1;
+  const filas: FilaPeriodo[] = [];
+  if (opciones.jornada) {
+    for (const periodo of PERIODOS) {
+      const horas = activas.map((j) => horaDePeriodo(periodo.numero, j));
+      const distintas = new Set(horas).size > 1;
+      filas.push({
+        numero: periodo.numero,
+        horario: distintas
+          ? activas.map((j, i) => `${horas[i]} ${ETIQUETA_JORNADA[j].toLowerCase()}`).join(" / ")
+          : horas[0]!,
+        recesos: activas
+          .filter((j) => RECESO_JORNADA[j].antesDe === periodo.numero)
+          .map(
+            (j) =>
+              `Receso ${RECESO_JORNADA[j].horario}` + (mixto ? ` (${ETIQUETA_JORNADA[j].toLowerCase()})` : ""),
+          ),
+      });
+    }
+  }
+  if (opciones.taller) {
+    for (const periodo of PERIODOS_TALLER) {
+      filas.push({ numero: periodo.numero, horario: periodo.horario, recesos: [] });
+    }
+  }
+  return filas;
+}

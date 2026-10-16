@@ -1,3 +1,4 @@
+import type { Jornada } from "@/features/horarios/api/horariosApi";
 import { http } from "@/app/http";
 import { crearRecursoCrud } from "@/shared/api/resource";
 import type { Attendance, CalendarEvent, Grade, ReportCard } from "@/shared/types/models";
@@ -12,6 +13,7 @@ export interface BloqueSemanal {
   course: string;
   section: string;
   section_type: string;
+  jornada: Jornada;
   teacher: string;
 }
 

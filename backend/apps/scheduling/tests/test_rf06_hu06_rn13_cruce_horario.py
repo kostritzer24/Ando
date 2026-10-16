@@ -274,3 +274,46 @@ def test_rn13_los_talleres_usan_la_franja_de_la_tarde_y_los_cursos_la_de_la_mañ
     assert _bloque(client, taller, periodo=7).status_code == 201
     assert _bloque(client, taller, dia="martes", periodo=1).status_code == 400
     assert _bloque(client, curso, periodo=8).status_code == 400
+
+
+def _docente_en_basicos_y_bachillerato():
+    docente = UserFactory(role=RoleFactory(name="Docente"))
+    basicos = SectionFactory(grade="Tercero básico")
+    bachillerato = SectionFactory(grade="Cuarto bachillerato", cycle=basicos.cycle)
+    return (
+        TeacherAssignmentFactory(
+            teacher=docente, course=CourseFactory(), section=basicos, cycle=basicos.cycle
+        ),
+        TeacherAssignmentFactory(
+            teacher=docente, course=CourseFactory(), section=bachillerato, cycle=basicos.cycle
+        ),
+    )
+
+
+def _crear(client, asignacion, periodo):
+    return client.post(
+        "/api/v1/schedule-blocks/",
+        {"assignment": str(asignacion.public_id), "day_of_week": "lunes", "period_number": periodo},
+        format="json",
+    )
+
+
+@pytest.mark.django_db
+def test_rn13_un_docente_no_puede_dar_basicos_y_bachillerato_a_la_misma_hora_real():
+    client = APIClient()
+    client.force_authenticate(user=_direccion())
+    basicos, bachillerato = _docente_en_basicos_y_bachillerato()
+
+    assert _crear(client, basicos, 3).status_code == 201
+    assert _crear(client, bachillerato, 3).status_code == 400
+
+
+@pytest.mark.django_db
+def test_rn13_el_periodo_4_de_cada_horario_no_choca_porque_el_receso_cae_distinto():
+    client = APIClient()
+    client.force_authenticate(user=_direccion())
+    basicos, bachillerato = _docente_en_basicos_y_bachillerato()
+
+    # Básicos P4 = 10:40–11:20; bachillerato P4 = 10:00–10:40.
+    assert _crear(client, basicos, 4).status_code == 201
+    assert _crear(client, bachillerato, 4).status_code == 201

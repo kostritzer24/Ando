@@ -159,12 +159,10 @@ export interface HorarioEnCuadricula {
   titulo: string;
   subtitulo: string;
   dias: { clave: string; etiqueta: string }[];
-  receso: { inicio: string; fin: string };
   periodos: {
     numero: number;
-    inicio: string;
-    fin: string;
-    receso_antes: boolean;
+    hora: string;
+    receso_antes: string[];
     celdas: Record<string, { curso: string; detalle: string } | null>;
   }[];
 }

@@ -13,7 +13,7 @@ from apps.core.permissions import PermisoPorArea
 from apps.students.models import Enrollment, Student
 
 from ..domain.calendar_event import PublicacionInvalida, puede_editar
-from ..domain.day_structure import PeriodoInvalido
+from ..domain.day_structure import PeriodoInvalido, jornada_de_grado
 from ..domain.teacher_assignment import AsignacionInvalida, validar_asignacion
 from ..models import CalendarEvent, ScheduleBlock, TeacherAssignment
 from ..services.calendar_event import crear_evento
@@ -208,6 +208,7 @@ class MyScheduleView(RegistraAccesoMixin, APIView):
                         "period_number": {"type": "integer"},
                         "course": {"type": "string"},
                         "section": {"type": "string"},
+                        "jornada": {"type": "string"},
                     },
                 },
             }
@@ -227,6 +228,7 @@ class MyScheduleView(RegistraAccesoMixin, APIView):
                     "period_number": bloque.period_number,
                     "course": bloque.assignment.course.name,
                     "section": str(bloque.assignment.section),
+                    "jornada": jornada_de_grado(bloque.assignment.section.grade),
                 }
                 for bloque in bloques
             ]
@@ -261,6 +263,7 @@ class WeeklyCalendarView(RegistraAccesoMixin, APIView):
                                 "course": {"type": "string"},
                                 "section": {"type": "string"},
                                 "section_type": {"type": "string"},
+                                "jornada": {"type": "string"},
                                 "teacher": {"type": "string"},
                             },
                         },
@@ -304,6 +307,7 @@ class WeeklyCalendarView(RegistraAccesoMixin, APIView):
                         "course": bloque.assignment.course.name,
                         "section": str(bloque.assignment.section),
                         "section_type": bloque.assignment.section.type,
+                        "jornada": jornada_de_grado(bloque.assignment.section.grade),
                         "teacher": bloque.assignment.teacher.username,
                     }
                     for bloque in bloques

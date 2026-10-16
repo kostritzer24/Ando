@@ -4,7 +4,14 @@ como se cuelga en la pared: una fila por período, una columna por día."""
 
 from apps.accounts.models import User
 from apps.catalog.models import Section
-from apps.scheduling.domain.day_structure import HORARIO_PERIODOS, PERIODOS_TALLER
+from apps.scheduling.domain.day_structure import (
+    HORARIO_POR_JORNADA,
+    JORNADA_BACHILLERATO,
+    JORNADA_BASICOS,
+    PERIODOS_TALLER,
+    RECESO_POR_JORNADA,
+    jornada_de_grado,
+)
 from apps.scheduling.models import ScheduleBlock
 
 DIAS = [
@@ -14,7 +21,7 @@ DIAS = [
     (ScheduleBlock.JUEVES, "Jueves"),
     (ScheduleBlock.VIERNES, "Viernes"),
 ]
-RECESO = {"inicio": "10:00", "fin": "10:40"}
+_ETIQUETA_JORNADA = {JORNADA_BASICOS: "básicos", JORNADA_BACHILLERATO: "bachillerato"}
 
 
 class SujetoNoEncontrado(Exception):
@@ -54,24 +61,45 @@ def horario_en_cuadricula(*, section_id: str | None = None, teacher_id: str | No
 
     bloques = list(bloques)
     hay_tarde = any(b.period_number in PERIODOS_TALLER for b in bloques)
-    hay_manana = any(b.period_number not in PERIODOS_TALLER for b in bloques)
-    numeros = [n for n in sorted(HORARIO_PERIODOS) if n not in PERIODOS_TALLER]
-    if hay_tarde and not hay_manana:
+    manana = [b for b in bloques if b.period_number not in PERIODOS_TALLER]
+    # Cada persona o sección sigue el horario de sus grados; quien da clase
+    # en básicos y en bachillerato ve las dos horas en cada período.
+    jornadas = sorted(
+        {jornada_de_grado(b.assignment.section.grade) for b in manana}
+        or ({jornada_de_grado(seccion.grade)} if section_id else {JORNADA_BASICOS})
+    )
+    mixto = len(jornadas) > 1
+    numeros = [n for n in sorted(HORARIO_POR_JORNADA[jornadas[0]]) if n not in PERIODOS_TALLER]
+    if hay_tarde and not manana:
         numeros = []
     if hay_tarde:
         numeros += list(PERIODOS_TALLER)
 
+    def _rango(numero: int, jornada: str) -> str:
+        inicio, fin = HORARIO_POR_JORNADA[jornada][numero]
+        return f"{_hora(inicio)}–{_hora(fin)}"
+
     celdas = {(b.day_of_week, b.period_number): b for b in bloques}
     periodos = []
     for numero in numeros:
-        inicio, fin = HORARIO_PERIODOS[numero]
-        fila = {
-            "numero": numero,
-            "inicio": _hora(inicio),
-            "fin": _hora(fin),
-            "receso_antes": numero == 4,
-            "celdas": {},
-        }
+        if numero in PERIODOS_TALLER:
+            horas = {_rango(numero, JORNADA_BASICOS)}
+            hora = _rango(numero, JORNADA_BASICOS)
+        else:
+            horas = {_rango(numero, j) for j in jornadas}
+            hora = (
+                " / ".join(f"{_rango(numero, j)} {_ETIQUETA_JORNADA[j]}" for j in jornadas)
+                if len(horas) > 1
+                else _rango(numero, jornadas[0])
+            )
+        recesos = []
+        if numero not in PERIODOS_TALLER:
+            for j in jornadas:
+                despues_de, inicio_r, fin_r = RECESO_POR_JORNADA[j]
+                if numero == despues_de + 1:
+                    texto = f"Receso {_hora(inicio_r)}–{_hora(fin_r)}"
+                    recesos.append(f"{texto} ({_ETIQUETA_JORNADA[j]})" if mixto else texto)
+        fila = {"numero": numero, "hora": hora, "receso_antes": recesos, "celdas": {}}
         for dia, _etiqueta in DIAS:
             bloque = celdas.get((dia, numero))
             fila["celdas"][dia] = (
@@ -85,6 +113,5 @@ def horario_en_cuadricula(*, section_id: str | None = None, teacher_id: str | No
         "titulo": titulo,
         "subtitulo": subtitulo,
         "dias": [{"clave": c, "etiqueta": e} for c, e in DIAS],
-        "receso": RECESO,
         "periodos": periodos,
     }

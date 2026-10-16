@@ -2,7 +2,7 @@
 import { BookOpenText } from "lucide-vue-next";
 import { computed, onMounted, ref, watch } from "vue";
 
-import { DIAS, PERIODOS } from "@/features/horarios/api/horariosApi";
+import { DIAS, horaDePeriodo } from "@/features/horarios/api/horariosApi";
 import { usePortalStore } from "@/features/portal/stores/portalStore";
 import { aFechaIso, fechaLegible } from "@/shared/fechas";
 import { AppButton, CargandoBloque, DayTabs, EmptyState, ErrorBanner, PageHeader, TagPill } from "@/shared/components";
@@ -62,7 +62,7 @@ const agendaDelDia = computed<FilaAgenda[]>(() => {
   const bloques: FilaAgenda[] = calendario.value.schedule
     .filter((b) => b.day_of_week === diaElegido.value)
     .map((b) => ({
-      hora: PERIODOS.find((p) => p.numero === b.period_number)?.horario.split("–")[0] ?? "",
+      hora: horaDePeriodo(b.period_number, b.jornada).split("–")[0] ?? "",
       titulo: b.course,
       detalle: b.teacher,
       variante: b.section_type === "taller" ? ("taller" as const) : undefined,

@@ -38,11 +38,11 @@
     </thead>
     <tbody>
       {% for periodo in periodos %}
-        {% if periodo.receso_antes %}
-        <tr class="receso"><td colspan="{{ dias|length|add:1 }}">Receso {{ receso.inicio }}–{{ receso.fin }}</td></tr>
-        {% endif %}
+        {% for receso in periodo.receso_antes %}
+        <tr class="receso"><td colspan="{{ dias|length|add:1 }}">{{ receso }}</td></tr>
+        {% endfor %}
         <tr>
-          <td class="hora">P{{ periodo.numero }}<small>{{ periodo.inicio }}–{{ periodo.fin }}</small></td>
+          <td class="hora">P{{ periodo.numero }}<small>{{ periodo.hora }}</small></td>
           {% for dia in dias %}
             {% with celda=periodo.celdas|lookup:dia.clave %}
             <td>

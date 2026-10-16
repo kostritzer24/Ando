@@ -1,4 +1,8 @@
-from ..domain.day_structure import validar_periodo_para_seccion
+from ..domain.day_structure import (
+    jornada_de_grado,
+    periodos_se_cruzan,
+    validar_periodo_para_seccion,
+)
 from ..models import ScheduleBlock, TeacherAssignment
 
 
@@ -22,22 +26,28 @@ def validar_bloque(
 
     vigentes = ScheduleBlock.objects.filter(
         day_of_week=day_of_week,
-        period_number=period_number,
         is_active=True,
         assignment__is_active=True,
         assignment__cycle=assignment.cycle,
-    )
+    ).select_related("assignment__section")
     if excluir is not None:
         vigentes = vigentes.exclude(pk=excluir.pk)
 
-    if vigentes.filter(assignment__teacher=assignment.teacher).exists():
-        raise CruceDeHorario(
-            f"{assignment.teacher.nombre_completo()} ya tiene una clase asignada ese día "
-            f"en el período {period_number}."
-        )
+    # Dos horarios (básicos y bachillerato) con el receso en lugar distinto:
+    # el choque se mide por la hora real, no por el número de período.
+    jornada = jornada_de_grado(assignment.section.grade)
+    for otro in vigentes.filter(assignment__teacher=assignment.teacher):
+        jornada_otro = jornada_de_grado(otro.assignment.section.grade)
+        if periodos_se_cruzan(period_number, jornada, otro.period_number, jornada_otro):
+            raise CruceDeHorario(
+                f"{assignment.teacher.nombre_completo()} ya tiene una clase asignada ese día "
+                f"a esa hora ({otro.assignment.section}, período {otro.period_number})."
+            )
 
     # Una sección tampoco puede tener dos cursos a la misma hora.
-    if vigentes.filter(assignment__section=assignment.section).exists():
+    if vigentes.filter(
+        assignment__section=assignment.section, period_number=period_number
+    ).exists():
         raise CruceDeHorario(
             f"La sección {assignment.section} ya tiene otro curso ese día en el período "
             f"{period_number}."

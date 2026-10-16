@@ -21,12 +21,12 @@ defineProps<{ horario: HorarioEnCuadricula }>();
         </thead>
         <tbody>
           <template v-for="periodo in horario.periodos" :key="periodo.numero">
-            <tr v-if="periodo.receso_antes" class="horario-cuadricula__receso">
-              <td :colspan="horario.dias.length + 1">Receso {{ horario.receso.inicio }}–{{ horario.receso.fin }}</td>
+            <tr v-for="receso in periodo.receso_antes" :key="receso" class="horario-cuadricula__receso">
+              <td :colspan="horario.dias.length + 1">{{ receso }}</td>
             </tr>
             <tr>
               <th scope="row" class="horario-cuadricula__hora">
-                P{{ periodo.numero }}<small>{{ periodo.inicio }}–{{ periodo.fin }}</small>
+                P{{ periodo.numero }}<small>{{ periodo.hora }}</small>
               </th>
               <td v-for="dia in horario.dias" :key="dia.clave">
                 <div v-if="periodo.celdas[dia.clave]" class="horario-cuadricula__clase">

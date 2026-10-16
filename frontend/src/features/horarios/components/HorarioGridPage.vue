@@ -15,7 +15,7 @@ import type { ScheduleBlock, TeacherAssignment } from "@/shared/types/models";
 import { descargarArchivo } from "@/features/pagos/api/pagosApi";
 import { descargarHorarioPdf } from "@/features/reportes/api/reportesApi";
 
-import { DIAS, PERIODOS, PERIODOS_TALLER, scheduleBlocksApi } from "../api/horariosApi";
+import { DIAS, filasDePeriodos, jornadaDeGrado, scheduleBlocksApi } from "../api/horariosApi";
 
 type Usuario = components["schemas"]["User"];
 
@@ -61,7 +61,13 @@ const misAsignaciones = computed(() =>
 const periodosVisibles = computed(() => {
   const hayTaller = misAsignaciones.value.some((a) => a.section_type === "taller");
   const hayJornada = misAsignaciones.value.some((a) => a.section_type !== "taller");
-  return [...(hayJornada || !hayTaller ? PERIODOS : []), ...(hayTaller ? PERIODOS_TALLER : [])];
+  // Quien da básicos y bachillerato ve las dos horas (el receso cae distinto).
+  const jornadas = [
+    ...new Set(
+      misAsignaciones.value.filter((a) => a.section_type !== "taller").map((a) => jornadaDeGrado(a.section_grade)),
+    ),
+  ];
+  return filasDePeriodos(jornadas, { jornada: hayJornada || !hayTaller, taller: hayTaller });
 });
 
 const esTarde = (periodo: number): boolean => periodo >= 7;
@@ -269,8 +275,8 @@ onMounted(cargar);
         </thead>
         <tbody>
           <template v-for="periodo in periodosVisibles" :key="periodo.numero">
-          <tr v-if="periodo.numero === 4" class="horario-grid__receso">
-            <td :colspan="DIAS.length + 1">Receso 10:00–10:40</td>
+          <tr v-for="receso in periodo.recesos" :key="receso" class="horario-grid__receso">
+            <td :colspan="DIAS.length + 1">{{ receso }}</td>
           </tr>
           <tr>
             <th class="horario-grid__hora">P{{ periodo.numero }}<br /><small>{{ periodo.horario }}</small></th>
