@@ -21,6 +21,8 @@ test("Dirección deja a todos presentes y corrige a quien faltó", async ({ page
 
   await menu(page).getByRole("link", { name: "Asistencia" }).click();
   await expect(page.getByRole("heading", { name: "Tomar asistencia" })).toBeVisible();
+  // Segundo básico es la sección con estudiantes en la siembra.
+  await page.getByLabel("Sección").selectOption({ label: "Segundo básico" });
 
   await page.getByRole("button", { name: "Marcar presentes a los pendientes de esta sección" }).click();
   const primeraFila = page.locator(".tomar-asistencia__fila").first();
@@ -31,6 +33,7 @@ test("Dirección deja a todos presentes y corrige a quien faltó", async ({ page
   await expect(primeraFila.getByRole("button", { name: "Ausente" })).toHaveClass(/--activo/);
 
   await page.reload();
+  await page.getByLabel("Sección").selectOption({ label: "Segundo básico" });
   await expect(page.locator(".tomar-asistencia__fila").first().getByRole("button", { name: "Ausente" })).toHaveClass(/--activo/);
 });
 
@@ -47,6 +50,7 @@ test("Dirección registra una justificación y la resuelve", async ({ page }) =>
   await entrarComo(page, "dir.demo");
   await expect(page).toHaveURL(/\/administrativo$/);
   await menu(page).getByRole("link", { name: "Asistencia" }).click();
+  await page.getByLabel("Sección").selectOption({ label: "Segundo básico" });
   await page.locator(".tomar-asistencia__fila").first().getByRole("button", { name: "Ausente" }).click();
   await expect(page.locator(".tomar-asistencia__fila").first().getByRole("button", { name: "Ausente" })).toHaveClass(/--activo/);
 
@@ -71,6 +75,9 @@ test("el tallerista pasa lista de su taller como una clase normal", async ({ pag
   await expect(page.getByRole("heading", { name: "Tomar asistencia" })).toBeVisible();
   await expect(menu(page).getByRole("link", { name: "Plantilla de talleres" })).toHaveCount(0);
 
-  await page.getByRole("button", { name: "Marcar presentes a los pendientes de esta sección" }).click();
+  // Si ya se marcó en una corrida anterior no queda nada pendiente y el botón se apaga.
+  const marcarTodos = page.getByRole("button", { name: "Marcar presentes a los pendientes de esta sección" });
+  await expect(marcarTodos).toBeVisible();
+  if (await marcarTodos.isEnabled()) await marcarTodos.click();
   await expect(page.locator(".tomar-asistencia__fila").first().getByRole("button", { name: "Presente" })).toHaveClass(/--activo/);
 });
