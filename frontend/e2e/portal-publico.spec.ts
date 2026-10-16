@@ -34,12 +34,11 @@ async function entrarComo(page: Page, usuario: string): Promise<void> {
   await page.getByRole("button", { name: "Entrar" }).click();
 }
 
-function lunesDeEstaSemana(): string {
+function hoyLocal(): string {
   const hoy = new Date();
-  const offset = hoy.getDay() === 0 ? -6 : 1 - hoy.getDay();
-  const lunes = new Date(hoy);
-  lunes.setDate(hoy.getDate() + offset);
-  return lunes.toISOString().slice(0, 10);
+  const mes = String(hoy.getMonth() + 1).padStart(2, "0");
+  const dia = String(hoy.getDate()).padStart(2, "0");
+  return `${hoy.getFullYear()}-${mes}-${dia}`;
 }
 
 test("familia consulta el calendario, las notas, la asistencia y la solvencia de su hija, y verifica su constancia por QR", async ({
@@ -78,13 +77,13 @@ test("familia consulta el calendario, las notas, la asistencia y la solvencia de
     data: { assignment: asignacionMatematica.public_id, day_of_week: "lunes", period_number: 1 },
   });
 
-  // Calendario: aviso institucional el lunes de esta semana.
+  // Calendario: aviso institucional de hoy (el sistema no deja publicar fechas pasadas).
   await request.post(`${API}/calendar-events/`, {
     headers: auth,
     data: {
       title: "Reunión de padres",
       type: "institucional",
-      event_date: lunesDeEstaSemana(),
+      event_date: hoyLocal(),
       start_time: "07:00",
       end_time: "07:30",
     },
@@ -151,6 +150,8 @@ test("familia consulta el calendario, las notas, la asistencia y la solvencia de
   await page.getByRole("button", { name: /^lun/ }).click();
   const filaMatematica = page.locator("li", { hasText: "Matemática" });
   await expect(filaMatematica).toBeVisible();
+  // El aviso es de hoy: se abre la pestaña del día de hoy.
+  await page.getByRole("button", { name: new RegExp(`^\\S+ ${new Date().getDate()}$`) }).click();
   const filaAviso = page.locator("li", { hasText: "Reunión de padres" });
   await expect(filaAviso).toBeVisible();
   await expect(filaAviso.getByText("Aviso", { exact: true })).toBeVisible();
