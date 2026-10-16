@@ -1,7 +1,7 @@
 from django.utils import timezone
 from rest_framework import serializers
 
-from apps.catalog.models import JustificationType
+from apps.catalog.models import JustificationType, Section
 from apps.core.validators import validar_documento_de_respaldo
 from apps.students.models import Enrollment
 
@@ -50,6 +50,18 @@ class AttendanceCreateSerializer(serializers.Serializer):
                 "El centro no abre sábados ni domingos: elige un día de lunes a viernes."
             )
         return value
+
+
+class MarcarPresentesSerializer(serializers.Serializer):
+    """Deja a todos presentes en un día; `section` vacío = toda la jornada."""
+
+    date = serializers.DateField()
+    section = serializers.SlugRelatedField(
+        slug_field="public_id", queryset=Section.objects.all(), required=False, allow_null=True
+    )
+
+    def validate_date(self, value):
+        return AttendanceCreateSerializer().validate_date(value)
 
 
 class JustificationSerializer(serializers.ModelSerializer):

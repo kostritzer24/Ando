@@ -177,12 +177,6 @@ const routes: RouteRecordRaw[] = [
         component: () => import("@/features/asignaciones/components/AsignacionesPage.vue"),
       },
       {
-        path: "plantilla-asistencia",
-        name: "administrativo-plantilla-asistencia",
-        meta: { area: "asistencia" },
-        component: () => import("@/features/asistencia/components/PlantillaAsistenciaPage.vue"),
-      },
-      {
         path: "asistencia",
         name: "administrativo-asistencia",
         meta: { area: "asistencia" },
@@ -300,12 +294,6 @@ const routes: RouteRecordRaw[] = [
         name: "operativo-justificaciones",
         meta: { area: "asistencia" },
         component: () => import("@/features/asistencia/components/JustificacionesPage.vue"),
-      },
-      {
-        path: "plantilla-asistencia",
-        name: "operativo-plantilla-asistencia",
-        meta: { area: "asistencia" },
-        component: () => import("@/features/asistencia/components/PlantillaAsistenciaPage.vue"),
       },
       {
         path: "notas/unidad",

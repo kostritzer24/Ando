@@ -9,7 +9,6 @@ import {
   FileBadge,
   FileCheck,
   FilePen,
-  FileSpreadsheet,
   FileText,
   GraduationCap,
   History,
@@ -45,13 +44,6 @@ const navegacion: GrupoNavegacion[] = [
     items: [
       { a: "/administrativo/asistencia", etiqueta: "Asistencia", icono: ClipboardCheck, area: "asistencia" },
       { a: "/administrativo/justificaciones", etiqueta: "Justificaciones", icono: FileCheck, area: "asistencia" },
-      {
-        a: "/administrativo/plantilla-asistencia",
-        etiqueta: "Plantilla de talleres",
-        icono: FileSpreadsheet,
-        area: "asistencia",
-        nivel: "editar",
-      },
     ],
   },
   {

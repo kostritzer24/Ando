@@ -1,5 +1,3 @@
-import { isAxiosError } from "axios";
-
 import { http } from "@/app/http";
 import { crearRecursoCrud } from "@/shared/api/resource";
 import type { Attendance, Justification } from "@/shared/types/models";
@@ -72,49 +70,10 @@ export async function descargarDocumentoJustificacion(
   };
 }
 
-export async function descargarPlantillaAsistencia(
-  sectionPublicId: string,
-  fecha: string,
-): Promise<{ blob: Blob; nombreArchivo: string }> {
-  const respuesta = await http.get(`/attendance/template/${sectionPublicId}/${fecha}/`, {
-    responseType: "blob",
-  });
-  const disposicion = String(respuesta.headers["content-disposition"] ?? "");
-  const coincidencia = /filename="?([^"]+)"?/.exec(disposicion);
-  return { blob: respuesta.data as Blob, nombreArchivo: coincidencia?.[1] ?? "plantilla.xlsx" };
-}
-
-export interface ResultadoPlantilla {
-  creados?: number;
-  errores?: string[];
-}
-
-export async function subirPlantillaAsistencia(payload: {
-  section: string;
+export async function marcarTodosPresentes(payload: {
   date: string;
-  file: File;
-}): Promise<ResultadoPlantilla> {
-  const formData = new FormData();
-  formData.append("section", payload.section);
-  formData.append("date", payload.date);
-  formData.append("file", payload.file);
-  try {
-    const { data } = await http.post<ResultadoPlantilla>("/attendance/template/upload/", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-    return data;
-  } catch (error) {
-    // El backend responde 400 de dos formas distintas para esta ruta:
-    // {errores: [...]} cuando el archivo se pudo leer pero hay filas
-    // que no cuadran (sección 14.4, no guarda nada), o una lista plana
-    // ["mensaje"] cuando `raise ValidationError(...)` corta antes de
-    // eso (extensión equivocada, sección que no es de taller, archivo
-    // ilegible) — ninguna de las dos es un error de red, así que las
-    // dos se muestran igual en la pantalla, no un error genérico.
-    if (isAxiosError(error) && error.response?.status === 400) {
-      const cuerpo = error.response.data as ResultadoPlantilla | string[];
-      return Array.isArray(cuerpo) ? { errores: cuerpo } : cuerpo;
-    }
-    throw error;
-  }
+  section?: string;
+}): Promise<{ creadas: number }> {
+  const { data } = await http.post<{ creadas: number }>("/attendance/mark-all-present/", payload);
+  return data;
 }

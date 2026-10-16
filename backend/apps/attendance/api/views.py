@@ -4,35 +4,34 @@ import unicodedata
 from urllib.parse import quote
 
 from django.http import HttpResponse
-from django.shortcuts import get_object_or_404
-from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
-from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import BasePermission
 from rest_framework.response import Response
-from rest_framework.views import APIView
 
-from apps.catalog.models import Section
 from apps.core.api.mixins import RegistraAccesoMixin, ScopedQuerysetMixin
 from apps.core.permissions import PermisoPorArea
 from apps.scheduling.models import TeacherAssignment
 
 from ..models import Attendance, Justification
-from ..services.attendance import AsistenciaYaRegistrada, registrar_asistencia
+from ..services.attendance import (
+    AsistenciaYaRegistrada,
+    marcar_presentes_pendientes,
+    registrar_asistencia,
+)
 from ..services.justification import (
     JustificacionInvalida,
     crear_justificacion,
     resolver_justificacion,
 )
-from ..services.template import SeccionNoEsDeTaller, generar_plantilla, procesar_plantilla
 from .serializers import (
     AttendanceCreateSerializer,
     AttendanceSerializer,
     JustificationResolveSerializer,
     JustificationSerializer,
+    MarcarPresentesSerializer,
 )
 
 _ROLES_SIN_ALCANCE_LIMITADO = {
@@ -100,6 +99,31 @@ class AttendanceViewSet(RegistraAccesoMixin, ScopedQuerysetMixin, viewsets.Model
         except AsistenciaYaRegistrada as exc:
             raise ValidationError(str(exc)) from exc
         return Response(AttendanceSerializer(asistencia).data, status=status.HTTP_201_CREATED)
+
+    @extend_schema(
+        request=MarcarPresentesSerializer,
+        responses={200: {"type": "object", "properties": {"creadas": {"type": "integer"}}}},
+    )
+    @action(detail=False, methods=["post"], url_path="mark-all-present")
+    def mark_all_present(self, request):
+        """POST /attendance/mark-all-present/ — deja presentes a quienes aún
+        no tienen asistencia ese día; después solo se corrigen las faltas."""
+        serializer = MarcarPresentesSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        seccion = serializer.validated_data.get("section")
+        rol = request.user.role.name
+        if seccion is None and rol not in _ROLES_SIN_ALCANCE_LIMITADO:
+            raise ValidationError("Elige la sección de la que quieres marcar a todos presentes.")
+        if (
+            seccion is not None
+            and rol in _ROLES_DOCENTES
+            and not _seccion_asignada_al_docente(request.user, seccion)
+        ):
+            raise PermissionDenied("No tienes una asignación vigente en esa sección.")
+        creadas = marcar_presentes_pendientes(
+            fecha=serializer.validated_data["date"], recorded_by=request.user, section=seccion
+        )
+        return Response({"creadas": creadas})
 
 
 class JustificationViewSet(RegistraAccesoMixin, ScopedQuerysetMixin, viewsets.ModelViewSet):
@@ -183,94 +207,4 @@ class JustificationViewSet(RegistraAccesoMixin, ScopedQuerysetMixin, viewsets.Mo
                     f"attachment; filename=\"{ascii_}\"; filename*=UTF-8''{quote(nombre_archivo)}"
                 )
             },
-        )
-
-
-class AttendanceTemplateDownloadView(RegistraAccesoMixin, APIView):
-    """GET /attendance/template/{section_public_id}/{fecha}/ — RF-21."""
-
-    permission_classes = [PermisoPorArea]
-    area = "asistencia"
-
-    @extend_schema(responses={200: OpenApiTypes.BINARY})
-    def get(self, request, section_public_id, fecha):
-        section = get_object_or_404(Section, public_id=section_public_id)
-        if request.user.role.name in _ROLES_DOCENTES and not _seccion_asignada_al_docente(
-            request.user, section
-        ):
-            raise PermissionDenied("No tienes una asignación vigente en esa sección.")
-        try:
-            contenido = generar_plantilla(section=section)
-        except SeccionNoEsDeTaller as exc:
-            raise ValidationError(str(exc)) from exc
-
-        respuesta = HttpResponse(
-            contenido,
-            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        )
-        nombre_archivo = f"asistencia_{section.grade}_{fecha}.xlsx".replace(" ", "_")
-        respuesta["Content-Disposition"] = f'attachment; filename="{nombre_archivo}"'
-        return respuesta
-
-
-class AttendanceTemplateUploadView(RegistraAccesoMixin, APIView):
-    """POST /attendance/template/upload/ — RF-21. Un solo paso: si hay
-    errores, no guarda nada y los devuelve (la vista previa de la
-    sección 14.4); si no hay errores, guarda directo."""
-
-    permission_classes = [PermisoPorArea]
-    area = "asistencia"
-    parser_classes = [MultiPartParser]
-
-    @extend_schema(
-        request={
-            "multipart/form-data": {
-                "type": "object",
-                "properties": {
-                    "section": {"type": "string", "format": "uuid"},
-                    "date": {"type": "string", "format": "date"},
-                    "file": {"type": "string", "format": "binary"},
-                },
-                "required": ["section", "date", "file"],
-            }
-        },
-        responses={
-            201: {"type": "object", "properties": {"creados": {"type": "integer"}}},
-            400: {"type": "object", "properties": {"errores": {"type": "array"}}},
-        },
-    )
-    def post(self, request):
-        section_public_id = request.data.get("section")
-        fecha = request.data.get("date")
-        archivo = request.FILES.get("file")
-
-        if not (section_public_id and fecha and archivo):
-            raise ValidationError("Hacen falta 'section', 'date' y 'file'.")
-        if not archivo.name.lower().endswith(".xlsx"):
-            raise ValidationError("El archivo debe ser un .xlsx — no se aceptan macros (.xlsm).")
-
-        section = get_object_or_404(Section, public_id=section_public_id)
-
-        if request.user.role.name in _ROLES_DOCENTES and not _seccion_asignada_al_docente(
-            request.user, section
-        ):
-            raise PermissionDenied("No tienes una asignación vigente en esa sección.")
-
-        try:
-            creados, errores = procesar_plantilla(
-                section=section, fecha=fecha, archivo=archivo, recorded_by=request.user
-            )
-        except SeccionNoEsDeTaller as exc:
-            raise ValidationError(str(exc)) from exc
-        except Exception as exc:  # noqa: BLE001 — archivo corrupto o que no es un .xlsx real
-            raise ValidationError(
-                "No se pudo leer el archivo. Descarga la plantilla de nuevo y sube ese "
-                "archivo de Excel (.xlsx) sin cambiarle el formato."
-            ) from exc
-
-        if errores:
-            return Response({"errores": errores}, status=status.HTTP_400_BAD_REQUEST)
-        return Response(
-            {"creados": len(creados)},
-            status=status.HTTP_201_CREATED,
         )

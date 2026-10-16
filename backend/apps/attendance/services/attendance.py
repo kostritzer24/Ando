@@ -2,6 +2,7 @@ from datetime import date
 
 from django.db import transaction
 
+from apps.catalog.models import Section
 from apps.core.services import registrar_cambio
 from apps.students.models import Enrollment
 
@@ -49,3 +50,31 @@ def registrar_asistencia(
         },
     )
     return asistencia
+
+
+@transaction.atomic
+def marcar_presentes_pendientes(
+    *, fecha: date, recorded_by, section: Section | None = None
+) -> int:
+    """RF-16 (ronda con Dirección): deja a todos presentes y solo se corrige
+    quien faltó o tiene excusa. Nunca pisa una asistencia ya registrada.
+    Sin `section`, cubre todas las secciones académicas (la jornada
+    matutina); los talleres se marcan sección por sección."""
+    inscripciones = Enrollment.objects.filter(status=Enrollment.ESTADO_ACTIVO, is_active=True)
+    if section is not None:
+        inscripciones = inscripciones.filter(section=section)
+    else:
+        inscripciones = inscripciones.filter(
+            section__type=Section.TIPO_ACADEMICA, section__is_active=True
+        )
+    ya_marcadas = Attendance.objects.filter(date=fecha).values_list("enrollment_id", flat=True)
+    creadas = 0
+    for inscripcion in inscripciones.exclude(id__in=ya_marcadas):
+        registrar_asistencia(
+            enrollment=inscripcion,
+            fecha=fecha,
+            recorded_by=recorded_by,
+            status=Attendance.ESTADO_PRESENTE,
+        )
+        creadas += 1
+    return creadas

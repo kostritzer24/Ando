@@ -21,7 +21,7 @@ Dirección (DIR), Coordinación (COORD), Encargado de pagos (PAGOS), Docente (DO
 | Estudiantes y encargados (datos generales) | E | V | V ¹ | V ² | V ² | V ³ |
 | Datos sensibles (salud, socioeconómicos) | E | S | S | S | S | S |
 | Horarios y calendario | E | V | S | E ² | E ² | V ³ |
-| Asistencia | E ⁴ | V | S | E ² | E ² | V ³ |
+| Asistencia | E ⁴ | V | S | V ² | E ² | V ³ |
 | Notas (actividades, calificaciones, boletín) | E | V | S | E ² | S ⁵ | V ³ ⁶ |
 | Modificación de notas (autorizar/rechazar) | E | S | S | S ⁷ | S | S |
 | Pagos y solvencia | E | V | E | S | S | V ³ |
@@ -43,6 +43,8 @@ Dirección (DIR), Coordinación (COORD), Encargado de pagos (PAGOS), Docente (DO
 7. `DOC` tiene `E` en "solicitar modificación de nota" (RF-23) pero no en "autorizar" — son acciones distintas; la matriz separa ambas filas a propósito.
 8. `PAGOS` no ve los reportes institucionales generales, solo el reporte de estudiantes insolventes, que en la práctica es una vista dentro de Pagos y solvencia, no de Reportes — **resuelto en la Fase 12** (`docs/fase-12-frontend-cierre.md`): ese reporte puntual vive en el área `pagos_solvencia`, con su propio botón en la pantalla de Pagos, en vez de en `reportes_institucionales`.
 9. ~~`ADMIN` con `V` en datos sensibles~~ — el rol Administrador del sistema se eliminó en la ronda de pruebas de octubre de 2026; los datos sensibles quedan solo para `DIR`.
+
+> **Cambio de la demostración al director (oct. 2026):** el Docente solo *consulta* la asistencia que marcó Dirección; ya no la marca. El Tallerista sí la marca, en sus talleres.
 
 ## Pendientes de confirmación con dirección
 

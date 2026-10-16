@@ -6,11 +6,11 @@ import { seccionesApi } from "@/features/catalogo/api/catalogoApi";
 import { enrollmentsApi, studentsApi } from "@/features/estudiantes/api/estudiantesApi";
 import { mensajeDelServidor } from "@/shared/api/errores";
 import { hoyIso, ultimoDiaHabilIso } from "@/shared/fechas";
-import { CargandoBloque, ErrorBanner, FormSelect, PageHeader } from "@/shared/components";
+import { AppButton, CargandoBloque, ErrorBanner, FormSelect, PageHeader } from "@/shared/components";
 import { usePermisos } from "@/shared/permisos";
 import type { Attendance, Enrollment, Section, Student, TeacherAssignment } from "@/shared/types/models";
 
-import { attendanceApi, registrarAsistencia } from "../api/asistenciaApi";
+import { attendanceApi, marcarTodosPresentes, registrarAsistencia } from "../api/asistenciaApi";
 
 const ESTADOS = [
   { valor: "presente", etiqueta: "Presente" },
@@ -148,6 +148,29 @@ async function marcar(inscripcion: Enrollment, estado: Attendance["status"]): Pr
   }
 }
 
+const marcandoTodos = ref(false);
+const pendientes = computed(
+  () => inscripciones.value.filter((i) => !asistenciaDe(i)).length,
+);
+
+// Se deja a todos presentes y luego solo se corrige a quien faltó o tiene
+// excusa (el director pasa salón por salón). Nunca pisa lo ya marcado.
+async function marcarPresentes(todoElCentro: boolean): Promise<void> {
+  marcandoTodos.value = true;
+  error.value = "";
+  try {
+    await marcarTodosPresentes({
+      date: fecha.value,
+      section: todoElCentro ? undefined : seccionElegida.value,
+    });
+    await cargarRoster();
+  } catch (e) {
+    error.value = mensajeDelServidor(e, "No se pudo marcar a todos como presentes. Inténtalo de nuevo.");
+  } finally {
+    marcandoTodos.value = false;
+  }
+}
+
 watch([seccionElegida, fecha], cargarRoster);
 
 onMounted(async () => {
@@ -180,6 +203,24 @@ onMounted(async () => {
         </div>
       </div>
 
+      <div v-if="!soloLectura" class="tomar-asistencia__masivo">
+        <AppButton
+          variante="secundario"
+          :deshabilitado="marcandoTodos || cargandoRoster || pendientes === 0"
+          @click="marcarPresentes(false)"
+        >
+          Marcar presentes a los pendientes de esta sección
+        </AppButton>
+        <AppButton
+          v-if="veTodasLasSecciones"
+          variante="secundario"
+          :deshabilitado="marcandoTodos"
+          @click="marcarPresentes(true)"
+        >
+          Marcar presentes a todo el centro
+        </AppButton>
+      </div>
+
       <CargandoBloque v-if="cargandoRoster" />
       <p v-else-if="inscripciones.length === 0" class="tomar-asistencia__vacio">
         No hay estudiantes inscritos en esta sección.
@@ -207,7 +248,7 @@ onMounted(async () => {
         </li>
       </ul>
       <p v-if="!soloLectura" class="tomar-asistencia__nota">
-        Cada estado se guarda apenas lo eliges. Puedes cerrar esta pantalla y volver más tarde
+        Marca a todos presentes y corrige solo a quien faltó o tiene excusa. Cada estado se guarda apenas lo eliges. Puedes cerrar esta pantalla y volver más tarde
         para completar el resto. La asistencia es una por estudiante y día: la ven todos los
         docentes de la sección.
       </p>
@@ -245,6 +286,12 @@ onMounted(async () => {
   border-radius: var(--radio-md);
   background: var(--color-papel);
   font-size: var(--texto-base);
+}
+
+.tomar-asistencia__masivo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espacio-sm);
 }
 
 .tomar-asistencia__vacio {

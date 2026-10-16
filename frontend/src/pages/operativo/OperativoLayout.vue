@@ -5,7 +5,6 @@ import {
   Clock,
   FileCheck,
   FilePen,
-  FileSpreadsheet,
   House,
   Inbox,
   Megaphone,
@@ -15,11 +14,9 @@ import {
 } from "lucide-vue-next";
 import { computed } from "vue";
 
-import { useAuthStore } from "@/features/auth/stores/authStore";
 import { AdminShell } from "@/shared/components";
 import type { GrupoNavegacion } from "@/shared/components/AdminShell.vue";
 
-const auth = useAuthStore();
 
 // Cada opción declara su área de docs/permisos-roles.md; AdminShell la
 // filtra con la matriz del rol. Tallerista no ve Notas porque su rol no
@@ -32,16 +29,6 @@ const navegacion = computed<GrupoNavegacion[]>(() => [
     items: [
       { a: "/operativo/asistencia", etiqueta: "Asistencia", icono: ClipboardCheck, area: "asistencia" },
       { a: "/operativo/justificaciones", etiqueta: "Justificaciones", icono: FileCheck, area: "asistencia" },
-      {
-        a: "/operativo/plantilla-asistencia",
-        etiqueta: "Plantilla de talleres",
-        icono: FileSpreadsheet,
-        area: "asistencia",
-        nivel: "editar",
-        // La plantilla es de asistencia de talleres: es del tallerista,
-        // no de cualquiera que registre asistencia.
-        visible: auth.usuario?.role_name === "Tallerista",
-      },
     ],
   },
   {

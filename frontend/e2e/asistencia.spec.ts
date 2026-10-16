@@ -3,8 +3,8 @@ import { expect, test } from "@playwright/test";
 import { elegirPrimeraDelBuscador, menu } from "./utils";
 
 /**
- * Fase 6 (RF-16, RF-12, RF-21): asistencia, justificaciones y plantilla
- * de talleres. Requiere `manage.py seed_demo` (docente.demo asignado a
+ * Fase 6 (RF-16, RF-12): asistencia y justificaciones. Dirección marca
+ * la jornada, el docente solo la consulta y el tallerista marca su taller. Requiere `manage.py seed_demo` (docente.demo asignado a
  * Segundo básico, tallerista.demo al taller de panadería).
  */
 
@@ -15,34 +15,37 @@ async function entrarComo(page: import("@playwright/test").Page, usuario: string
   await page.getByRole("button", { name: "Entrar" }).click();
 }
 
-test("docente toma asistencia de su sección y el estado se guarda solo", async ({ page }) => {
-  await entrarComo(page, "docente.demo");
-  await expect(page).toHaveURL(/\/operativo$/);
+test("Dirección deja a todos presentes y corrige a quien faltó", async ({ page }) => {
+  await entrarComo(page, "dir.demo");
+  await expect(page).toHaveURL(/\/administrativo$/);
 
   await menu(page).getByRole("link", { name: "Asistencia" }).click();
   await expect(page.getByRole("heading", { name: "Tomar asistencia" })).toBeVisible();
 
+  await page.getByRole("button", { name: "Marcar presentes a los pendientes de esta sección" }).click();
   const primeraFila = page.locator(".tomar-asistencia__fila").first();
-  await primeraFila.getByRole("button", { name: "Presente" }).click();
   await expect(primeraFila.getByRole("button", { name: "Presente" })).toHaveClass(/--activo/);
 
-  const segundaFila = page.locator(".tomar-asistencia__fila").nth(1);
-  await segundaFila.getByRole("button", { name: "Ausente" }).click();
-  await expect(segundaFila.getByRole("button", { name: "Ausente" })).toHaveClass(/--activo/);
+  // Solo se corrige a quien faltó (PATCH sobre lo ya marcado).
+  await primeraFila.getByRole("button", { name: "Ausente" }).click();
+  await expect(primeraFila.getByRole("button", { name: "Ausente" })).toHaveClass(/--activo/);
 
-  // Recargar la página simula "volver más tarde" — HU-16.
   await page.reload();
-  await expect(page.locator(".tomar-asistencia__fila").first().getByRole("button", { name: "Presente" })).toHaveClass(/--activo/);
-  await expect(page.locator(".tomar-asistencia__fila").nth(1).getByRole("button", { name: "Ausente" })).toHaveClass(/--activo/);
-
-  // Corregir un estado ya guardado (PATCH, no un segundo POST).
-  await page.locator(".tomar-asistencia__fila").nth(1).getByRole("button", { name: "Presente" }).click();
-  await expect(page.locator(".tomar-asistencia__fila").nth(1).getByRole("button", { name: "Presente" })).toHaveClass(/--activo/);
+  await expect(page.locator(".tomar-asistencia__fila").first().getByRole("button", { name: "Ausente" })).toHaveClass(/--activo/);
 });
 
-test("docente registra una justificación y Dirección la resuelve", async ({ page }) => {
+test("el docente consulta la asistencia pero no puede marcarla", async ({ page }) => {
   await entrarComo(page, "docente.demo");
   await expect(page).toHaveURL(/\/operativo$/);
+  await menu(page).getByRole("link", { name: "Asistencia" }).click();
+  await expect(page.getByRole("heading", { name: "Asistencia", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Marcar presentes a los pendientes de esta sección" })).toHaveCount(0);
+  await expect(page.locator(".tomar-asistencia__fila").first().getByRole("button", { name: "Presente" })).toBeDisabled();
+});
+
+test("Dirección registra una justificación y la resuelve", async ({ page }) => {
+  await entrarComo(page, "dir.demo");
+  await expect(page).toHaveURL(/\/administrativo$/);
   await menu(page).getByRole("link", { name: "Asistencia" }).click();
   await page.locator(".tomar-asistencia__fila").first().getByRole("button", { name: "Ausente" }).click();
   await expect(page.locator(".tomar-asistencia__fila").first().getByRole("button", { name: "Ausente" })).toHaveClass(/--activo/);
@@ -54,28 +57,20 @@ test("docente registra una justificación y Dirección la resuelve", async ({ pa
   await page.locator("#reason_detail").fill("Cita médica.");
   await page.getByRole("button", { name: "Guardar", exact: true }).click();
 
-  await expect(page.locator("tr", { hasText: "pendiente" })).toBeVisible();
-
-  await page.getByRole("button", { name: "Cerrar sesión" }).click();
-  await entrarComo(page, "dir.demo");
-  await expect(page).toHaveURL(/\/administrativo$/);
-  await menu(page).getByRole("link", { name: "Justificaciones" }).click();
-
   const fila = page.locator("tr", { hasText: "pendiente" }).first();
+  await expect(fila).toBeVisible();
   await fila.getByRole("button", { name: "Aprobar" }).click();
   await expect(page.locator("tr", { hasText: "pendiente" })).toHaveCount(0);
 });
 
-test("tallerista descarga y sube la plantilla de asistencia de su taller", async ({ page }) => {
+test("el tallerista pasa lista de su taller como una clase normal", async ({ page }) => {
   await entrarComo(page, "tallerista.demo");
   await expect(page).toHaveURL(/\/operativo$/);
 
-  await menu(page).getByRole("link", { name: "Plantilla de talleres" }).click();
-  await expect(page.getByRole("heading", { name: "Plantilla de asistencia de talleres" })).toBeVisible();
+  await menu(page).getByRole("link", { name: "Asistencia" }).click();
+  await expect(page.getByRole("heading", { name: "Tomar asistencia" })).toBeVisible();
+  await expect(menu(page).getByRole("link", { name: "Plantilla de talleres" })).toHaveCount(0);
 
-  const [descarga] = await Promise.all([
-    page.waitForEvent("download"),
-    page.getByRole("button", { name: "Descargar plantilla" }).click(),
-  ]);
-  expect(descarga.suggestedFilename()).toMatch(/\.xlsx$/);
+  await page.getByRole("button", { name: "Marcar presentes a los pendientes de esta sección" }).click();
+  await expect(page.locator(".tomar-asistencia__fila").first().getByRole("button", { name: "Presente" })).toHaveClass(/--activo/);
 });

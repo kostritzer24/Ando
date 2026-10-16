@@ -215,3 +215,46 @@ def test_rf16_no_se_registra_asistencia_en_fecha_futura_ni_en_fin_de_semana(fech
     )
 
     assert respuesta.status_code == 400
+
+
+@pytest.mark.django_db
+def test_rf16_direccion_marca_a_todos_presentes_sin_pisar_lo_ya_registrado():
+    direccion = _direccion()
+    seccion = SectionFactory(type="academica")
+    ya_ausente = EnrollmentFactory(section=seccion, cycle=seccion.cycle)
+    pendiente = EnrollmentFactory(section=seccion, cycle=seccion.cycle)
+    Attendance.objects.create(
+        enrollment=ya_ausente, date="2026-01-13", status="ausente", recorded_by=direccion
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=direccion)
+    respuesta = client.post(
+        "/api/v1/attendance/mark-all-present/", {"date": "2026-01-13"}, format="json"
+    )
+
+    assert respuesta.status_code == 200
+    assert respuesta.data["creadas"] == 1
+    assert Attendance.objects.get(enrollment=pendiente, date="2026-01-13").status == "presente"
+    assert Attendance.objects.get(enrollment=ya_ausente, date="2026-01-13").status == "ausente"
+
+
+@pytest.mark.django_db
+def test_rf16_docente_con_solo_ver_no_puede_marcar_asistencia_acceso_no_autorizado():
+    rol = RoleFactory(name="Docente", permissions={"asistencia": "ver"})
+    docente = UserFactory(role=rol)
+    inscripcion = EnrollmentFactory()
+
+    client = APIClient()
+    client.force_authenticate(user=docente)
+    marcar = client.post(
+        "/api/v1/attendance/",
+        {"enrollment": str(inscripcion.public_id), "date": "2026-01-13", "status": "presente"},
+        format="json",
+    )
+    todos = client.post(
+        "/api/v1/attendance/mark-all-present/", {"date": "2026-01-13"}, format="json"
+    )
+
+    assert marcar.status_code == 403
+    assert todos.status_code == 403

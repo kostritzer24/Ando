@@ -72,7 +72,7 @@ _MATRIZ: dict[str, dict[str, str]] = {
         "estudiantes_encargados": _V,
         "datos_sensibles": _S,
         "horarios_calendario": _E,
-        "asistencia": _E,
+        "asistencia": _V,
         "notas": _E,
         "modificacion_notas": _S,
         "pagos_solvencia": _S,
