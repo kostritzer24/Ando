@@ -102,9 +102,10 @@ test("Dirección asigna un docente a un curso académico y el selector filtra po
   // Tercero básico no tiene asignación todavía en la siembra de demo.
   await elegirEnBuscador(page, "Sección", "Tercero básico");
   await page.getByLabel("Docente o tallerista").click();
-  const opcionesDocente = await page.getByRole("option").allTextContents();
+  const listaDocentes = page.locator("#teacher-lista").getByRole("option");
+  const opcionesDocente = await listaDocentes.allTextContents();
   expect(opcionesDocente).not.toContain("tallerista.demo");
-  await page.getByRole("option").first().click();
+  await listaDocentes.first().click();
 
   await page.getByLabel("Curso").selectOption({ index: 1 });
   await page.getByRole("button", { name: "Guardar" }).click();

@@ -128,7 +128,11 @@ test("Dirección genera, aprueba y publica boletines, y RN-09 bloquea la publica
 
   // Segundo básico: María Ximena (solvente) y Juan Carlos (becado) — ambos
   // publican sin problema para la Unidad 1 (el plazo de RN-10 ya pasó).
+  // Al cambiar de sección se recargan las unidades de su ciclo: hay que
+  // esperar esa respuesta, o "Unidad 1" se elige de la lista del ciclo anterior.
+  const unidadesCargadas = page.waitForResponse(/\/cycles\/[^/]+\/units\//);
   await page.getByLabel("Sección").selectOption({ label: "Segundo básico" });
+  await unidadesCargadas;
   await page.getByLabel("Unidad").selectOption({ label: "Unidad 1" });
   await page.getByRole("button", { name: "Generar boletines" }).click();
 

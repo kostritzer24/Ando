@@ -61,13 +61,13 @@ test("RF-01: el administrador crea una cuenta, la persona cambia su contraseña 
   await expect(page.getByRole("alert")).toContainText("Usuario o contraseña incorrectos");
 });
 
-test("RNF-03: el menú sale de la matriz del rol — el administrador ve Asistencia en consulta, pero no Buzón", async ({
+test("RNF-03: el menú sale de la matriz del rol — Coordinación ve Asistencia en consulta, pero no Buzón ni Bitácora", async ({
   page,
 }) => {
-  await entrarComo(page, "dir.demo");
+  await entrarComo(page, "coord.demo", "CambiaEstaClave2026");
   await expect(page).toHaveURL(/\/administrativo$/);
 
-  await expect(menu(page).getByRole("link", { name: "Bitácora" })).toBeVisible();
+  await expect(menu(page).getByRole("link", { name: "Bitácora" })).toHaveCount(0);
   await expect(menu(page).getByRole("link", { name: "Buzón" })).toHaveCount(0);
   await expect(menu(page).getByRole("link", { name: "Modificaciones de notas" })).toHaveCount(0);
 
