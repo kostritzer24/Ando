@@ -37,10 +37,10 @@ Es un proyecto de Seminario de Tecnologías de la Información de la Universidad
 | Coordinación | Acompaña a la dirección y firma informes de su comisión | Coordinación, portal administrativo |
 | Encargado de pagos | Lleva las mensualidades y emite constancias de solvencia | Encargado de pagos, portal administrativo |
 | Docentes | Planifican, califican y entregan notas por unidad | Docente, portal operativo |
-| Maestro guía | Docente con una sección a cargo; firma boletines y reportes de conducta | Docente con sección a cargo, portal operativo |
+| Maestro guía | Docente con una sección a cargo; firma boletines y reportes de conducta. *Ya no es un rol aparte (ronda de pruebas, oct. 2026): cualquier docente puede estar a cargo de una sección y levantar reportes o responder el buzón* | Docente, portal operativo |
 | Talleristas | Imparten los talleres de la tarde y llevan su propio control de asistencia | Tallerista, portal operativo |
 | Padres y encargados | Reciben información y consultan el avance del estudiante | Padre de familia, portal público |
-| Encargado del laboratorio | Será el responsable del sistema dentro del centro y capacitará al personal | Administrador del sistema |
+| Encargado del laboratorio | Será el responsable del sistema dentro del centro y capacitará al personal | Dirección (el rol «Administrador del sistema» se eliminó: solo consultaba datos) |
 
 El Ministerio de Educación es un actor externo que no usa la aplicación. Por eso cada estudiante lleva un código interno propio del centro y no el código del ministerio.
 
@@ -185,12 +185,12 @@ Detalles definidos en las historias de usuario y que son parte del alcance aprob
 - **HU-03.** El sistema asigna el código interno único. No se puede inscribir dos veces al mismo estudiante en un mismo ciclo.
 - **HU-05.** Cada curso de una sección tiene un docente responsable y cada sección tiene un maestro guía. Un docente solo registra notas en los cursos que tiene asignados.
 - **HU-06.** El sistema no permite asignar a un docente en dos secciones dentro del mismo período. Los cambios de horario quedan visibles para docentes y familias.
-- **HU-07.** Cada pago registra mes, fecha, monto y número de recibo. El estudiante con beca aparece siempre solvente. Solo el encargado de pagos y la dirección modifican esta información.
+- **HU-07.** Cada pago registra mes, fecha, monto y número de recibo. El monto y el recibo los pone el sistema: la mensualidad es de Q100 en básico y Q150 en bachillerato, y la inscripción de Q200 por ciclo escolar. La beca es completa o no hay beca (no existen becas parciales). El estudiante con beca aparece siempre solvente. Solo el encargado de pagos y la dirección modifican esta información.
 - **HU-08 y HU-11.** Cada documento lleva nombre del establecimiento, logo y código QR, sin firma ni sello digital, y queda registro de cada emisión.
 - **HU-14.** El código QR abre una página pública de verificación que muestra tipo de documento, fecha y estudiante, sin datos sensibles. Un código inexistente indica que el documento no es válido.
 - **HU-16.** Los estados de asistencia son presente, ausente y justificado. Se puede registrar durante la clase o al final de la jornada.
 - **HU-19 y HU-20.** La plantilla trae la lista de estudiantes con su código. Los códigos y la estructura no se pueden modificar. El sistema valida códigos, punteos y estructura, y muestra una vista previa con los errores por fila antes de guardar. La plantilla no sustituye al sistema: respeta la costumbre del docente de llevar su propio cuadro de notas.
-- **HU-25 y HU-37.** Cada mensaje del buzón lo ven solo el encargado que lo envió, el maestro guía de la sección y la dirección. La respuesta queda en el mismo hilo. No hay conversación en tiempo real, ni indicador de escritura, ni de visto.
+- **HU-25 y HU-37.** Cada mensaje del buzón lo ven solo el encargado que lo envió, los docentes de la sección y la dirección; la respuesta indica quién respondió. La respuesta queda en el mismo hilo. No hay conversación en tiempo real, ni indicador de escritura, ni de visto.
 - **HU-27.** Un encargado con varios estudiantes vinculados cambia entre ellos con un selector, sin volver a iniciar sesión, y no ve información de estudiantes ajenos.
 - **HU-30.** El cálculo de puntos faltantes toma como referencia los 60 puntos mínimos y se muestra curso por curso. Los cursos en riesgo se distinguen a simple vista.
 - **HU-36.** Los avisos se muestran del más reciente al más antiguo, y los vencidos dejan de mostrarse.

@@ -56,7 +56,7 @@ const misAsignaciones = computed(() =>
   asignaciones.value.filter((a) => a.teacher === docenteElegido.value && a.is_active !== false),
 );
 
-// Los cursos de la jornada usan los períodos 1 a 6; los talleres, los 7 a 9
+// Los cursos de la jornada usan los períodos 1 a 6; los talleres, los 7 a 11
 // (la tarde). Cada persona ve la franja que le toca según sus asignaciones.
 const periodosVisibles = computed(() => {
   const hayTaller = misAsignaciones.value.some((a) => a.section_type === "taller");

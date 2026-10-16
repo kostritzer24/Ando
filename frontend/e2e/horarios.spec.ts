@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { menu } from "./utils";
+import { elegirEnBuscador, menu } from "./utils";
 
 /**
  * Fase 8 (RF-06, RF-22, RF-26): grilla de horario (Dirección), horario
@@ -24,11 +24,11 @@ test("Dirección arma el horario de un docente y lo puede quitar", async ({ page
 
   // Los usuarios de siembra no tienen nombre/apellido cargados, así que
   // el selector muestra el username como respaldo (docente.demo).
-  await page.getByLabel("Docente o tallerista").selectOption({ label: "docente.demo" });
+  await elegirEnBuscador(page, "Docente o tallerista", "docente.demo");
 
   // Celda vacía: lunes, período 1 (primera fila, primera columna de datos).
   const primeraCelda = page.locator("table.horario-grid__tabla tbody tr").first().locator("td").first();
-  await primeraCelda.getByRole("button", { name: "+" }).click();
+  await primeraCelda.getByRole("button", { name: "Agregar clase" }).click();
 
   await expect(page.getByRole("heading", { name: "Agregar clase" })).toBeVisible();
   await page.getByRole("button", { name: "Guardar", exact: true }).click();
@@ -38,11 +38,11 @@ test("Dirección arma el horario de un docente y lo puede quitar", async ({ page
 
   // La celda ocupada ya no ofrece "+" — el cruce queda evitado por diseño
   // (no se puede pedir una segunda clase en un espacio ya lleno).
-  await expect(primeraCelda.getByRole("button", { name: "+" })).toHaveCount(0);
+  await expect(primeraCelda.getByRole("button", { name: "Agregar clase" })).toHaveCount(0);
 
   await primeraCelda.getByRole("button", { name: "Quitar" }).click();
   await page.getByRole("dialog").getByRole("button", { name: "Quitar clase" }).click();
-  await expect(primeraCelda.getByRole("button", { name: "+" })).toBeVisible();
+  await expect(primeraCelda.getByRole("button", { name: "Agregar clase" })).toBeVisible();
 });
 
 test("docente ve su propio horario después de que Dirección lo arma", async ({ page }) => {
@@ -50,11 +50,12 @@ test("docente ve su propio horario después de que Dirección lo arma", async ({
   await expect(page).toHaveURL(/\/administrativo$/);
   await menu(page).getByRole("link", { name: "Horarios" }).click();
 
-  await page.getByLabel("Docente o tallerista").selectOption({ label: "docente.demo" });
+  await elegirEnBuscador(page, "Docente o tallerista", "docente.demo");
 
   // Martes, período 2, para no chocar con la prueba anterior.
   const celda = page.locator("table.horario-grid__tabla tbody tr").nth(1).locator("td").nth(1);
-  await celda.getByRole("button", { name: "+" }).click();
+  await celda.getByRole("button", { name: "Agregar clase" }).click();
+  await page.getByLabel("Curso y sección").selectOption({ label: "Matemática — Segundo básico" });
   await page.getByRole("button", { name: "Guardar", exact: true }).click();
   await expect(celda.locator(".horario-grid__celda--ocupada")).toBeVisible();
 

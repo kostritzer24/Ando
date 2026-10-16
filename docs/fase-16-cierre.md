@@ -45,3 +45,44 @@ Reiniciar la base antes: `cd backend && rm db.sqlite3 && python manage.py migrat
 - **B (Gabriela):** nómina de taller sin asignación, asistencia en fin de semana o futura (y que ya no hay "tarde" ni hora), justificaciones repetidas, nombre del archivo de plantilla, receso en el horario, semanas en el portal, fechas legibles.
 - **C (Oscar):** que sus C-001 a C-020 sigan bien, curso sin notas ("—" y fuera del promedio), mensaje de plazo con fecha, "Ver boletín" antes de aprobar.
 - **D (Milton):** buzón bloqueado y filtro con números, "Ver vínculos", bandeja de documentos, datos de salud al inscribir, dar de baja, filtros en Pagos.
+
+## Segunda ronda: prueba guiada E2E (15/10/2026)
+
+El equipo siguió `docs/guia-prueba-e2e.html` y anotó 23 fallos más los hallazgos de los demás (`docs/resultados-prueba-e2e.md`). Se corrigió en la misma rama.
+
+### Decisiones del dueño
+
+| Tema | Decisión | Dónde quedó |
+|---|---|---|
+| Roles | Se eliminan «Docente con sección a cargo» y «Administrador del sistema». Cualquier docente levanta reportes de conducta y responde el buzón en las secciones donde da clase o es docente a cargo; las respuestas dicen quién respondió | Migración `accounts/0002`; `permisos-roles.md` |
+| Cuotas | Mensualidad Q100 en básico y Q150 en bachillerato; inscripción Q200 por ciclo. El sistema pone el monto y el recibo (automático) | `payments/domain/fees.py`, `payments/services/payment.py`, migración `payments/0002` |
+| Becas | Solo completa o ninguna; una beca completa no genera cobros | Migración `catalog/0003`, seed |
+| Talleres | La inscripción a un taller es de la misma persona: se agrega o se saca desde el expediente, y cambiar de grado mueve la misma inscripción (no se crea otro estudiante) | `students/services/enrollment.py`, `InscripcionesPanel.vue` |
+
+### Hallazgo → corrección
+
+| Hallazgo | Causa | Corrección |
+|---|---|---|
+| Pantallas con error al entrar que se arreglan recargando; «Sección» y «Beca» solo con «Ninguna»; 403 en `/users/` | Dos ventanas comparten la cookie de refresco: al renovarse el token una ventana se volvía, sin avisar, el otro usuario. Además `opcional()` escondía el 403 | `authStore`/`http.ts`: confirman que la persona sigue siendo la misma tras renovar y las demás ventanas se enteran de un inicio o cierre de sesión. Secciones ya no pide `/users/` de forma obligatoria |
+| Coordinación no abre Secciones | La pantalla exigía la lista de usuarios (403) | Lista de docentes opcional |
+| Cruces de horario intermitentes | Las clases de asignaciones dadas de baja seguían ocupando celdas; mover un bloque no se validaba; volver a asignar chocaba con la unicidad | `schedule_block.py`, `teacher_assignment.py`: solo cuentan bloques y asignaciones vigentes del ciclo; baja lógica que libera celdas; reactivación; `PATCH` validado |
+| Mensaje en inglés al duplicar una asignación | Validador de unicidad de DRF | «X ya tiene asignado Y en esa sección» |
+| Secciones duplicadas | Sin validación | `SectionSerializer.validate` |
+| Fechas de nacimiento absurdas | Solo se rechazaba más de 100 años | Edad entre 4 y 25 años |
+| Horarios de talleres | Solo existían los períodos de la mañana | Franja de la tarde (períodos 7 a 11, de 14:00 a 19:00) para talleres; los cursos usan 1 a 6 |
+| Horario en PDF y en cuadrícula | Solo había una lista | `GET /reports/schedule-grid/` (JSON y PDF) por grado o por persona; pantalla de Reportes y de Horario |
+| Horario más fácil | — | La grilla marca celdas libres y no disponibles y permite repetir un curso en varios días |
+| María Ximena aparece dos veces en Pagos | Se listaban también las inscripciones de taller | Pagos solo lista la inscripción de grado; la solvencia de un taller es la del grado |
+| Documentos descargan con el código como nombre | `Content-Disposition` usaba el código de verificación | «Tipo - Estudiante.pdf» (UTF-8) |
+| Justificaciones confusas; un archivo bajó sin formato en una computadora | No se explicaba que primero hay que marcar «ausente»; el nombre de respaldo no tenía extensión y el tipo era `octet-stream` | Texto guía, faltas ya justificadas fuera de la lista, tipo y nombre correctos en la descarga y extensión de respaldo |
+| Buzón rompe la vista móvil con palabras largas | Texto sin `overflow-wrap` | Conversación en burbujas, con nombre y cargo, que parte palabras largas |
+| Avisos muy blancos | — | Tarjetas de color con franja lateral |
+| Selectores gigantes | `<select>` con decenas de opciones | `FormBuscador` (búsqueda con predicción) en estudiantes, vínculos, asignaciones, horario y reportes de conducta |
+| «Secciones de distintos años» indistinguibles | Etiqueta sin año | El año del ciclo en las etiquetas (`cycle_year`) |
+
+### Sin cambio o por confirmar
+
+- **Contraseña provisional como definitiva:** el backend ya la rechazaba (`test_cambiar_la_contrasena_por_la_misma_se_rechaza`); probablemente se probó con un servidor sin la corrección de la fase anterior. Re-probar.
+- **Tallerista marcando asistencia de otro taller:** el backend ya lo impide por asignación (pruebas en `test_rf21...` y `test_rf16...`); probablemente se asignaron varios talleres a `tallerista.demo`. Re-probar con una base nueva.
+- **Horarios de la tarde:** decisión del dueño: los talleres van de 14:00 a 19:00; se modelaron como cinco períodos de una hora.
+- **Inscripción de Q200:** se registra como pago y se muestra pendiente, pero no vuelve insolvente al estudiante (RN-08 sigue hablando solo de mensualidad). Confirmar si debe bloquear la constancia.

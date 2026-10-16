@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { menu } from "./utils";
+import { elegirEnBuscador, menu } from "./utils";
 
 /**
  * Fase 9 (RF-07 a RF-09, RF-11, RF-14): registrar pagos y consultar
@@ -22,6 +22,14 @@ async function elegirEstudiante(
   idSelect: string,
   fragmentoNombre: string,
 ): Promise<void> {
+  // En Pagos el estudiante se busca escribiendo (selector con búsqueda);
+  // en Documentos sigue siendo una lista.
+  const campo = page.locator(`#${idSelect}`);
+  await expect(campo).toBeVisible();
+  if ((await campo.evaluate((el) => el.tagName)) === "INPUT") {
+    await elegirEnBuscador(page, "Estudiante", fragmentoNombre);
+    return;
+  }
   const opcionesLocator = page.locator(`#${idSelect} option`);
   await expect(opcionesLocator.nth(1)).toBeAttached();
   const opciones = await opcionesLocator.allTextContents();
@@ -53,17 +61,21 @@ test("Encargado de pagos consulta solvencia, registra un pago y emite la constan
   await expect(page.getByText("Meses pendientes:")).toBeVisible();
   await expect(page.getByRole("button", { name: "Emitir constancia de solvencia" })).toBeDisabled();
 
-  const numeroRecibo = `E2E-${Date.now()}`;
+  // El monto lo fija el sistema según el grado (Q100 en básico) y el recibo
+  // se genera solo: el formulario no los pide.
   await page.getByLabel("Mes").selectOption({ label: "Enero" });
   await page.getByLabel("Año").fill("2026");
   await page.getByLabel("Año").press("Tab");
-  await page.getByLabel("Monto (Q)").fill("150.00");
-  await page.getByLabel("Monto (Q)").press("Tab");
   await page.getByLabel("Fecha de pago").fill("2026-01-05");
-  await page.getByLabel("Número de recibo").fill(numeroRecibo);
+  await expect(page.getByLabel("Monto (Q)")).toHaveCount(0);
+  await expect(page.getByLabel("Número de recibo")).toHaveCount(0);
+  await expect(page.getByText(/Monto a cobrar:/)).toContainText("Q100.00");
   await page.getByRole("button", { name: "Registrar pago" }).click();
 
-  await expect(page.locator("tr", { hasText: numeroRecibo })).toBeVisible();
+  const filaPago = page.locator("tr", { hasText: "Enero" });
+  await expect(filaPago).toBeVisible();
+  await expect(filaPago).toContainText("Q100.00");
+  await expect(filaPago).toContainText("REC-");
 });
 
 test("Dirección emite documentos generales y Pagos solo ve las constancias de solvencia", async ({ page }) => {

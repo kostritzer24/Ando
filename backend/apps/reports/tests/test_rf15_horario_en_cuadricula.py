@@ -62,7 +62,7 @@ def test_rf15_el_horario_de_un_taller_muestra_la_franja_de_la_tarde():
 
     respuesta = _client().get(f"/api/v1/reports/schedule-grid/?section={taller.public_id}")
 
-    assert [p["numero"] for p in respuesta.data["periodos"]] == [7, 8, 9]
+    assert [p["numero"] for p in respuesta.data["periodos"]] == [7, 8, 9, 10, 11]
 
 
 def test_rf15_pide_una_seccion_o_una_persona():

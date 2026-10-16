@@ -35,7 +35,7 @@ def test_rn13_hay_un_receso_de_cuarenta_minutos_entre_el_tercer_y_cuarto_periodo
     assert minutos_receso == DURACION_MINUTOS
 
 
-@pytest.mark.parametrize("numero", [0, 10, -1])
+@pytest.mark.parametrize("numero", [0, 12, -1])
 def test_rn13_periodo_fuera_de_rango_es_invalido(numero):
     with pytest.raises(PeriodoInvalido):
         horario_de_periodo(numero)

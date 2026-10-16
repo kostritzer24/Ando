@@ -1,6 +1,6 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 
-import { menu } from "./utils";
+import { elegirEnBuscador, menu } from "./utils";
 
 /**
  * Fase 11 (RF-13, RF-24, RF-25, RF-35 a RF-37, RN-16): avisos de
@@ -44,9 +44,9 @@ test("avisos: Dirección publica para todos y por sección, y cada rol ve solo l
 
   const secciones = (await (await request.get(`${API}/sections/`, { headers: authDir })).json()).results;
   const segundoBasico = secciones.find((s: { grade: string; letter: string }) => s.grade === "Segundo básico");
-  const primeroA = secciones.find(
-    (s: { grade: string; letter: string }) => s.grade === "Primero básico" && s.letter === "A",
-  );
+  // docente.demo da clases en Segundo básico y en Primero básico A; Tercero
+  // básico le es ajena.
+  const terceroBasico = secciones.find((s: { grade: string }) => s.grade === "Tercero básico");
 
   await request.post(`${API}/announcements/`, {
     headers: authDir,
@@ -64,10 +64,10 @@ test("avisos: Dirección publica para todos y por sección, y cada rol ve solo l
   await request.post(`${API}/announcements/`, {
     headers: authDir,
     data: {
-      title: "Reunión Primero básico A",
+      title: "Reunión Tercero básico",
       content: "Viernes 8am.",
       audience: "seccion",
-      target_section: primeroA.public_id,
+      target_section: terceroBasico.public_id,
     },
   });
 
@@ -77,7 +77,7 @@ test("avisos: Dirección publica para todos y por sección, y cada rol ve solo l
   await expect(page.getByRole("heading", { name: "Cartelera de avisos" })).toBeVisible();
   await expect(page.getByText("Suspensión de labores")).toBeVisible();
   await expect(page.getByText("Reunión Segundo básico")).toBeVisible();
-  await expect(page.getByText("Reunión Primero básico A")).toHaveCount(0);
+  await expect(page.getByText("Reunión Tercero básico")).toHaveCount(0);
 });
 
 test("reportes de conducta: el docente registra uno con artículos marcados y descarga el PDF", async ({
@@ -97,6 +97,7 @@ test("reportes de conducta: el docente registra uno con artículos marcados y de
   await expect(page.getByRole("heading", { name: "Reportes de conducta" })).toBeVisible();
 
   await page.getByRole("button", { name: "Registrar reporte" }).click();
+  await elegirEnBuscador(page, "Estudiante", "Diego");
   await page.getByLabel("Fecha").fill("2026-03-10");
   await page.getByLabel("Hechos ocurridos").fill("Se retiró del aula sin permiso.");
   await page.getByLabel("Medidas inmediatas tomadas").fill("Se conversó con el estudiante.");

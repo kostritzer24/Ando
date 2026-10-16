@@ -195,15 +195,16 @@ Restricción: `unique(enrollment_id, date)`. RN-11 (tardanza) fue eliminada en o
 ### `payments.Payment` — Pago
 | Columna | Tipo | Notas |
 |---|---|---|
-| enrollment_id | FK → Enrollment | |
-| period_month | integer 1–12 | |
-| period_year | integer | |
-| amount | decimal(8,2) | |
+| enrollment_id | FK → Enrollment | solo la inscripción de grado se cobra; el taller no |
+| concept | varchar | `mensualidad` (por defecto) o `inscripcion` |
+| period_month | integer 1–12, nulo | nulo en la inscripción, que es anual |
+| period_year | integer | en la inscripción, el año del ciclo |
+| amount | decimal(8,2) | **lo fija el sistema**: mensualidad Q100 en básico y Q150 en bachillerato; inscripción Q200 por ciclo |
 | payment_date | date | |
-| receipt_number | varchar, único | |
+| receipt_number | varchar, único | **automático** (`REC-<año>-<correlativo>`), nunca se recibe del cliente |
 | recorded_by_id | FK → accounts.User | solo Encargado de pagos o Dirección |
 
-Restricción: `unique(enrollment_id, period_year, period_month)`. `period_month` con `CheckConstraint` 1–12. RNF-06: cada pago registrado escribe también en `core.AuditLog` (acción `crear`).
+Restricción: `unique(enrollment_id, period_year, period_month)` y una sola inscripción (`concept = inscripcion`) por inscripción. Un estudiante con beca (completa) no genera cobros. `period_month` con `CheckConstraint` 1–12. RNF-06: cada pago registrado escribe también en `core.AuditLog` (acción `crear`).
 
 ### `catalog.Scholarship` — Beca *(corrección de la Fase 9: vive en `catalog`, no en `payments`)*
 El Capítulo IV la agrupa conceptualmente con pagos, pero es un dato maestro que Dirección administra desde la pantalla de catálogos (dato maestro 7, Fase 4) — no una tabla de la app `payments`. Se corrige acá para que el modelo documentado coincida con el código.
@@ -275,7 +276,7 @@ Es el octavo dato maestro parametrizable, no estaba en los 7 de la sección 9 or
 | sanction_type | enum: `llamado_verbal, amonestacion_escrita, comunicacion_familia, suspension_extracurricular, servicio_comunitario, suspension_clases, evaluacion_expulsion, otra` | |
 | sanction_detail | text, nullable | días de suspensión, rango de fechas, detalle del servicio comunitario o de "otra" |
 | commitments | text | "Compromisos establecidos" |
-| guide_teacher_id | FK → accounts.User | firma como Maestro Guía (impresa, RN-15) |
+| guide_teacher_id | FK → accounts.User | docente que firma (impreso, RN-15): quien levanta el reporte, o el docente a cargo si lo registra Dirección |
 | direction_member_id | FK → accounts.User, nullable | firma como Miembro de Dirección |
 
 ### `communication.ConductReportArticle` — Artículos incumplidos en un reporte *(tabla de unión, ADR-0006)*
@@ -289,8 +290,8 @@ Restricción: `unique(conduct_report_id, article_id)`. Un reporte de conducta ma
 ### `communication.Message` — Mensaje de buzón
 | Columna | Tipo | Notas |
 |---|---|---|
-| sender_id | FK → accounts.User | encargado que envía, o Dirección/maestro guía que responde |
-| section_id | FK → Section | define quién más ve el hilo: el maestro guía de esa sección y Dirección (HU-25) |
+| sender_id | FK → accounts.User | encargado que envía, o Dirección/docente que responde (la API devuelve su nombre y rol) |
+| section_id | FK → Section | define quién más ve el hilo: los docentes de esa sección (con asignación o a cargo) y Dirección (HU-25) |
 | subject | varchar | solo en el mensaje raíz |
 | content | text | |
 | original_message_id | FK → Message, nullable, self | nulo = mensaje raíz del hilo |
@@ -303,7 +304,7 @@ Restricción: `unique(conduct_report_id, article_id)`. Un reporte de conducta ma
 ### `accounts.Role` — Rol
 | Columna | Tipo | Notas |
 |---|---|---|
-| name | varchar, único | Dirección, Coordinación, Encargado de pagos, Docente, Docente con sección a cargo, Tallerista, Padre de familia, Administrador del sistema |
+| name | varchar, único | Dirección, Coordinación, Encargado de pagos, Docente, Tallerista, Padre de familia (seis roles: ya no existen «Docente con sección a cargo» ni «Administrador del sistema») |
 | permissions | JSON | mapa área → `ver / editar / sin_acceso`, ver `docs/permisos-roles.md` |
 
 ### `accounts.User` — Usuario

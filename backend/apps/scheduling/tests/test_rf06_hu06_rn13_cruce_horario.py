@@ -40,7 +40,7 @@ def test_rn13_periodo_fuera_de_rango_es_rechazado():
 
     respuesta = client.post(
         "/api/v1/schedule-blocks/",
-        {"assignment": str(asignacion.public_id), "day_of_week": "lunes", "period_number": 10},
+        {"assignment": str(asignacion.public_id), "day_of_week": "lunes", "period_number": 12},
         format="json",
     )
 

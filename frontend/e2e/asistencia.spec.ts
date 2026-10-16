@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { menu } from "./utils";
+import { elegirPrimeraDelBuscador, menu } from "./utils";
 
 /**
  * Fase 6 (RF-16, RF-12, RF-21): asistencia, justificaciones y plantilla
@@ -49,7 +49,7 @@ test("docente registra una justificación y Dirección la resuelve", async ({ pa
 
   await menu(page).getByRole("link", { name: "Justificaciones" }).click();
   await page.getByRole("button", { name: "Registrar justificación" }).click();
-  await page.getByLabel("Falta a justificar").selectOption({ index: 1 });
+  await elegirPrimeraDelBuscador(page, "Falta a justificar");
   await page.getByLabel("Tipo de justificación").selectOption({ index: 1 });
   await page.locator("#reason_detail").fill("Cita médica.");
   await page.getByRole("button", { name: "Guardar", exact: true }).click();

@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { menu } from "./utils";
+import { elegirEnBuscador, elegirPrimeraDelBuscador, menu } from "./utils";
 
 /**
  * Fase 5 (RF-03, RF-04, RF-05): expedientes, encargados y asignaciones.
@@ -23,7 +23,7 @@ test("Dirección inscribe un estudiante y el sistema le asigna el código", asyn
   await page.getByLabel("Nombres").fill("Estudiante");
   await page.getByLabel("Apellidos").fill(`Prueba ${Date.now()}`);
   await page.getByLabel("Fecha de nacimiento").fill("2012-04-10");
-  await page.getByLabel("Sección").selectOption({ index: 1 });
+  await page.getByLabel("Grado y sección").selectOption({ index: 1 });
   await page.getByRole("button", { name: "Inscribir", exact: true }).click();
 
   await expect(page.getByText(/Estudiante inscrito con el código/)).toBeVisible();
@@ -82,7 +82,7 @@ test("Dirección crea un encargado, lo vincula a un estudiante y lo desvincula",
   await expect(page.getByText(/Estudiantes vinculados a Encargado De Prueba/)).toBeVisible();
   await expect(page.getByText("Sin vínculos todavía.")).toBeVisible();
 
-  await page.locator("select").filter({ hasText: "Elige un estudiante" }).selectOption({ index: 1 });
+  await elegirPrimeraDelBuscador(page, "Estudiante");
   await page.getByPlaceholder("Parentesco (Madre, Padre, …)").fill("Tía");
   await page.getByRole("button", { name: "Vincular" }).click();
 
@@ -100,13 +100,13 @@ test("Dirección asigna un docente a un curso académico y el selector filtra po
 
   await page.getByRole("button", { name: "Agregar asignación" }).click();
   // Tercero básico no tiene asignación todavía en la siembra de demo.
-  await page.getByLabel("Sección").selectOption({ label: "Tercero básico" });
-  await expect(page.getByLabel("Docente o tallerista")).toBeEnabled();
-  const opcionesDocente = await page.getByLabel("Docente o tallerista").locator("option").allTextContents();
+  await elegirEnBuscador(page, "Sección", "Tercero básico");
+  await page.getByLabel("Docente o tallerista").click();
+  const opcionesDocente = await page.getByRole("option").allTextContents();
   expect(opcionesDocente).not.toContain("tallerista.demo");
+  await page.getByRole("option").first().click();
 
   await page.getByLabel("Curso").selectOption({ index: 1 });
-  await page.getByLabel("Docente o tallerista").selectOption({ index: 1 });
   await page.getByRole("button", { name: "Guardar" }).click();
 
   await expect(page.locator("tr", { hasText: "Tercero básico" })).toBeVisible();
@@ -116,10 +116,9 @@ test("el selector de docente filtra a Tallerista cuando la sección es de taller
   await page.goto("/administrativo/asignaciones");
   await page.getByRole("button", { name: "Agregar asignación" }).click();
   // allTextContents() no espera: primero, que la opción de taller exista.
-  await expect(page.getByLabel("Sección").locator("option", { hasText: "(taller)" })).toHaveCount(1);
-  const opcionesSeccion = await page.getByLabel("Sección").locator("option").allTextContents();
-  const etiquetaTaller = opcionesSeccion.find((o) => o.includes("taller"));
-  await page.getByLabel("Sección").selectOption({ label: etiquetaTaller });
+  await page.getByLabel("Sección", { exact: true }).click();
+  await expect(page.getByRole("option", { name: /taller/ })).toHaveCount(1);
+  await page.getByRole("option", { name: /taller/ }).click();
 
   const opciones = await page.getByLabel("Curso").locator("option").allTextContents();
   expect(opciones.some((o) => o.toLowerCase().includes("panadería"))).toBe(true);
