@@ -166,7 +166,8 @@ test("familia consulta el calendario, las notas, la asistencia y la solvencia de
   await page.getByRole("button", { name: "Asistencia" }).click();
   await expect(page.getByRole("heading", { name: "Asistencia" })).toBeVisible();
   await expect(page.getByText("Jornada matutina")).toBeVisible();
-  await expect(page.getByText("Presente")).toBeVisible();
+  // La asistencia se ve en calendario mensual: el día marcado dice "Presente".
+  await expect(page.getByRole("button", { name: /: Presente$/ })).toBeVisible();
 
   await page.getByRole("button", { name: "Pagos" }).click();
   await expect(page.getByText("Al día con los pagos.")).toBeVisible();

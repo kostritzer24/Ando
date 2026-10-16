@@ -121,6 +121,12 @@ test("buzón y RN-16: la familia escribe, el docente responde, y el lenguaje ina
   const tokenDir = await tokenPara(request, "dir.demo");
   const authDir = { Authorization: `Bearer ${tokenDir}` };
 
+  // El reporte nace en borrador: la familia lo ve cuando Dirección lo publica.
+  const reportes = (await (await request.get(`${API}/conduct-reports/`, { headers: authDir })).json()).results;
+  for (const reporte of reportes.filter((r: { status: string }) => r.status === "borrador")) {
+    await request.post(`${API}/conduct-reports/${reporte.public_id}/publish/`, { headers: authDir });
+  }
+
   const estudiantes = (await (await request.get(`${API}/students/`, { headers: authDir })).json()).results;
   const diego = estudiantes.find((e: { internal_code: string }) => e.internal_code === "ES004");
   const guardianes = (await (await request.get(`${API}/guardians/`, { headers: authDir })).json()).results;
