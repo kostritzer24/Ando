@@ -284,3 +284,22 @@ def test_rf25_un_docente_ajeno_a_la_seccion_no_ve_el_hilo():
     client = APIClient()
     client.force_authenticate(user=ajeno)
     assert client.get("/api/v1/messages/").data["count"] == 0
+
+
+def test_rf37_el_lado_administrativo_reconoce_la_familia_por_el_nombre_del_estudiante():
+    seccion = SectionFactory()
+    guia = _guia_de(seccion)
+    familia = _familia_con_hijo(seccion)
+    hijo = familia.guardian.student_links.get().student
+    client_familia = APIClient()
+    client_familia.force_authenticate(user=familia)
+    client_familia.post(
+        "/api/v1/messages/",
+        {"section": str(seccion.public_id), "subject": "Hola", "content": "Buenos días."},
+    )
+
+    client_guia = APIClient()
+    client_guia.force_authenticate(user=guia)
+    lista = client_guia.get("/api/v1/messages/").data["results"]
+
+    assert lista[0]["sender_label"] == f"Usuario familia - {hijo.nombre_completo()}"

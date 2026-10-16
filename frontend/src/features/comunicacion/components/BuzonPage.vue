@@ -110,7 +110,7 @@ onMounted(cargar);
         >
           <span class="buzon-page__resumen">
             <span class="buzon-page__asunto">{{ hilo.subject }}</span>
-            <span class="buzon-page__remitente">{{ hilo.sender_name || hilo.sender }}</span>
+            <span class="buzon-page__remitente">{{ hilo.sender_label || hilo.sender_name || hilo.sender }}</span>
           </span>
           <TagPill :variante="VARIANTE_ESTADO[hilo.status]">{{ ETIQUETA_ESTADO[hilo.status] }}</TagPill>
         </button>

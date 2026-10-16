@@ -9,15 +9,18 @@ import type { Message } from "@/shared/types/models";
  * Las palabras larguísimas se parten dentro de la burbuja en lugar de
  * ensanchar la pantalla.
  */
-defineProps<{
+const props = defineProps<{
   hilo: Message;
   respuestas: Message[];
   /** Nombre de usuario de quien mira, para saber qué burbujas son suyas. */
   usuarioActual: string;
 }>();
 
+// Lo propio se lee "Tú"; a una familia, el lado administrativo la reconoce
+// como "Usuario familia - <estudiante>".
 function quien(mensaje: Message): string {
-  return mensaje.sender_name || mensaje.sender;
+  if (mensaje.sender === props.usuarioActual) return "Tú";
+  return mensaje.sender_label || mensaje.sender_name || mensaje.sender;
 }
 
 function cargo(mensaje: Message): string {

@@ -3174,6 +3174,12 @@ export interface components {
             readonly public_id: string;
             readonly sender: string;
             readonly sender_name: string;
+            /**
+             * @description Cómo se reconoce a quien escribe en el lado administrativo: una
+             *     familia aparece como "Usuario familia - <estudiante(s)>" (los de esa
+             *     sección vinculados a la cuenta), el resto por su nombre.
+             */
+            readonly sender_label: string;
             readonly sender_role: string;
             /** Format: uuid */
             section: string;

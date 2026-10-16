@@ -114,14 +114,17 @@ onMounted(cargar);
 
       <h2>Buzón</h2>
       <p class="avisos-page__ayuda">Escríbele a la sección de tu hijo o hija. Te responde su docente o Dirección.</p>
-      <ErrorBanner v-if="errorEnvio" :mensaje="errorEnvio" />
-      <form class="avisos-page__formulario" @submit.prevent="enviar">
-        <FormField id="subject" etiqueta="Asunto" v-model="formulario.subject" />
-        <FormField id="content" etiqueta="Mensaje" multilinea v-model="formulario.content" />
-        <AppButton tipo="submit" :deshabilitado="enviando || !formulario.subject || !formulario.content">
-          {{ enviando ? "Enviando…" : "Enviar" }}
-        </AppButton>
-      </form>
+      <details class="avisos-page__nuevo" :open="hilos.length === 0">
+        <summary>Escribir un mensaje nuevo</summary>
+        <ErrorBanner v-if="errorEnvio" :mensaje="errorEnvio" />
+        <form class="avisos-page__formulario" @submit.prevent="enviar">
+          <FormField id="subject" etiqueta="Asunto" v-model="formulario.subject" />
+          <FormField id="content" etiqueta="Mensaje" multilinea v-model="formulario.content" />
+          <AppButton tipo="submit" :deshabilitado="enviando || !formulario.subject || !formulario.content">
+            {{ enviando ? "Enviando…" : "Enviar" }}
+          </AppButton>
+        </form>
+      </details>
 
       <EmptyState
         v-if="hilos.length === 0"
@@ -130,7 +133,12 @@ onMounted(cargar);
       />
       <ul v-else class="avisos-page__hilos">
         <li v-for="hilo in hilos" :key="hilo.public_id" class="avisos-page__hilo">
-          <h3 class="avisos-page__asunto">{{ hilo.subject }}</h3>
+          <div class="avisos-page__hilo-cabecera">
+            <h3 class="avisos-page__asunto">{{ hilo.subject }}</h3>
+            <TagPill :variante="respuestasDe(hilo).length > 0 ? 'taller' : 'aviso'">
+              {{ respuestasDe(hilo).length > 0 ? "Respondido" : "Esperando respuesta" }}
+            </TagPill>
+          </div>
           <ConversacionHilo
             :hilo="hilo"
             :respuestas="respuestasDe(hilo)"
@@ -233,5 +241,40 @@ onMounted(cargar);
   margin: 0 0 var(--espacio-xs);
   font-size: var(--texto-base);
   overflow-wrap: anywhere;
+}
+
+.avisos-page__nuevo {
+  margin-bottom: var(--espacio-md);
+  padding: var(--espacio-sm) var(--espacio-md);
+  background: var(--color-papel);
+  border: 1px solid var(--color-linea);
+  border-radius: var(--radio-lg);
+}
+
+.avisos-page__nuevo > summary {
+  min-height: var(--area-tactil-minima);
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.avisos-page__hilo {
+  padding: var(--espacio-md);
+  background: var(--color-papel);
+  border: 1px solid var(--color-linea);
+  border-radius: var(--radio-lg);
+}
+
+.avisos-page__hilo-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espacio-sm);
+  margin-bottom: var(--espacio-sm);
+}
+
+.avisos-page__hilo-cabecera .avisos-page__asunto {
+  margin: 0;
 }
 </style>
