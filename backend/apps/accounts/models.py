@@ -30,8 +30,7 @@ NIVELES_PERMISO = ["ver", "editar", "sin_acceso"]
 
 class Role(models.Model):
     """Rol (RNF-03): Dirección, Coordinación, Encargado de pagos, Docente,
-    Docente con sección a cargo, Tallerista, Padre de familia,
-    Administrador del sistema — ver docs/permisos-roles.md."""
+    Tallerista, Padre de familia — ver docs/permisos-roles.md."""
 
     public_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     name = models.CharField("nombre", max_length=60, unique=True)

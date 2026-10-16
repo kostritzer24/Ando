@@ -1,5 +1,5 @@
 """
-Semilla mínima de la Fase 3: los 8 roles de docs/permisos-roles.md con su
+Semilla mínima de la Fase 3: los 6 roles de docs/permisos-roles.md con su
 matriz de permisos, más un usuario ficticio por rol para poder probar
 inicio de sesión y permisos de punta a punta. No es el comando de
 demostración completo de la sección 16 (ese llega cuando existan más
@@ -78,23 +78,6 @@ _MATRIZ: dict[str, dict[str, str]] = {
         "pagos_solvencia": _S,
         "documentos": _S,
         "avisos": _V,
-        "reportes_conducta": _S,
-        "buzon": _S,
-        "reportes_institucionales": _S,
-        "bitacora_registro_acceso": _S,
-    },
-    "Docente con sección a cargo": {
-        "usuarios_roles": _S,
-        "datos_maestros": _S,
-        "estudiantes_encargados": _V,
-        "datos_sensibles": _S,
-        "horarios_calendario": _E,
-        "asistencia": _E,
-        "notas": _E,
-        "modificacion_notas": _S,
-        "pagos_solvencia": _S,
-        "documentos": _S,
-        "avisos": _V,
         "reportes_conducta": _E,
         "buzon": _E,
         "reportes_institucionales": _S,
@@ -134,23 +117,6 @@ _MATRIZ: dict[str, dict[str, str]] = {
         "reportes_institucionales": _S,
         "bitacora_registro_acceso": _S,
     },
-    "Administrador del sistema": {
-        "usuarios_roles": _E,
-        "datos_maestros": _E,
-        "estudiantes_encargados": _V,
-        "datos_sensibles": _V,
-        "horarios_calendario": _V,
-        "asistencia": _V,
-        "notas": _V,
-        "modificacion_notas": _S,
-        "pagos_solvencia": _V,
-        "documentos": _V,
-        "avisos": _V,
-        "reportes_conducta": _V,
-        "buzon": _S,
-        "reportes_institucionales": _V,
-        "bitacora_registro_acceso": _V,
-    },
 }
 
 _USERNAME_POR_ROL = {
@@ -158,10 +124,8 @@ _USERNAME_POR_ROL = {
     "Coordinación": "coord.demo",
     "Encargado de pagos": "pagos.demo",
     "Docente": "docente.demo",
-    "Docente con sección a cargo": "guia.demo",
     "Tallerista": "tallerista.demo",
     "Padre de familia": "familia.demo",
-    "Administrador del sistema": "admin.demo",
 }
 
 # Contraseña de siembra ficticia, solo para desarrollo — nunca se usa en
@@ -170,7 +134,7 @@ _CONTRASENA_SIEMBRA = "CambiaEstaClave2026"
 
 
 class Command(BaseCommand):
-    help = "Crea los 8 roles y un usuario de demostración por rol (Fase 3)."
+    help = "Crea los 6 roles y un usuario de demostración por rol (Fase 3)."
 
     @transaction.atomic
     def handle(self, *args, **options):

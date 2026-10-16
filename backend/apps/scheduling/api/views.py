@@ -27,8 +27,8 @@ from .serializers import (
 
 ROL_FAMILIA = "Padre de familia"
 
-_ROLES_SIN_ALCANCE_LIMITADO = {"Dirección", "Coordinación", "Administrador del sistema"}
-_ROLES_DOCENTES = {"Docente", "Docente con sección a cargo", "Tallerista"}
+_ROLES_SIN_ALCANCE_LIMITADO = {"Dirección", "Coordinación"}
+_ROLES_DOCENTES = {"Docente", "Tallerista"}
 ROL_DIRECCION = "Dirección"
 
 

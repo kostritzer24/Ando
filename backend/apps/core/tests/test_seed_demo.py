@@ -11,8 +11,8 @@ from apps.students.models import Enrollment, Guardian, GuardianStudentLink, Stud
 def test_seed_demo_crea_roles_usuarios_y_datos_maestros():
     call_command("seed_demo")
 
-    assert Role.objects.count() == 8
-    assert User.objects.count() == 8
+    assert Role.objects.count() == 6
+    assert User.objects.count() == 6
 
     ciclo = SchoolCycle.objects.get(year=2026)
     assert GradingUnit.objects.filter(cycle=ciclo).count() == 4
@@ -32,8 +32,8 @@ def test_seed_demo_crea_expedientes_y_asignaciones():
     # Dos hijos, no uno: sección 16 del prompt maestro pide el flujo de
     # extremo a punta "consultar el portal como encargado con dos hijos".
     assert GuardianStudentLink.objects.filter(is_active=True).count() == 2
-    # docente.demo (Matemática), guia.demo (Comunicación, su propia
-    # sección) y tallerista.demo (Panadería).
+    # docente.demo (Matemática y Comunicación, su propia sección) y
+    # tallerista.demo (Panadería).
     assert TeacherAssignment.objects.count() == 3
 
 
@@ -47,6 +47,6 @@ def test_seed_demo_es_idempotente():
     assert Section.objects.filter(cycle__year=2026).count() == 7
     assert ConductRuleArticle.objects.count() == 16
     assert Student.objects.count() == 4
-    # docente.demo (Matemática), guia.demo (Comunicación, su propia
-    # sección) y tallerista.demo (Panadería).
+    # docente.demo (Matemática y Comunicación, su propia sección) y
+    # tallerista.demo (Panadería).
     assert TeacherAssignment.objects.count() == 3

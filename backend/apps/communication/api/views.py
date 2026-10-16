@@ -31,9 +31,9 @@ from .serializers import (
     MessageSerializer,
 )
 
-_ROLES_SIN_ALCANCE_LIMITADO = {"Dirección", "Coordinación", "Administrador del sistema"}
+_ROLES_SIN_ALCANCE_LIMITADO = {"Dirección", "Coordinación"}
 ROL_DIRECCION = "Dirección"
-_ROLES_DOCENTES = {"Docente", "Docente con sección a cargo", "Tallerista"}
+_ROLES_DOCENTES = {"Docente", "Tallerista"}
 
 
 def _secciones_del_docente(user):
@@ -41,6 +41,17 @@ def _secciones_del_docente(user):
 
     return TeacherAssignment.objects.filter(teacher=user, is_active=True).values_list(
         "section_id", flat=True
+    )
+
+
+def _secciones_a_cargo_o_asignadas(user):
+    """Secciones donde un docente puede actuar en el buzón y en los
+    reportes de conducta: las que tiene asignadas (cualquier curso) y
+    aquella de la que figura como docente a cargo."""
+    from apps.catalog.models import Section
+
+    return set(_secciones_del_docente(user)) | set(
+        Section.objects.filter(homeroom_teacher=user).values_list("id", flat=True)
     )
 
 
@@ -111,10 +122,9 @@ class ConductReportViewSet(
     mixins.RetrieveModelMixin,
     viewsets.GenericViewSet,
 ):
-    """RF-24/RF-35. `guide_teacher` es siempre el maestro guía de la
-    sección de la inscripción (quien firma), no necesariamente quien
-    llena el formulario — Dirección también puede registrar un reporte
-    de una sección que no es la suya."""
+    """RF-24/RF-35. `guide_teacher` es el docente que firma: quien levanta
+    el reporte, o el docente a cargo de la sección si lo registra
+    Dirección."""
 
     queryset = ConductReport.objects.all()
     permission_classes = [PermisoPorArea]
@@ -127,8 +137,8 @@ class ConductReportViewSet(
     def scope_queryset(self, queryset, user):
         if user.role.name in _ROLES_SIN_ALCANCE_LIMITADO:
             return queryset
-        if user.role.name == "Docente con sección a cargo":
-            return queryset.filter(enrollment__section__homeroom_teacher=user)
+        if user.role.name == "Docente":
+            return queryset.filter(enrollment__section_id__in=_secciones_a_cargo_o_asignadas(user))
         if user.role.name == "Padre de familia":
             return queryset.filter(
                 enrollment__student__guardian_links__guardian__user=user,
@@ -147,16 +157,17 @@ class ConductReportViewSet(
         # `article_id=` del FK en `ConductReportArticle`.
         article_ids = [a.id for a in datos.pop("article_ids", [])]
 
-        guide_teacher = enrollment.section.homeroom_teacher
-        if guide_teacher is None:
-            raise ValidationError("Esa sección todavía no tiene maestro guía asignado.")
-        if (
-            request.user.role.name == "Docente con sección a cargo"
-            and guide_teacher != request.user
-        ):
-            raise PermissionDenied(
-                "Solo el maestro guía de esa sección puede registrar este reporte."
-            )
+        # Quien firma es el docente que levanta el reporte. Si lo registra
+        # Dirección, firma el docente a cargo de la sección (o, si no hay,
+        # Dirección misma).
+        if request.user.role.name == "Docente":
+            if enrollment.section_id not in _secciones_a_cargo_o_asignadas(request.user):
+                raise PermissionDenied(
+                    "Solo un docente de esa sección puede registrar este reporte."
+                )
+            guide_teacher = request.user
+        else:
+            guide_teacher = enrollment.section.homeroom_teacher or request.user
 
         reporte = crear_reporte(
             enrollment=enrollment,
@@ -194,8 +205,8 @@ class MessageViewSet(
     mixins.RetrieveModelMixin,
     viewsets.GenericViewSet,
 ):
-    """RF-25/RF-37. Un hilo es del encargado que lo empezó — lo ven él, el
-    maestro guía de la sección y Dirección (HU-25/HU-37)."""
+    """RF-25/RF-37. Un hilo es del encargado que lo empezó — lo ven él, los
+    docentes de la sección y Dirección (HU-25/HU-37)."""
 
     queryset = Message.objects.all()
     serializer_class = MessageSerializer
@@ -206,8 +217,8 @@ class MessageViewSet(
     def scope_queryset(self, queryset, user):
         if user.role.name == ROL_DIRECCION:
             return queryset
-        if user.role.name == "Docente con sección a cargo":
-            return queryset.filter(section__homeroom_teacher=user)
+        if user.role.name == "Docente":
+            return queryset.filter(section_id__in=_secciones_a_cargo_o_asignadas(user))
         if user.role.name == "Padre de familia":
             return queryset.filter(
                 Q(sender=user, original_message__isnull=True) | Q(original_message__sender=user)
@@ -245,8 +256,8 @@ class MessageViewSet(
         hilo_raiz = get_object_or_404(
             self.get_queryset(), public_id=public_id, original_message__isnull=True
         )
-        if request.user.role.name not in {ROL_DIRECCION, "Docente con sección a cargo"}:
-            raise PermissionDenied("Solo la dirección o el maestro guía de la sección responden.")
+        if request.user.role.name not in {ROL_DIRECCION, "Docente"}:
+            raise PermissionDenied("Solo la dirección o los docentes de la sección responden.")
         serializer = MessageReplySerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:

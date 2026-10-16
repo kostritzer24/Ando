@@ -32,31 +32,6 @@ def test_direccion_puede_leer_y_editar_datos_sensibles():
 
 
 @pytest.mark.django_db
-def test_administrador_puede_leer_pero_no_editar_datos_sensibles():
-    """Confirmado en el cierre de la Fase 1: Administrador ve (no
-    edita) los datos sensibles — docs/permisos-roles.md, nota 9."""
-    rol = RoleFactory(
-        name="Administrador del sistema",
-        permissions={"estudiantes_encargados": "ver", "datos_sensibles": "ver"},
-    )
-    admin = UserFactory(role=rol)
-    estudiante = StudentFactory()
-
-    client = APIClient()
-    client.force_authenticate(user=admin)
-
-    respuesta_lectura = client.get(f"/api/v1/students/{estudiante.public_id}/sensitive/")
-    assert respuesta_lectura.status_code == 200
-
-    respuesta_escritura = client.patch(
-        f"/api/v1/students/{estudiante.public_id}/sensitive/",
-        {"health_notes": "No debería poder escribir esto."},
-        format="json",
-    )
-    assert respuesta_escritura.status_code == 403
-
-
-@pytest.mark.django_db
 def test_docente_no_alcanza_los_datos_sensibles_acceso_no_autorizado():
     rol = RoleFactory(
         name="Docente",

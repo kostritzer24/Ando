@@ -24,7 +24,7 @@ test("RF-01: el administrador crea una cuenta, la persona cambia su contraseña 
 }) => {
   const nombreUsuario = `prueba.${Date.now()}`;
 
-  await entrarComo(page, "admin.demo");
+  await entrarComo(page, "dir.demo");
   await expect(page).toHaveURL(/\/administrativo$/);
   await menu(page).getByRole("link", { name: "Usuarios" }).click();
   await expect(page.getByRole("heading", { name: "Usuarios", level: 1 })).toBeVisible();
@@ -48,7 +48,7 @@ test("RF-01: el administrador crea una cuenta, la persona cambia su contraseña 
   await expect(page).toHaveURL(/\/cambiar-contrasena$/);
   await page.goto("/ingresar");
 
-  await entrarComo(page, "admin.demo");
+  await entrarComo(page, "dir.demo");
   await expect(page).toHaveURL(/\/administrativo$/);
   await page.goto("/administrativo/usuarios");
   await page.getByPlaceholder("Buscar por nombre o usuario").fill(nombreUsuario);
@@ -64,7 +64,7 @@ test("RF-01: el administrador crea una cuenta, la persona cambia su contraseña 
 test("RNF-03: el menú sale de la matriz del rol — el administrador ve Asistencia en consulta, pero no Buzón", async ({
   page,
 }) => {
-  await entrarComo(page, "admin.demo");
+  await entrarComo(page, "dir.demo");
   await expect(page).toHaveURL(/\/administrativo$/);
 
   await expect(menu(page).getByRole("link", { name: "Bitácora" })).toBeVisible();

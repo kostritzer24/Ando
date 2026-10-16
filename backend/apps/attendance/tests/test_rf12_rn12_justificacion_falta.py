@@ -190,7 +190,7 @@ def test_rf12_seccion14_4_rechaza_un_archivo_demasiado_pesado():
 
 @pytest.mark.django_db
 def test_solo_direccion_resuelve_justificaciones_acceso_no_autorizado():
-    rol_guia = RoleFactory(name="Docente con sección a cargo", permissions={"asistencia": "editar"})
+    rol_guia = RoleFactory(name="Docente", permissions={"asistencia": "editar"})
     guia = UserFactory(role=rol_guia)
     asistencia = AttendanceFactory(status=Attendance.ESTADO_AUSENTE)
     tipo = JustificationType.objects.create(name="Motivo familiar")

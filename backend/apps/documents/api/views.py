@@ -16,7 +16,7 @@ from ..models import IssuedDocument
 from ..services.issuance import TipoDeDocumentoNoPermitido, emitir_documento_general
 from .serializers import DocumentIssueSerializer, IssuedDocumentSerializer
 
-_ROLES_SIN_ALCANCE_LIMITADO = {"Dirección", "Coordinación", "Administrador del sistema"}
+_ROLES_SIN_ALCANCE_LIMITADO = {"Dirección", "Coordinación"}
 ROL_DIRECCION = "Dirección"
 ROL_PAGOS = "Encargado de pagos"
 

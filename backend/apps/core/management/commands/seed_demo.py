@@ -159,11 +159,11 @@ class Command(BaseCommand):
                 "Creadas las 4 unidades del ciclo, con sus fechas calculadas (RN-10)."
             )
 
-        maestro_guia = User.objects.filter(username="guia.demo").first()
+        docente_a_cargo = User.objects.filter(username="docente.demo").first()
         for indice, (grade, letter, tipo) in enumerate(_SECCIONES):
             if Section.objects.filter(cycle=ciclo, grade=grade, letter=letter).exists():
                 continue
-            homeroom_teacher = maestro_guia if indice == 0 else None
+            homeroom_teacher = docente_a_cargo if indice == 0 else None
             crear_seccion(
                 cycle=ciclo,
                 grade=grade,
@@ -278,29 +278,26 @@ class Command(BaseCommand):
             except AsignacionInvalida:
                 pass
 
-        # El maestro guía también da un curso a su propia sección — no solo
-        # firma boletines y reportes de conducta (sección 2 del prompt
-        # maestro): sin una TeacherAssignment propia no llega ni a la lista
-        # de sus propios estudiantes (RF-24), porque ese alcance se filtra
-        # siempre por asignación docente, nunca por `homeroom_teacher`.
-        guia = User.objects.filter(username="guia.demo").first()
+        # El docente a cargo también da un curso a su propia sección (sin una
+        # TeacherAssignment propia no llega a la lista de sus estudiantes,
+        # porque ese alcance se filtra siempre por asignación docente).
         comunicacion = Course.objects.filter(name="Comunicación y lenguaje L1").first()
         primero_basico_a = Section.objects.filter(
             cycle=ciclo, grade="Primero básico", letter="A", type=Section.TIPO_ACADEMICA
         ).first()
         if (
-            guia
+            docente
             and comunicacion
             and primero_basico_a
             and not TeacherAssignment.objects.filter(
-                teacher=guia, course=comunicacion, section=primero_basico_a, cycle=ciclo
+                teacher=docente, course=comunicacion, section=primero_basico_a, cycle=ciclo
             ).exists()
         ):
             try:
                 crear_asignacion(
-                    teacher=guia, course=comunicacion, section=primero_basico_a, cycle=ciclo
+                    teacher=docente, course=comunicacion, section=primero_basico_a, cycle=ciclo
                 )
-                self.stdout.write("Maestro guía de demostración asignado a su propia sección.")
+                self.stdout.write("Docente de demostración asignado a su propia sección.")
             except AsignacionInvalida:
                 pass
 

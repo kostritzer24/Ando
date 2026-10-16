@@ -105,7 +105,7 @@ def test_rf13_aviso_de_seccion_solo_lo_ve_quien_esta_conectado_a_esa_seccion():
         published_by=dir_user,
     )
 
-    rol_guia = RoleFactory(name="Docente con sección a cargo", permissions={"avisos": "ver"})
+    rol_guia = RoleFactory(name="Docente", permissions={"avisos": "ver"})
     guia_de_a = UserFactory(role=rol_guia)
     seccion_a.homeroom_teacher = guia_de_a
     seccion_a.save(update_fields=["homeroom_teacher"])

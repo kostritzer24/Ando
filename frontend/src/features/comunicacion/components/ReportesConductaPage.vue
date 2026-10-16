@@ -26,7 +26,7 @@ const SANCIONES = [
   { valor: "otra", etiqueta: "Otra" },
 ];
 
-// Registran el maestro guía (de su sección) y Dirección; el resto de los
+// Registran los docentes (de sus secciones) y Dirección; el resto de los
 // roles que llegan acá solo consulta (docs/permisos-roles.md).
 const permisos = usePermisos();
 const puedeRegistrar = computed(() => permisos.puedeEditar("reportes_conducta"));

@@ -77,7 +77,7 @@ async function cargar(): Promise<void> {
     const [asignacionesResp, bloquesResp, docentesResp, talleristasResp] = await Promise.all([
       assignmentsApi.listar(),
       scheduleBlocksApi.listar(),
-      opcional(listarUsuariosPorRoles(["Docente", "Docente con sección a cargo"]), []),
+      opcional(listarUsuariosPorRoles(["Docente"]), []),
       opcional(listarUsuariosPorRoles(["Tallerista"]), []),
     ]);
     asignaciones.value = asignacionesResp.results;

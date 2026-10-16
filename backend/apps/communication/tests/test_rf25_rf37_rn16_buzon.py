@@ -22,7 +22,7 @@ def _familia_con_hijo(seccion):
 
 
 def _guia_de(seccion):
-    rol = RoleFactory(name="Docente con sección a cargo", permissions={"buzon": "editar"})
+    rol = RoleFactory(name="Docente", permissions={"buzon": "editar"})
     guia = UserFactory(role=rol)
     seccion.homeroom_teacher = guia
     seccion.save(update_fields=["homeroom_teacher"])
@@ -242,3 +242,45 @@ def test_rn16_con_la_cuenta_bloqueada_no_se_puede_seguir_enviando_mensajes():
 
     assert segundo.status_code == 400
     assert Message.objects.filter(sender=familia).count() == 0
+
+
+def test_rf25_un_docente_asignado_a_la_seccion_responde_y_la_respuesta_dice_quien_fue():
+    from apps.scheduling.tests.factories import TeacherAssignmentFactory
+
+    seccion = SectionFactory()
+    familia = _familia_con_hijo(seccion)
+    docente = UserFactory(role=RoleFactory(name="Docente", permissions={"buzon": "editar"}))
+    TeacherAssignmentFactory(teacher=docente, section=seccion, cycle=seccion.cycle)
+
+    client_familia = APIClient()
+    client_familia.force_authenticate(user=familia)
+    client_familia.post(
+        "/api/v1/messages/",
+        {"section": str(seccion.public_id), "subject": "Consulta", "content": "Hola"},
+    )
+
+    client_docente = APIClient()
+    client_docente.force_authenticate(user=docente)
+    hilo_id = client_docente.get("/api/v1/messages/").data["results"][0]["public_id"]
+    respuesta = client_docente.post(f"/api/v1/messages/{hilo_id}/reply/", {"content": "Hola."})
+
+    assert respuesta.status_code == 201
+    assert respuesta.data["sender_role"] == "Docente"
+    assert respuesta.data["sender_name"] == docente.nombre_completo()
+
+
+def test_rf25_un_docente_ajeno_a_la_seccion_no_ve_el_hilo():
+    seccion = SectionFactory()
+    familia = _familia_con_hijo(seccion)
+    ajeno = UserFactory(role=RoleFactory(name="Docente", permissions={"buzon": "editar"}))
+
+    client_familia = APIClient()
+    client_familia.force_authenticate(user=familia)
+    client_familia.post(
+        "/api/v1/messages/",
+        {"section": str(seccion.public_id), "subject": "Consulta", "content": "Hola"},
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=ajeno)
+    assert client.get("/api/v1/messages/").data["count"] == 0

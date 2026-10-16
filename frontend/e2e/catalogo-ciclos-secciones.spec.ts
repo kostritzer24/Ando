@@ -3,8 +3,8 @@ import { expect, test } from "@playwright/test";
 /**
  * Fase 4 (RF-02): las dos pantallas de catálogo con lógica propia —
  * Ciclos con sus unidades anidadas, y Secciones con el selector de
- * maestro guía. Requiere `manage.py seed_demo` (crea el ciclo 2026 con
- * sus 4 unidades, 7 secciones y `guia.demo` con rol "Docente con
+ * docente a cargo. Requiere `manage.py seed_demo` (crea el ciclo 2026 con
+ * sus 4 unidades, 7 secciones y `docente.demo` con rol "Docente con
  * sección a cargo").
  */
 test.beforeEach(async ({ page }) => {
@@ -48,7 +48,7 @@ test("Dirección crea un ciclo, agrega una unidad y ve las fechas calculadas; la
   await expect(tablaUnidades).toContainText(`15/04/${anio}`);
 });
 
-test("Dirección crea una sección académica con maestro guía", async ({ page }) => {
+test("Dirección crea una sección académica con docente a cargo", async ({ page }) => {
   await page.goto("/administrativo/catalogo/secciones");
   await expect(page.getByRole("heading", { name: "Secciones" })).toBeVisible();
 
@@ -56,16 +56,16 @@ test("Dirección crea una sección académica con maestro guía", async ({ page 
   await page.getByLabel("Grado").fill("Sexto bachillerato");
   await page.getByLabel("Letra").fill("");
   await page.getByLabel("Tipo").selectOption("academica");
-  await expect(page.getByLabel("Maestro guía")).toBeVisible();
-  await page.getByLabel("Maestro guía").selectOption({ index: 1 });
+  await expect(page.getByLabel("Docente a cargo")).toBeVisible();
+  await page.getByLabel("Docente a cargo").selectOption({ index: 1 });
   await page.getByRole("button", { name: "Guardar" }).click();
 
   await expect(page.locator("tr", { hasText: "Sexto bachillerato" })).toBeVisible();
 });
 
-test("el selector de maestro guía se esconde para una sección de taller", async ({ page }) => {
+test("el selector de docente a cargo se esconde para una sección de taller", async ({ page }) => {
   await page.goto("/administrativo/catalogo/secciones");
   await page.getByRole("button", { name: "Agregar sección" }).click();
   await page.getByLabel("Tipo").selectOption("taller");
-  await expect(page.getByLabel("Maestro guía")).toHaveCount(0);
+  await expect(page.getByLabel("Docente a cargo")).toHaveCount(0);
 });

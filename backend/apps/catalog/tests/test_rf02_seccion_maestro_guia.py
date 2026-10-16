@@ -11,7 +11,7 @@ from .factories import SchoolCycleFactory, SectionFactory
 def test_seccion_taller_con_maestro_guia_es_rechazada_por_la_api():
     rol_direccion = RoleFactory(name="Dirección", permissions={"datos_maestros": "editar"})
     direccion = UserFactory(role=rol_direccion)
-    rol_guia = RoleFactory(name="Docente con sección a cargo")
+    rol_guia = RoleFactory(name="Docente")
     maestro = UserFactory(role=rol_guia)
     ciclo = SchoolCycleFactory()
 
@@ -37,7 +37,7 @@ def test_seccion_taller_con_maestro_guia_es_rechazada_por_la_api():
 def test_seccion_academica_con_maestro_guia_se_crea_correctamente():
     rol_direccion = RoleFactory(name="Dirección", permissions={"datos_maestros": "editar"})
     direccion = UserFactory(role=rol_direccion)
-    rol_guia = RoleFactory(name="Docente con sección a cargo")
+    rol_guia = RoleFactory(name="Docente")
     maestro = UserFactory(role=rol_guia)
     ciclo = SchoolCycleFactory()
 
@@ -105,7 +105,7 @@ def test_editar_letra_de_una_seccion_academica_existente():
 def test_no_se_puede_convertir_a_taller_una_seccion_con_maestro_guia():
     rol_direccion = RoleFactory(name="Dirección", permissions={"datos_maestros": "editar"})
     direccion = UserFactory(role=rol_direccion)
-    rol_guia = RoleFactory(name="Docente con sección a cargo")
+    rol_guia = RoleFactory(name="Docente")
     maestro = UserFactory(role=rol_guia)
     seccion = SectionFactory(type=Section.TIPO_ACADEMICA, homeroom_teacher=maestro)
 

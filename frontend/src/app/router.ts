@@ -38,22 +38,15 @@ const catalogoRecursos = {
   articulosConvivencia: comoRecursoGenerico(articulosConvivenciaApi),
 };
 
-const ROLES_ADMINISTRATIVO = [
-  "Dirección",
-  "Coordinación",
-  "Encargado de pagos",
-  "Administrador del sistema",
-];
-const ROLES_OPERATIVO = ["Docente", "Docente con sección a cargo", "Tallerista"];
+const ROLES_ADMINISTRATIVO = ["Dirección", "Coordinación", "Encargado de pagos"];
+const ROLES_OPERATIVO = ["Docente", "Tallerista"];
 const ROLES_PUBLICO = ["Padre de familia"];
 
 export const DESTINO_POR_ROL: Record<string, string> = {
   Dirección: "/administrativo",
   Coordinación: "/administrativo",
   "Encargado de pagos": "/administrativo",
-  "Administrador del sistema": "/administrativo",
   Docente: "/operativo",
-  "Docente con sección a cargo": "/operativo",
   Tallerista: "/operativo",
   "Padre de familia": "/portal",
 };

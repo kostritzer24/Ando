@@ -23,8 +23,8 @@ const auth = useAuthStore();
 
 // Cada opción declara su área de docs/permisos-roles.md; AdminShell la
 // filtra con la matriz del rol. Tallerista no ve Notas porque su rol no
-// tiene esa área (ADR-0001: los talleres no califican), y solo el maestro
-// guía tiene Reportes de conducta y Buzón.
+// tiene esa área (ADR-0001: los talleres no califican). Reportes de conducta
+// y Buzón los tiene el rol Docente, no el Tallerista.
 const navegacion = computed<GrupoNavegacion[]>(() => [
   { items: [{ a: "/operativo", etiqueta: "Inicio", icono: House, exacto: true }] },
   {

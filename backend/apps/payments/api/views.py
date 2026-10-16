@@ -21,7 +21,6 @@ _ROLES_SIN_ALCANCE_LIMITADO = {
     "Dirección",
     "Coordinación",
     "Encargado de pagos",
-    "Administrador del sistema",
 }
 
 

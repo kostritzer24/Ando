@@ -71,10 +71,9 @@ _ROLES_SIN_ALCANCE_LIMITADO = {
     "Dirección",
     "Coordinación",
     "Encargado de pagos",
-    "Administrador del sistema",
 }
-_ROLES_SIN_ALCANCE_LIMITADO_BOLETIN = {"Dirección", "Coordinación", "Administrador del sistema"}
-_ROLES_DOCENTES_QUE_CALIFICAN = {"Docente", "Docente con sección a cargo"}
+_ROLES_SIN_ALCANCE_LIMITADO_BOLETIN = {"Dirección", "Coordinación"}
+_ROLES_DOCENTES_QUE_CALIFICAN = {"Docente"}
 ROL_DIRECCION = "Dirección"
 
 

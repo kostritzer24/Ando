@@ -17,7 +17,7 @@ import { assignmentsApi, listarUsuariosPorRoles } from "../api/asignacionesApi";
 type Usuario = components["schemas"]["User"];
 
 const ROLES_POR_TIPO_CURSO: Record<string, string[]> = {
-  academico: ["Docente", "Docente con sección a cargo"],
+  academico: ["Docente"],
   taller: ["Tallerista"],
 };
 
@@ -89,7 +89,7 @@ async function cargar(): Promise<void> {
         assignmentsApi.listar(),
         seccionesApi.listar(),
         cursosApi.listar(),
-        opcional(listarUsuariosPorRoles(["Docente", "Docente con sección a cargo"]), []),
+        opcional(listarUsuariosPorRoles(["Docente"]), []),
         opcional(listarUsuariosPorRoles(["Tallerista"]), []),
       ]);
     asignaciones.value = asignacionesResp.results;

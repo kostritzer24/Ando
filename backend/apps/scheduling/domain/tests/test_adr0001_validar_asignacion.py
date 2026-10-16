@@ -43,5 +43,5 @@ def test_docente_con_seccion_a_cargo_puede_dar_un_curso_academico():
     validar_asignacion(
         course_type="academico",
         section_type="academica",
-        teacher_role_name="Docente con sección a cargo",
+        teacher_role_name="Docente",
     )

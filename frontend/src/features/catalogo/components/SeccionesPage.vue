@@ -2,6 +2,7 @@
 import { computed, onMounted, reactive, ref } from "vue";
 
 import { mensajeDelServidor } from "@/shared/api/errores";
+import { opcional } from "@/shared/api/opcional";
 import { AppButton, AppModal, CargandoBloque, DataTable, EmptyState, ErrorBanner, FormField, FormSelect, PageHeader } from "@/shared/components";
 import { usePermisos } from "@/shared/permisos";
 import { avisar } from "@/shared/composables/useAvisos";
@@ -9,7 +10,7 @@ import { confirmar } from "@/shared/composables/useConfirmar";
 import type { components } from "@/shared/types/api";
 import type { SchoolCycle, Section } from "@/shared/types/models";
 
-import { ciclosApi, listarDocentesConSeccion, seccionesApi } from "../api/catalogoApi";
+import { ciclosApi, listarDocentes, seccionesApi } from "../api/catalogoApi";
 
 type Usuario = components["schemas"]["User"];
 
@@ -66,7 +67,9 @@ async function cargar(): Promise<void> {
     const [seccionesResp, ciclosResp, docentesResp] = await Promise.all([
       seccionesApi.listar(),
       ciclosApi.listar(),
-      listarDocentesConSeccion(),
+      // Coordinación ve las secciones pero no la lista de usuarios (403):
+      // sin docentes el selector queda vacío, la pantalla sí carga.
+      opcional(listarDocentes(), []),
     ]);
     secciones.value = seccionesResp.results;
     ciclos.value = ciclosResp.results;
@@ -217,14 +220,14 @@ onMounted(cargar);
         <FormField
           id="letter"
           etiqueta="Letra"
-          pista="Dejalo vacío si el grado tiene un solo grupo"
+          pista="Déjalo vacío si el grado tiene un solo grupo"
           v-model="formulario.letter"
         />
         <FormSelect id="type" etiqueta="Tipo" :opciones="OPCIONES_TIPO" v-model="formulario.type" />
         <FormSelect
           v-if="formulario.type === 'academica'"
           id="homeroom_teacher"
-          etiqueta="Maestro guía"
+          etiqueta="Docente a cargo"
           :opciones="opcionesDocente"
           v-model="formulario.homeroom_teacher"
         />

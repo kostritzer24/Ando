@@ -74,7 +74,7 @@ class Section(BaseModel):
     type = models.CharField("tipo", max_length=20, choices=TIPOS)
     homeroom_teacher = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        verbose_name="maestro guía",
+        verbose_name="docente a cargo",
         on_delete=models.PROTECT,
         related_name="secciones_a_cargo",
         null=True,

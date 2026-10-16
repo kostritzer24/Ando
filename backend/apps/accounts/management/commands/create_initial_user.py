@@ -24,7 +24,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--role",
             required=True,
-            help="Nombre exacto del rol (por ejemplo, 'Administrador del sistema').",
+            help="Nombre exacto del rol (por ejemplo, 'Dirección').",
         )
         parser.add_argument("--email", default="")
 

@@ -5,7 +5,7 @@ import { menu } from "./utils";
 /**
  * Fase 5 (RF-03, RF-04, RF-05): expedientes, encargados y asignaciones.
  * Requiere `manage.py seed_demo` (secciones, cursos, ES001..ES004,
- * docente.demo/guia.demo/tallerista.demo con sus asignaciones).
+ * docente.demo/docente.demo/tallerista.demo con sus asignaciones).
  */
 test.beforeEach(async ({ page }) => {
   await page.goto("/ingresar");

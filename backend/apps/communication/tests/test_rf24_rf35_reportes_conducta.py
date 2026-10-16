@@ -19,9 +19,7 @@ def _direccion():
 
 
 def _guia_de(seccion):
-    rol = RoleFactory(
-        name="Docente con sección a cargo", permissions={"reportes_conducta": "editar"}
-    )
+    rol = RoleFactory(name="Docente", permissions={"reportes_conducta": "editar"})
     guia = UserFactory(role=rol)
     seccion.homeroom_teacher = guia
     seccion.save(update_fields=["homeroom_teacher"])
@@ -213,3 +211,23 @@ def test_rf24_el_formato_lista_todo_el_catalogo_y_marca_solo_lo_registrado():
     ]
     # El formato deja tres renglones de compromisos; los que faltan quedan en blanco.
     assert len(contenido["compromisos"]) == 3
+
+
+def test_rf24_un_docente_asignado_a_la_seccion_registra_un_reporte_y_firma_el():
+    from apps.scheduling.tests.factories import TeacherAssignmentFactory
+
+    seccion = SectionFactory()
+    docente = UserFactory(
+        role=RoleFactory(name="Docente", permissions={"reportes_conducta": "editar"})
+    )
+    TeacherAssignmentFactory(teacher=docente, section=seccion, cycle=seccion.cycle)
+    inscripcion = EnrollmentFactory(section=seccion, cycle=seccion.cycle)
+
+    client = APIClient()
+    client.force_authenticate(user=docente)
+    respuesta = client.post(
+        "/api/v1/conduct-reports/", {**_DATOS_BASE, "enrollment": str(inscripcion.public_id)}
+    )
+
+    assert respuesta.status_code == 201
+    assert respuesta.data["guide_teacher"] == docente.username

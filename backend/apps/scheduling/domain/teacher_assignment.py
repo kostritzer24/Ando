@@ -5,7 +5,7 @@ cursos, talleristas a talleres": el rol de quien se asigna tiene que
 corresponder al tipo de curso."""
 
 ROLES_VALIDOS_POR_TIPO_CURSO = {
-    "academico": {"Docente", "Docente con sección a cargo"},
+    "academico": {"Docente"},
     "taller": {"Tallerista"},
 }
 

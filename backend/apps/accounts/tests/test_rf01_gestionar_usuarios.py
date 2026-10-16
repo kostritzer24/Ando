@@ -23,7 +23,7 @@ def cliente(admin):
 @pytest.mark.django_db
 def test_rf01_editar_nombre_y_rol_deja_bitacora_con_valor_anterior_y_nuevo(cliente):
     docente = RoleFactory(name="Docente")
-    guia = RoleFactory(name="Docente con sección a cargo")
+    guia = RoleFactory(name="Tallerista")
     persona = UserFactory(username="p.lopez", first_name="Pedro", role=docente)
 
     respuesta = cliente.patch(
@@ -38,7 +38,7 @@ def test_rf01_editar_nombre_y_rol_deja_bitacora_con_valor_anterior_y_nuevo(clien
     assert persona.role == guia
     registro = AuditLog.objects.get(entity_name="accounts.User", entity_id=persona.id)
     assert registro.old_value == {"first_name": "Pedro", "role": "Docente"}
-    assert registro.new_value == {"first_name": "Pedro José", "role": "Docente con sección a cargo"}
+    assert registro.new_value == {"first_name": "Pedro José", "role": "Tallerista"}
 
 
 @pytest.mark.django_db

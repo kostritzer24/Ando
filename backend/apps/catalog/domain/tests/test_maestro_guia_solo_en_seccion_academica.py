@@ -7,7 +7,7 @@ from apps.catalog.models import Section
 
 
 class _MaestroGuiaFalso:
-    role = type("Rol", (), {"name": "Docente con sección a cargo"})()
+    role = type("Rol", (), {"name": "Docente"})()
 
 
 def test_seccion_taller_con_maestro_guia_es_invalida():

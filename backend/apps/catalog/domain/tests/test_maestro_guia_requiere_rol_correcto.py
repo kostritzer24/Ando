@@ -18,12 +18,12 @@ class _UsuarioFalso:
 
 
 def test_maestro_guia_con_rol_correcto_es_valido():
-    validar_maestro_guia(Section.TIPO_ACADEMICA, _UsuarioFalso("Docente con sección a cargo"))
+    validar_maestro_guia(Section.TIPO_ACADEMICA, _UsuarioFalso("Docente"))
 
 
-def test_maestro_guia_con_rol_de_docente_comun_es_invalido():
+def test_docente_a_cargo_con_rol_de_coordinacion_es_invalido():
     with pytest.raises(MaestroGuiaInvalido):
-        validar_maestro_guia(Section.TIPO_ACADEMICA, _UsuarioFalso("Docente"))
+        validar_maestro_guia(Section.TIPO_ACADEMICA, _UsuarioFalso("Coordinación"))
 
 
 def test_maestro_guia_con_rol_ajeno_es_invalido():

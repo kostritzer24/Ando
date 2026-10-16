@@ -34,9 +34,8 @@ _ROLES_SIN_ALCANCE_LIMITADO = {
     "Dirección",
     "Coordinación",
     "Encargado de pagos",
-    "Administrador del sistema",
 }
-_ROLES_DOCENTES = {"Docente", "Docente con sección a cargo", "Tallerista"}
+_ROLES_DOCENTES = {"Docente", "Tallerista"}
 
 
 def _seccion_asignada_al_docente(user, section) -> bool:

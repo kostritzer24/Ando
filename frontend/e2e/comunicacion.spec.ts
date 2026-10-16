@@ -8,7 +8,7 @@ import { menu } from "./utils";
  * y buzón con filtro de lenguaje inapropiado y bloqueo temporal — en los
  * tres portales (administrativo/operativo para Dirección y el maestro
  * guía, portal público para la familia). Requiere `manage.py seed_demo`
- * (guia.demo es maestro guía de "Primero básico A", donde está inscrito
+ * (docente.demo es docente a cargo de "Primero básico A", donde está inscrito
  * Diego Alejandro Ramírez Cabrera; docente.demo da Matemática en
  * "Segundo básico").
  *
@@ -80,7 +80,7 @@ test("avisos: Dirección publica para todos y por sección, y cada rol ve solo l
   await expect(page.getByText("Reunión Primero básico A")).toHaveCount(0);
 });
 
-test("reportes de conducta: el maestro guía registra uno con artículos marcados y descarga el PDF", async ({
+test("reportes de conducta: el docente registra uno con artículos marcados y descarga el PDF", async ({
   page,
   request,
 }) => {
@@ -91,7 +91,7 @@ test("reportes de conducta: el maestro guía registra uno con artículos marcado
   ).results;
   const primerArticulo = articulos[0];
 
-  await entrarComo(page, "guia.demo");
+  await entrarComo(page, "docente.demo");
   await expect(page).toHaveURL(/\/operativo$/);
   await menu(page).getByRole("link", { name: "Reportes de conducta" }).click();
   await expect(page.getByRole("heading", { name: "Reportes de conducta" })).toBeVisible();
@@ -113,7 +113,7 @@ test("reportes de conducta: el maestro guía registra uno con artículos marcado
   await descarga;
 });
 
-test("buzón y RN-16: la familia escribe, el maestro guía responde, y el lenguaje inapropiado se rechaza", async ({
+test("buzón y RN-16: la familia escribe, el docente responde, y el lenguaje inapropiado se rechaza", async ({
   page,
   request,
 }) => {
@@ -141,7 +141,7 @@ test("buzón y RN-16: la familia escribe, el maestro guía responde, y el lengua
     data: { section: inscripcionDiego.section, subject: "Consulta", content: "¿Hay actividad el viernes?" },
   });
 
-  await entrarComo(page, "guia.demo");
+  await entrarComo(page, "docente.demo");
   await expect(page).toHaveURL(/\/operativo$/);
   await menu(page).getByRole("link", { name: "Buzón" }).click();
   await expect(page.getByRole("heading", { name: "Buzón" })).toBeVisible();
@@ -157,7 +157,7 @@ test("buzón y RN-16: la familia escribe, el maestro guía responde, y el lengua
   await page.getByRole("button", { name: "Cambiar estudiante" }).click();
   await page.getByRole("button", { name: /Diego Alejandro Ramírez Cabrera/ }).click();
 
-  // RF-35: el reporte de conducta que registró guia.demo en la prueba
+  // RF-35: el reporte de conducta que registró docente.demo en la prueba
   // anterior ya debería verse en el portal de la familia.
   await page.getByRole("button", { name: "Asistencia" }).click();
   await expect(page.getByText("Se retiró del aula sin permiso.")).toBeVisible();

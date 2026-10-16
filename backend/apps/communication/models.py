@@ -98,7 +98,7 @@ class ConductReport(BaseModel):
     commitments = models.TextField("compromisos establecidos")
     guide_teacher = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        verbose_name="maestro guía",
+        verbose_name="docente que firma",
         on_delete=models.PROTECT,
         related_name="conduct_reports_as_guide",
     )

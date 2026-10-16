@@ -86,6 +86,8 @@ class ConductReportCreateSerializer(serializers.Serializer):
 
 class MessageSerializer(serializers.ModelSerializer):
     sender = serializers.CharField(source="sender.username", read_only=True)
+    sender_name = serializers.SerializerMethodField()
+    sender_role = serializers.CharField(source="sender.role.name", read_only=True)
     section = serializers.SlugRelatedField(slug_field="public_id", queryset=Section.objects.all())
     original_message = serializers.SlugRelatedField(slug_field="public_id", read_only=True)
 
@@ -94,6 +96,8 @@ class MessageSerializer(serializers.ModelSerializer):
         fields = [
             "public_id",
             "sender",
+            "sender_name",
+            "sender_role",
             "section",
             "subject",
             "content",
@@ -103,6 +107,9 @@ class MessageSerializer(serializers.ModelSerializer):
             "is_active",
         ]
         read_only_fields = ["public_id", "sender", "original_message", "status", "created_at"]
+
+    def get_sender_name(self, mensaje) -> str:
+        return mensaje.sender.nombre_completo()
 
 
 class MessageReplySerializer(serializers.Serializer):
