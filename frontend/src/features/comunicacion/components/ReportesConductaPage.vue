@@ -6,8 +6,14 @@ import { enrollmentsApi, studentsApi } from "@/features/estudiantes/api/estudian
 import { AppButton, AppModal, CargandoBloque, DataTable, EmptyState, ErrorBanner, FormBuscador, FormField, FormSelect, PageHeader } from "@/shared/components";
 import type { ConductReport, ConductRuleArticle, Enrollment, Student } from "@/shared/types/models";
 
-import { conductReportsApi, crearReporteConducta, descargarReporteConducta } from "../api/comunicacionApi";
+import {
+  conductReportsApi,
+  crearReporteConducta,
+  descargarReporteConducta,
+  publicarReporteConducta,
+} from "../api/comunicacionApi";
 import { descargarArchivo } from "@/features/pagos/api/pagosApi";
+import { useAuthStore } from "@/features/auth/stores/authStore";
 import { usePermisos } from "@/shared/permisos";
 
 const GRAVEDADES = [
@@ -30,6 +36,10 @@ const SANCIONES = [
 // roles que llegan acá solo consulta (docs/permisos-roles.md).
 const permisos = usePermisos();
 const puedeRegistrar = computed(() => permisos.puedeEditar("reportes_conducta"));
+// Publicar es una regla de negocio (solo Dirección), no un área de la matriz.
+const auth = useAuthStore();
+const puedePublicar = computed(() => auth.usuario?.role_name === "Dirección");
+const publicandoId = ref("");
 
 const cargando = ref(true);
 const error = ref("");
@@ -142,6 +152,19 @@ async function descargar(reporte: ConductReport): Promise<void> {
   }
 }
 
+async function publicar(reporte: ConductReport): Promise<void> {
+  publicandoId.value = reporte.public_id;
+  try {
+    const actualizado = await publicarReporteConducta(reporte.public_id);
+    const indice = reportes.value.findIndex((r) => r.public_id === reporte.public_id);
+    reportes.value[indice] = actualizado;
+  } catch {
+    error.value = "No se pudo publicar el reporte. Inténtalo de nuevo.";
+  } finally {
+    publicandoId.value = "";
+  }
+}
+
 onMounted(cargar);
 </script>
 
@@ -178,6 +201,7 @@ onMounted(cargar);
           { clave: 'report_date', etiqueta: 'Fecha' },
           { clave: 'severity', etiqueta: 'Tipo de falta' },
           { clave: 'sanction_type', etiqueta: 'Sanción' },
+          { clave: 'estado', etiqueta: 'Estado' },
         ]"
         :filas="
           reportes.map((r) => ({
@@ -185,10 +209,20 @@ onMounted(cargar);
             estudiante: nombreEstudiante(r.enrollment),
             severity: GRAVEDADES.find((g) => g.valor === r.severity)?.etiqueta ?? r.severity,
             sanction_type: SANCIONES.find((s) => s.valor === r.sanction_type)?.etiqueta ?? r.sanction_type,
+            estado: r.status === 'publicado' ? 'Publicado' : 'Borrador',
           }))
         "
       >
         <template #acciones="{ fila }">
+          <AppButton
+            v-if="puedePublicar && (fila as unknown as ConductReport).status === 'borrador'"
+            variante="discreto"
+            compacto
+            :deshabilitado="publicandoId === (fila as unknown as ConductReport).public_id"
+            @click="publicar(fila as unknown as ConductReport)"
+          >
+            Publicar
+          </AppButton>
           <AppButton
             variante="discreto"
             compacto

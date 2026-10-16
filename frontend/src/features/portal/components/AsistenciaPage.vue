@@ -8,12 +8,8 @@ import type { Attendance, ConductReport } from "@/shared/types/models";
 
 import { attendanceApi } from "../api/portalApi";
 import AsistenciaCalendario from "./AsistenciaCalendario.vue";
+import ReportesConductaFamilia from "./ReportesConductaFamilia.vue";
 
-const ETIQUETA_GRAVEDAD: Record<string, string> = {
-  leve: "Leve",
-  grave: "Grave",
-  muy_grave: "Muy grave",
-};
 
 const portal = usePortalStore();
 
@@ -90,17 +86,7 @@ onMounted(cargar);
       </div>
 
       <h2>Reportes de conducta</h2>
-      <EmptyState
-        v-if="reportesPropios.length === 0"
-        titulo="No hay reportes de conducta"
-        descripcion="Los reportes de conducta registrados van a aparecer aquí."
-      />
-      <ul v-else class="asistencia-page__reportes">
-        <li v-for="reporte in reportesPropios" :key="reporte.public_id" class="asistencia-page__reporte">
-          <p class="asistencia-page__reporte-fecha">{{ reporte.report_date }} — {{ ETIQUETA_GRAVEDAD[reporte.severity] }}</p>
-          <p>{{ reporte.incident_description }}</p>
-        </li>
-      </ul>
+      <ReportesConductaFamilia :reportes="reportesPropios" />
     </template>
   </section>
 </template>
@@ -114,19 +100,4 @@ onMounted(cargar);
 }
 
 
-.asistencia-page__reportes {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.asistencia-page__reporte {
-  padding: var(--espacio-sm) 0;
-  border-bottom: 1px solid var(--color-linea);
-}
-
-.asistencia-page__reporte-fecha {
-  margin: 0;
-  font-weight: 600;
-}
 </style>

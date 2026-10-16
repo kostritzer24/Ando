@@ -310,24 +310,7 @@ export interface paths {
         patch: operations["v1_attendance_partial_update"];
         trace?: never;
     };
-    "/api/v1/attendance/template/{section_public_id}/{fecha}/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** @description GET /attendance/template/{section_public_id}/{fecha}/ — RF-21. */
-        get: operations["v1_attendance_template_retrieve"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/attendance/template/upload/": {
+    "/api/v1/attendance/mark-all-present/": {
         parameters: {
             query?: never;
             header?: never;
@@ -337,11 +320,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * @description POST /attendance/template/upload/ — RF-21. Un solo paso: si hay
-         *     errores, no guarda nada y los devuelve (la vista previa de la
-         *     sección 14.4); si no hay errores, guarda directo.
+         * @description POST /attendance/mark-all-present/ — deja presentes a quienes aún
+         *     no tienen asistencia ese día; después solo se corrigen las faltas.
          */
-        post: operations["v1_attendance_template_upload_create"];
+        post: operations["v1_attendance_mark_all_present_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -614,6 +596,23 @@ export interface paths {
         get: operations["v1_conduct_reports_download_retrieve"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/conduct-reports/{public_id}/publish/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description POST /conduct-reports/{public_id}/publish/ — solo Dirección. */
+        post: operations["v1_conduct_reports_publish_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2791,6 +2790,13 @@ export interface components {
             readonly guide_teacher: string;
             readonly direction_member: string;
             readonly articles: string[];
+            /** Estado */
+            readonly status: components["schemas"]["ConductReportStatusEnum"];
+            /**
+             * Fecha de publicación
+             * Format: date-time
+             */
+            readonly published_at: string | null;
             /** Activo */
             is_active?: boolean;
         };
@@ -2810,6 +2816,12 @@ export interface components {
             commitments: string;
             article_ids?: string[];
         };
+        /**
+         * @description * `borrador` - Borrador
+         *     * `publicado` - Publicado
+         * @enum {string}
+         */
+        ConductReportStatusEnum: "borrador" | "publicado";
         ConductRuleArticle: {
             /** Format: uuid */
             readonly public_id: string;
@@ -3114,6 +3126,13 @@ export interface components {
         Login: {
             username: string;
             password: string;
+        };
+        /** @description Deja a todos presentes en un día; `section` vacío = toda la jornada. */
+        MarcarPresentes: {
+            /** Format: date */
+            date: string;
+            /** Format: uuid */
+            section?: string | null;
         };
         /**
          * @description `/auth/me/`: la persona más los permisos de su rol por área
@@ -5094,65 +5113,28 @@ export interface operations {
             };
         };
     };
-    v1_attendance_template_retrieve: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                fecha: string;
-                section_public_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
-    v1_attendance_template_upload_create: {
+    v1_attendance_mark_all_present_create: {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody?: {
+        requestBody: {
             content: {
-                "multipart/form-data": {
-                    /** Format: uuid */
-                    section: string;
-                    /** Format: date */
-                    date: string;
-                    /** Format: binary */
-                    file: string;
-                };
+                "application/json": components["schemas"]["MarcarPresentes"];
+                "application/x-www-form-urlencoded": components["schemas"]["MarcarPresentes"];
+                "multipart/form-data": components["schemas"]["MarcarPresentes"];
             };
         };
         responses: {
-            201: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": {
-                        creados?: number;
-                    };
-                };
-            };
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        errores?: unknown[];
+                        creadas?: number;
                     };
                 };
             };
@@ -5456,6 +5438,7 @@ export interface operations {
                             course?: string;
                             section?: string;
                             section_type?: string;
+                            jornada?: string;
                             teacher?: string;
                         }[];
                         events?: Record<string, never>[];
@@ -5544,6 +5527,33 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConductReport"];
+                };
+            };
+        };
+    };
+    v1_conduct_reports_publish_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                public_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConductReport"];
+                "application/x-www-form-urlencoded": components["schemas"]["ConductReport"];
+                "multipart/form-data": components["schemas"]["ConductReport"];
+            };
+        };
         responses: {
             200: {
                 headers: {
@@ -8173,6 +8183,7 @@ export interface operations {
                         period_number?: number;
                         course?: string;
                         section?: string;
+                        jornada?: string;
                     }[];
                 };
             };

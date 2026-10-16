@@ -12,6 +12,11 @@ export async function crearReporteConducta(payload: ConductReportCreate): Promis
   return data;
 }
 
+export async function publicarReporteConducta(publicId: string): Promise<ConductReport> {
+  const { data } = await http.post<ConductReport>(`/conduct-reports/${publicId}/publish/`);
+  return data;
+}
+
 export async function responderMensaje(publicId: string, content: string): Promise<Message> {
   const { data } = await http.post<Message>(`/messages/${publicId}/reply/`, { content });
   return data;
