@@ -1,13 +1,16 @@
 <script setup lang="ts">
-import { isAxiosError } from "axios";
 import { computed, onMounted, reactive, ref, watch } from "vue";
 
 import { announcementsApi, messagesApi } from "@/features/comunicacion/api/comunicacionApi";
+import ConversacionHilo from "@/features/comunicacion/components/ConversacionHilo.vue";
+import { useAuthStore } from "@/features/auth/stores/authStore";
+import { mensajeDelServidor } from "@/shared/api/errores";
 import { usePortalStore } from "@/features/portal/stores/portalStore";
-import { AppButton, CargandoBloque, EmptyState, ErrorBanner, FormField, PageHeader } from "@/shared/components";
+import { AppButton, CargandoBloque, EmptyState, ErrorBanner, FormField, PageHeader, TagPill } from "@/shared/components";
 import type { Announcement, Message } from "@/shared/types/models";
 
 const portal = usePortalStore();
+const auth = useAuthStore();
 
 const cargando = ref(true);
 const error = ref("");
@@ -60,12 +63,18 @@ async function enviar(): Promise<void> {
     formulario.content = "";
     await cargar();
   } catch (err) {
-    errorEnvio.value = isAxiosError(err) && Array.isArray(err.response?.data)
-      ? String(err.response.data[0])
-      : "No se pudo enviar el mensaje. Inténtalo de nuevo.";
+    errorEnvio.value = mensajeDelServidor(err, "No se pudo enviar el mensaje. Inténtalo de nuevo.");
   } finally {
     enviando.value = false;
   }
+}
+
+function fechaAviso(aviso: Announcement): string {
+  return new Date(aviso.published_at).toLocaleDateString("es-GT", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
 }
 
 watch(() => portal.estudianteSeleccionadoId, cargar);
@@ -86,18 +95,29 @@ onMounted(cargar);
         descripcion="Los avisos de la cartelera van a aparecer aquí."
       />
       <ul v-else class="avisos-page__lista">
-        <li v-for="aviso in avisos" :key="aviso.public_id" class="avisos-page__aviso">
-          <p class="avisos-page__titulo">{{ aviso.title }}</p>
-          <p>{{ aviso.content }}</p>
-          <p class="avisos-page__fecha">{{ new Date(aviso.published_at).toLocaleDateString("es-GT") }}</p>
+        <li
+          v-for="aviso in avisos"
+          :key="aviso.public_id"
+          class="avisos-page__aviso"
+          :class="{ 'avisos-page__aviso--seccion': aviso.audience === 'seccion' }"
+        >
+          <div class="avisos-page__cabecera">
+            <TagPill :variante="aviso.audience === 'seccion' ? 'hoy' : 'aviso'">
+              {{ aviso.audience === "seccion" ? "Para tu sección" : "Para todos" }}
+            </TagPill>
+            <time class="avisos-page__fecha" :datetime="aviso.published_at">{{ fechaAviso(aviso) }}</time>
+          </div>
+          <h3 class="avisos-page__titulo">{{ aviso.title }}</h3>
+          <p class="avisos-page__contenido">{{ aviso.content }}</p>
         </li>
       </ul>
 
       <h2>Buzón</h2>
+      <p class="avisos-page__ayuda">Escríbele a la sección de tu hijo o hija. Te responde su docente o Dirección.</p>
       <ErrorBanner v-if="errorEnvio" :mensaje="errorEnvio" />
       <form class="avisos-page__formulario" @submit.prevent="enviar">
         <FormField id="subject" etiqueta="Asunto" v-model="formulario.subject" />
-        <FormField id="content" etiqueta="Mensaje" v-model="formulario.content" />
+        <FormField id="content" etiqueta="Mensaje" multilinea v-model="formulario.content" />
         <AppButton tipo="submit" :deshabilitado="enviando || !formulario.subject || !formulario.content">
           {{ enviando ? "Enviando…" : "Enviar" }}
         </AppButton>
@@ -110,12 +130,12 @@ onMounted(cargar);
       />
       <ul v-else class="avisos-page__hilos">
         <li v-for="hilo in hilos" :key="hilo.public_id" class="avisos-page__hilo">
-          <p class="avisos-page__titulo">{{ hilo.subject }}</p>
-          <p>{{ hilo.content }}</p>
-          <div v-for="respuesta in respuestasDe(hilo)" :key="respuesta.public_id" class="avisos-page__respuesta">
-            <p class="avisos-page__fecha">Respuesta:</p>
-            <p>{{ respuesta.content }}</p>
-          </div>
+          <h3 class="avisos-page__asunto">{{ hilo.subject }}</h3>
+          <ConversacionHilo
+            :hilo="hilo"
+            :respuestas="respuestasDe(hilo)"
+            :usuario-actual="auth.usuario?.username ?? ''"
+          />
         </li>
       </ul>
     </template>
@@ -123,11 +143,20 @@ onMounted(cargar);
 </template>
 
 <style scoped>
+.avisos-page {
+  min-width: 0;
+}
 
 .avisos-page h2 {
   font-family: var(--fuente-titulo);
-  font-size: var(--texto-base);
-  margin: var(--espacio-xl) 0 var(--espacio-md);
+  font-size: var(--texto-md);
+  margin: var(--espacio-xl) 0 var(--espacio-xs);
+}
+
+.avisos-page__ayuda {
+  margin: 0 0 var(--espacio-md);
+  color: var(--color-tinta-suave);
+  font-size: var(--texto-sm);
 }
 
 .avisos-page__lista,
@@ -135,23 +164,53 @@ onMounted(cargar);
   list-style: none;
   margin: 0;
   padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-md);
 }
 
-.avisos-page__aviso,
-.avisos-page__hilo {
-  padding: var(--espacio-md) 0;
-  border-bottom: 1px solid var(--color-linea);
+/* Los avisos son lo primero que se busca: tarjeta con color propio y
+   franja lateral, no una línea más sobre fondo blanco. */
+.avisos-page__aviso {
+  padding: var(--espacio-md) var(--espacio-lg);
+  background: var(--color-etiqueta-aviso-fondo);
+  color: var(--color-etiqueta-aviso-texto);
+  border-left: 6px solid #d9a400;
+  border-radius: var(--radio-lg);
+  min-width: 0;
+}
+
+.avisos-page__aviso--seccion {
+  background: var(--color-etiqueta-hoy-fondo);
+  color: var(--color-etiqueta-hoy-texto);
+  border-left-color: var(--color-accion);
+}
+
+.avisos-page__cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espacio-sm);
+  margin-bottom: var(--espacio-xs);
 }
 
 .avisos-page__titulo {
+  margin: 0 0 var(--espacio-2xs);
+  font-family: var(--fuente-titulo);
+  font-size: var(--texto-md);
+  overflow-wrap: anywhere;
+}
+
+.avisos-page__contenido {
   margin: 0;
-  font-weight: 700;
+  color: var(--color-tinta);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .avisos-page__fecha {
-  margin: var(--espacio-2xs) 0 0;
   font-size: var(--texto-sm);
-  color: var(--color-tinta-suave);
+  font-weight: 600;
 }
 
 .avisos-page__formulario {
@@ -162,10 +221,17 @@ onMounted(cargar);
   margin-bottom: var(--espacio-lg);
 }
 
-.avisos-page__respuesta {
-  margin-top: var(--espacio-sm);
-  padding: var(--espacio-sm);
-  background: var(--color-fondo);
-  border-radius: var(--radio-md);
+.avisos-page__formulario :deep(.form-field) {
+  width: 100%;
+}
+
+.avisos-page__hilo {
+  min-width: 0;
+}
+
+.avisos-page__asunto {
+  margin: 0 0 var(--espacio-xs);
+  font-size: var(--texto-base);
+  overflow-wrap: anywhere;
 }
 </style>

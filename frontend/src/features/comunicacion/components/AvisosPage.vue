@@ -129,7 +129,12 @@ onMounted(cargar);
         descripcion="Los avisos publicados van a aparecer aquí."
       />
       <ul v-else class="avisos-page__lista">
-        <li v-for="aviso in avisos" :key="aviso.public_id" class="avisos-page__fila">
+        <li
+          v-for="aviso in avisos"
+          :key="aviso.public_id"
+          class="avisos-page__fila"
+          :class="{ 'avisos-page__fila--seccion': aviso.audience === 'seccion' }"
+        >
           <div class="avisos-page__contenido">
             <p class="avisos-page__titulo">{{ aviso.title }}</p>
             <p class="avisos-page__texto">{{ aviso.content }}</p>
@@ -147,7 +152,7 @@ onMounted(cargar);
       <form class="avisos-page__formulario" @submit.prevent="guardar">
         <ErrorBanner v-if="errorGuardado" :mensaje="errorGuardado" />
         <FormField id="title" etiqueta="Título" v-model="formulario.title" />
-        <FormField id="content" etiqueta="Contenido" v-model="formulario.content" />
+        <FormField id="content" etiqueta="Contenido" multilinea v-model="formulario.content" />
         <FormSelect
           id="audience"
           etiqueta="Destinatario"
@@ -184,15 +189,31 @@ onMounted(cargar);
   list-style: none;
   margin: var(--espacio-lg) 0 0;
   padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-md);
 }
 
+/* Tarjetas de color con franja lateral: la cartelera se tiene que leer de
+   un vistazo, no parecer una lista más sobre fondo blanco. */
 .avisos-page__fila {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--espacio-md);
-  padding: var(--espacio-md) 0;
-  border-bottom: 1px solid var(--color-linea);
+  padding: var(--espacio-md) var(--espacio-lg);
+  background: var(--color-etiqueta-aviso-fondo);
+  border-left: 6px solid #d9a400;
+  border-radius: var(--radio-lg);
+}
+
+.avisos-page__fila--seccion {
+  background: var(--color-etiqueta-hoy-fondo);
+  border-left-color: var(--color-accion);
+}
+
+.avisos-page__contenido {
+  min-width: 0;
 }
 
 .avisos-page__titulo {
@@ -202,6 +223,8 @@ onMounted(cargar);
 
 .avisos-page__texto {
   margin: var(--espacio-2xs) 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .avisos-page__meta {

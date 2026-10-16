@@ -1,10 +1,14 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from "vue";
 
+import { useAuthStore } from "@/features/auth/stores/authStore";
+import { mensajeDelServidor } from "@/shared/api/errores";
 import { AppButton, CargandoBloque, EmptyState, ErrorBanner, FormField, PageHeader, TagPill } from "@/shared/components";
+import { usePermisos } from "@/shared/permisos";
 import type { Message } from "@/shared/types/models";
 
 import { messagesApi, responderMensaje } from "../api/comunicacionApi";
+import ConversacionHilo from "./ConversacionHilo.vue";
 
 const ETIQUETA_ESTADO: Record<string, string> = {
   enviado: "Nuevo",
@@ -16,6 +20,10 @@ const VARIANTE_ESTADO: Record<string, "aviso" | "hoy" | "taller"> = {
   leido: "hoy",
   respondido: "taller",
 };
+
+const auth = useAuthStore();
+const permisos = usePermisos();
+const puedeResponder = computed(() => permisos.puedeEditar("buzon"));
 
 const cargando = ref(true);
 const error = ref("");
@@ -62,8 +70,11 @@ async function responder(hilo: Message): Promise<void> {
     await responderMensaje(hilo.public_id, contenidoRespuesta.texto);
     contenidoRespuesta.texto = "";
     await cargar();
-  } catch {
-    errorRespuesta.value = "No se pudo enviar la respuesta. Revisa el contenido e inténtalo de nuevo.";
+  } catch (e) {
+    errorRespuesta.value = mensajeDelServidor(
+      e,
+      "No se pudo enviar la respuesta. Revisa el contenido e inténtalo de nuevo.",
+    );
   } finally {
     respondiendo.value = false;
   }
@@ -74,7 +85,7 @@ onMounted(cargar);
 
 <template>
   <section class="buzon-page">
-    <PageHeader titulo="Buzón" />
+    <PageHeader titulo="Buzón" descripcion="Mensajes de las familias a cada sección. Responde cualquier docente de la sección o Dirección." />
 
     <ErrorBanner v-if="error" :mensaje="error" etiqueta-accion="Reintentar" @accion="cargar" />
     <CargandoBloque v-else-if="cargando" />
@@ -85,26 +96,36 @@ onMounted(cargar);
       descripcion="Los mensajes que envíen las familias van a aparecer aquí."
     />
     <ul v-else class="buzon-page__lista">
-      <li v-for="hilo in hilos" :key="hilo.public_id" class="buzon-page__hilo">
-        <button type="button" class="buzon-page__cabecera" @click="abrirHilo(hilo)">
-          <div>
-            <p class="buzon-page__asunto">{{ hilo.subject }}</p>
-            <p class="buzon-page__remitente">{{ hilo.sender }}</p>
-          </div>
+      <li
+        v-for="hilo in hilos"
+        :key="hilo.public_id"
+        class="buzon-page__hilo"
+        :class="{ 'buzon-page__hilo--abierto': hiloAbiertoId === hilo.public_id }"
+      >
+        <button
+          type="button"
+          class="buzon-page__cabecera"
+          :aria-expanded="hiloAbiertoId === hilo.public_id"
+          @click="abrirHilo(hilo)"
+        >
+          <span class="buzon-page__resumen">
+            <span class="buzon-page__asunto">{{ hilo.subject }}</span>
+            <span class="buzon-page__remitente">{{ hilo.sender_name || hilo.sender }}</span>
+          </span>
           <TagPill :variante="VARIANTE_ESTADO[hilo.status]">{{ ETIQUETA_ESTADO[hilo.status] }}</TagPill>
         </button>
 
         <div v-if="hiloAbiertoId === hilo.public_id" class="buzon-page__detalle">
-          <p class="buzon-page__mensaje">{{ hilo.content }}</p>
-          <div v-for="respuesta in respuestasDe(hilo)" :key="respuesta.public_id" class="buzon-page__respuesta">
-            <p class="buzon-page__remitente">{{ respuesta.sender }}</p>
-            <p class="buzon-page__mensaje">{{ respuesta.content }}</p>
-          </div>
+          <ConversacionHilo
+            :hilo="hilo"
+            :respuestas="respuestasDe(hilo)"
+            :usuario-actual="auth.usuario?.username ?? ''"
+          />
 
           <ErrorBanner v-if="errorRespuesta" :mensaje="errorRespuesta" />
-          <form class="buzon-page__formulario" @submit.prevent="responder(hilo)">
-            <FormField id="respuesta" etiqueta="Responder" v-model="contenidoRespuesta.texto" />
-            <AppButton tipo="submit" :deshabilitado="respondiendo || !contenidoRespuesta.texto">
+          <form v-if="puedeResponder" class="buzon-page__formulario" @submit.prevent="responder(hilo)">
+            <FormField id="respuesta" etiqueta="Responder" multilinea v-model="contenidoRespuesta.texto" />
+            <AppButton tipo="submit" :deshabilitado="respondiendo || !contenidoRespuesta.texto.trim()">
               {{ respondiendo ? "Enviando…" : "Enviar respuesta" }}
             </AppButton>
           </form>
@@ -115,15 +136,29 @@ onMounted(cargar);
 </template>
 
 <style scoped>
+.buzon-page {
+  min-width: 0;
+}
 
 .buzon-page__lista {
   list-style: none;
   margin: 0;
   padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-sm);
 }
 
 .buzon-page__hilo {
-  border-bottom: 1px solid var(--color-linea);
+  background: var(--color-papel);
+  border: 1px solid var(--color-linea);
+  border-left: 4px solid var(--color-linea-fuerte);
+  border-radius: var(--radio-lg);
+  min-width: 0;
+}
+
+.buzon-page__hilo--abierto {
+  border-left-color: var(--color-accion);
 }
 
 .buzon-page__cabecera {
@@ -132,40 +167,39 @@ onMounted(cargar);
   align-items: center;
   justify-content: space-between;
   gap: var(--espacio-md);
-  padding: var(--espacio-md) 0;
+  padding: var(--espacio-md);
   background: none;
   border: none;
   text-align: left;
   cursor: pointer;
   font-family: var(--fuente-cuerpo);
+  color: inherit;
+}
+
+.buzon-page__resumen {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
 }
 
 .buzon-page__asunto {
-  margin: 0;
-  font-weight: 600;
+  font-weight: 700;
+  overflow-wrap: anywhere;
 }
 
 .buzon-page__remitente {
-  margin: 0.1rem 0 0;
   font-size: var(--texto-sm);
   color: var(--color-tinta-suave);
+  overflow-wrap: anywhere;
 }
 
 .buzon-page__detalle {
-  padding: 0 0 var(--espacio-md);
+  padding: 0 var(--espacio-md) var(--espacio-md);
   display: flex;
   flex-direction: column;
   gap: var(--espacio-md);
-}
-
-.buzon-page__mensaje {
-  margin: 0.2rem 0 0;
-}
-
-.buzon-page__respuesta {
-  padding: var(--espacio-sm);
-  background: var(--color-fondo);
-  border-radius: var(--radio-md);
+  min-width: 0;
 }
 
 .buzon-page__formulario {
@@ -173,5 +207,9 @@ onMounted(cargar);
   flex-direction: column;
   gap: var(--espacio-md);
   align-items: flex-start;
+}
+
+.buzon-page__formulario :deep(.form-field) {
+  width: 100%;
 }
 </style>
