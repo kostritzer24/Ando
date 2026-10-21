@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
+import { isAxiosError } from "axios";
 import { useRouter } from "vue-router";
 
 import { mensajeDelServidor } from "@/shared/api/errores";
@@ -22,6 +23,11 @@ async function enviar(): Promise<void> {
     await cambiarContrasena(contrasenaActual.value, contrasenaNueva.value);
     await router.push("/");
   } catch (error) {
+    if (isAxiosError(error) && error.response?.status === 401) {
+      mensajeError.value =
+        "La contraseña temporal no es correcta. Escríbela tal como te la dieron, sin espacios.";
+      return;
+    }
     mensajeError.value = mensajeDelServidor(
       error,
       "No se pudo cambiar la contraseña. Revisa la contraseña actual y que la nueva cumpla los requisitos.",
