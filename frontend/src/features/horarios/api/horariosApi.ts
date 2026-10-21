@@ -39,14 +39,15 @@ export const PERIODOS_TALLER = [
 export type Jornada = "basicos" | "bachillerato";
 
 export const ETIQUETA_JORNADA: Record<Jornada, string> = {
-  basicos: "Básicos",
-  bachillerato: "Bachillerato",
+  basicos: "Primero y segundo",
+  bachillerato: "Tercero a quinto",
 };
 
-/** Cuarto y quinto bachillerato siguen el horario de bachillerato; el resto
- * (primero a tercero básico y los talleres) el de básicos. */
+/** Tercero básico, cuarto y quinto bachillerato siguen el horario de
+ * bachillerato; el resto (primero y segundo básico y los talleres) el de básicos. */
 export function jornadaDeGrado(grado: string): Jornada {
-  return grado.toLowerCase().includes("bachiller") ? "bachillerato" : "basicos";
+  const g = grado.toLowerCase();
+  return g.includes("bachiller") || g.includes("tercero") ? "bachillerato" : "basicos";
 }
 
 // RN-13: seis períodos de 40 minutos de 8:00 a 12:40. Los dos horarios solo

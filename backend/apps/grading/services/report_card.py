@@ -9,11 +9,11 @@ from apps.payments.services.solvency import calcular_solvencia
 from apps.students.models import Enrollment
 
 from ..domain.report_card import (
-    NUMERO_DE_UNIDADES,
     TransicionDeBoletinInvalida,
     armar_fila_cuadro,
     nivel_del_grado,
     promedio_de_unidades,
+    unidades_del_grado,
     validar_aprobacion,
     validar_publicacion,
 )
@@ -172,15 +172,14 @@ def contenido_boletin(boletin: ReportCard) -> dict:
     salen de una sola consulta, sumadas con la misma función que
     `nota_de_unidad` (ADR-0003)."""
     inscripcion = boletin.enrollment
+    numero_unidades = unidades_del_grado(inscripcion.section.grade)
     unidades_visibles = {boletin.unit.number: boletin.unit}
     for publicado in ReportCard.objects.filter(
         enrollment=inscripcion, status=ReportCard.ESTADO_PUBLICADO, is_active=True
     ).select_related("unit"):
         unidades_visibles[publicado.unit.number] = publicado.unit
     unidades_visibles = {
-        numero: unidad
-        for numero, unidad in unidades_visibles.items()
-        if numero <= NUMERO_DE_UNIDADES
+        numero: unidad for numero, unidad in unidades_visibles.items() if numero <= numero_unidades
     }
 
     asignaciones = list(
@@ -193,7 +192,8 @@ def contenido_boletin(boletin: ReportCard) -> dict:
             numero: notas.get((asignacion.id, unidad.id))  # sin notas: en blanco, no un 0
             for numero, unidad in unidades_visibles.items()
         }
-        cursos.append({"nombre": asignacion.course.name, **armar_fila_cuadro(notas_por_unidad)})
+        fila = armar_fila_cuadro(notas_por_unidad, numero_unidades)
+        cursos.append({"nombre": asignacion.course.name, **fila})
 
     maestro_guia = inscripcion.section.homeroom_teacher
     return {
@@ -204,7 +204,7 @@ def contenido_boletin(boletin: ReportCard) -> dict:
         "nivel": nivel_del_grado(inscripcion.section.grade),
         "ciclo_anio": inscripcion.cycle.year,
         "unidad_numero": boletin.unit.number,
-        "numeros_unidad": list(range(1, NUMERO_DE_UNIDADES + 1)),
+        "numeros_unidad": list(range(1, numero_unidades + 1)),
         "cursos": cursos,
         "promedios": promedio_de_unidades(cursos),
         "maestro_guia": f"{maestro_guia.first_name} {maestro_guia.last_name}".strip()

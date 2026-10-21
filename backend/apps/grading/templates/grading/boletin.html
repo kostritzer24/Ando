@@ -89,13 +89,13 @@ sin acceso garantizado a internet), igual que
   <table class="notas">
     <colgroup>
       <col>
-      <col class="unidad"><col class="unidad"><col class="unidad"><col class="unidad">
+      {% for numero in numeros_unidad %}<col class="unidad">{% endfor %}
       <col class="final"><col class="estado">
     </colgroup>
     <thead>
       <tr>
         <th rowspan="2" style="text-align:left;">Materia</th>
-        <th colspan="4">Nota Promoción</th>
+        <th colspan="{{ numeros_unidad|length }}">Nota Promoción</th>
         <th rowspan="2">Promedio Final</th>
         <th rowspan="2">A/R</th>
       </tr>

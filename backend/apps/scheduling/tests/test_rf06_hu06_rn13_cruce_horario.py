@@ -55,7 +55,7 @@ def test_hu06_no_se_puede_asignar_al_mismo_docente_en_dos_secciones_en_el_mismo_
     curso_a = CourseFactory()
     curso_b = CourseFactory()
     seccion_a = SectionFactory(grade="Segundo básico")
-    seccion_b = SectionFactory(grade="Tercero básico", cycle=seccion_a.cycle)
+    seccion_b = SectionFactory(grade="Primero básico", cycle=seccion_a.cycle)
     asignacion_a = TeacherAssignmentFactory(
         teacher=docente, course=curso_a, section=seccion_a, cycle=seccion_a.cycle
     )
@@ -89,7 +89,7 @@ def test_el_mismo_docente_puede_tener_clases_en_periodos_distintos_el_mismo_dia(
     curso_a = CourseFactory()
     curso_b = CourseFactory()
     seccion_a = SectionFactory(grade="Segundo básico")
-    seccion_b = SectionFactory(grade="Tercero básico", cycle=seccion_a.cycle)
+    seccion_b = SectionFactory(grade="Primero básico", cycle=seccion_a.cycle)
     asignacion_a = TeacherAssignmentFactory(
         teacher=docente, course=curso_a, section=seccion_a, cycle=seccion_a.cycle
     )
@@ -278,7 +278,7 @@ def test_rn13_los_talleres_usan_la_franja_de_la_tarde_y_los_cursos_la_de_la_mañ
 
 def _docente_en_basicos_y_bachillerato():
     docente = UserFactory(role=RoleFactory(name="Docente"))
-    basicos = SectionFactory(grade="Tercero básico")
+    basicos = SectionFactory(grade="Segundo básico")
     bachillerato = SectionFactory(grade="Cuarto bachillerato", cycle=basicos.cycle)
     return (
         TeacherAssignmentFactory(

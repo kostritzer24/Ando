@@ -2,8 +2,10 @@
 misma duración, de 8:00 a 12:40. La institución maneja dos horarios que
 solo se distinguen por dónde cae el receso:
 
-- Básicos (primero a tercero): receso 10:00–10:40, después del período 3.
-- Bachillerato (cuarto y quinto): receso 10:40–11:20, después del período 4.
+- Básicos (primero y segundo): receso 10:00–10:40, después del período 3.
+- Bachillerato (tercero básico, cuarto y quinto): receso 10:40–11:20,
+  después del período 4. Tercero básico comparte el horario de
+  bachillerato (horario real del ciclo 2026, oct. 2026).
 
 Los talleres son de la tarde (14:00 a 19:00) y tienen su propia franja:
 cinco períodos de una hora (7 a 11) que no se mezclan con los de la
@@ -65,9 +67,11 @@ class PeriodoInvalido(Exception):
 
 
 def jornada_de_grado(grado: str) -> str:
-    """Cuarto y quinto bachillerato siguen el horario de bachillerato; el
-    resto (primero a tercero básico y los talleres) el de básicos."""
-    return JORNADA_BACHILLERATO if "bachiller" in (grado or "").lower() else JORNADA_BASICOS
+    """Tercero básico, cuarto y quinto bachillerato siguen el horario de
+    bachillerato; el resto (primero y segundo básico y los talleres) el de
+    básicos."""
+    grado = (grado or "").lower()
+    return JORNADA_BACHILLERATO if "bachiller" in grado or "tercero" in grado else JORNADA_BASICOS
 
 
 def horario_de_periodo(numero: int, jornada: str = JORNADA_BASICOS) -> tuple[time, time]:
@@ -77,9 +81,7 @@ def horario_de_periodo(numero: int, jornada: str = JORNADA_BASICOS) -> tuple[tim
     return horario[numero]
 
 
-def periodos_se_cruzan(
-    numero_a: int, jornada_a: str, numero_b: int, jornada_b: str
-) -> bool:
+def periodos_se_cruzan(numero_a: int, jornada_a: str, numero_b: int, jornada_b: str) -> bool:
     """Dos clases chocan si sus horas reales se traslapan, no si comparten
     número de período: el 4 de bachillerato (10:00–10:40) y el 4 de básicos
     (10:40–11:20) no chocan, pero el 3 de básicos (9:20–10:00) y el 3 de

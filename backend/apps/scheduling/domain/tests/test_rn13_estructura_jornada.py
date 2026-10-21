@@ -61,7 +61,8 @@ def test_rn13_los_dos_horarios_cubren_la_misma_jornada_de_8_a_12_40():
     ("grado", "jornada"),
     [
         ("Primero básico", "basicos"),
-        ("Tercero básico", "basicos"),
+        ("Segundo básico", "basicos"),
+        ("Tercero básico", "bachillerato"),
         ("Cuarto bachillerato", "bachillerato"),
         ("Quinto Bachillerato", "bachillerato"),
         ("Taller de panadería", "basicos"),

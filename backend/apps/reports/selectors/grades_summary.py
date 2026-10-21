@@ -3,6 +3,7 @@ y `calcular_nota_final` (RN-02) — ningún cálculo se duplica, el mismo
 número que ve el docente en la captura es el que sale acá."""
 
 from apps.catalog.models import GradingUnit
+from apps.grading.domain.report_card import unidades_del_grado
 from apps.grading.domain.scoring import calcular_nota_final
 from apps.grading.services.grade import nota_de_unidad
 from apps.scheduling.models import TeacherAssignment
@@ -20,7 +21,14 @@ def resumen_notas(*, cycle_id: str | None = None, section_id: str | None = None)
 
     filas = []
     for inscripcion in inscripciones:
-        unidades = list(GradingUnit.objects.filter(cycle=inscripcion.cycle).order_by("number"))
+        # Quinto bachillerato solo cursa 3 unidades: la cuarta no entra al
+        # promedio (si entrara, contaría como un 0).
+        esperadas = unidades_del_grado(inscripcion.section.grade)
+        unidades = list(
+            GradingUnit.objects.filter(cycle=inscripcion.cycle, number__lte=esperadas).order_by(
+                "number"
+            )
+        )
         asignaciones = TeacherAssignment.objects.filter(
             section=inscripcion.section, cycle=inscripcion.cycle, is_active=True
         ).select_related("course")
@@ -34,7 +42,9 @@ def resumen_notas(*, cycle_id: str | None = None, section_id: str | None = None)
                 "student_name": inscripcion.student.nombre_completo(),
                 "section": str(inscripcion.section),
                 "course": asignacion.course.name,
-                "final_score": calcular_nota_final(notas_unidad) if len(unidades) == 4 else None,
+                "final_score": (
+                    calcular_nota_final(notas_unidad) if len(unidades) == esperadas else None
+                ),
             }
             for unidad, nota in zip(unidades, notas_unidad, strict=True):
                 fila[f"unit_{unidad.number}_score"] = nota

@@ -41,6 +41,15 @@ def validar_publicacion(
 
 
 NUMERO_DE_UNIDADES = 4
+#: Quinto bachillerato solo cursa tres unidades: el cuarto bimestre lo usa
+#: para el cierre de su promoción (indicado por el centro, oct. 2026).
+UNIDADES_QUINTO = 3
+
+
+def unidades_del_grado(grado: str) -> int:
+    """Cuántas unidades se califican en un grado: 3 en quinto
+    bachillerato, 4 en el resto."""
+    return UNIDADES_QUINTO if "quinto" in (grado or "").lower() else NUMERO_DE_UNIDADES
 
 
 def nivel_del_grado(grado: str) -> str:
@@ -55,12 +64,14 @@ def nivel_del_grado(grado: str) -> str:
     return ""
 
 
-def armar_fila_cuadro(notas_por_unidad: dict[int, Decimal]) -> dict:
+def armar_fila_cuadro(
+    notas_por_unidad: dict[int, Decimal], numero_unidades: int = NUMERO_DE_UNIDADES
+) -> dict:
     """Una fila del cuadro de notas (formato institucional: Unidad 1 a 4,
     Promedio Final y A/R). Una unidad sin nota queda en blanco y no entra
     al promedio — como el `AVERAGE` de la hoja de cálculo del centro. El
     promedio y la aprobación salen de `scoring.py` (RN-02/RN-03)."""
-    unidades = [notas_por_unidad.get(numero) for numero in range(1, NUMERO_DE_UNIDADES + 1)]
+    unidades = [notas_por_unidad.get(numero) for numero in range(1, numero_unidades + 1)]
     con_nota = [nota for nota in unidades if nota is not None]
     promedio = calcular_nota_final(con_nota) if con_nota else None
     return {
@@ -74,7 +85,8 @@ def promedio_de_unidades(filas: list[dict]) -> list[int | None]:
     """Fila "Promedio de Unidad" del cuadro: el promedio de todos los cursos
     en cada columna, más el general en la última posición."""
     columnas = []
-    for indice in range(NUMERO_DE_UNIDADES):
+    numero_unidades = len(filas[0]["unidades"]) if filas else NUMERO_DE_UNIDADES
+    for indice in range(numero_unidades):
         notas = [fila["unidades"][indice] for fila in filas if fila["unidades"][indice] is not None]
         columnas.append(calcular_nota_final(notas) if notas else None)
     promedios = [fila["promedio"] for fila in filas if fila["promedio"] is not None]

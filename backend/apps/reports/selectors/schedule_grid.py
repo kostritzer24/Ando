@@ -21,7 +21,7 @@ DIAS = [
     (ScheduleBlock.JUEVES, "Jueves"),
     (ScheduleBlock.VIERNES, "Viernes"),
 ]
-_ETIQUETA_JORNADA = {JORNADA_BASICOS: "básicos", JORNADA_BACHILLERATO: "bachillerato"}
+_ETIQUETA_JORNADA = {JORNADA_BASICOS: "primero y segundo", JORNADA_BACHILLERATO: "tercero a quinto"}
 
 
 class SujetoNoEncontrado(Exception):
