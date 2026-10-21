@@ -81,7 +81,12 @@ class LoginSerializer(serializers.Serializer):
 
 
 class ChangePasswordSerializer(serializers.Serializer):
-    contrasena_actual = serializers.CharField(write_only=True, trim_whitespace=False)
+    # En el cambio obligatorio del primer ingreso la sesión ya se probó con
+    # la contraseña temporal al entrar: pedirla otra vez solo agrega un
+    # campo más que equivocar. En el cambio voluntario sí es obligatoria.
+    contrasena_actual = serializers.CharField(
+        write_only=True, trim_whitespace=False, required=False, allow_blank=True
+    )
     contrasena_nueva = serializers.CharField(write_only=True, trim_whitespace=False)
 
     def validate_contrasena_nueva(self, value):
@@ -89,7 +94,13 @@ class ChangePasswordSerializer(serializers.Serializer):
         return value
 
     def validate(self, attrs):
-        if attrs["contrasena_actual"] == attrs["contrasena_nueva"]:
+        user = self.context["user"]
+        actual = attrs.get("contrasena_actual", "")
+        if not user.must_change_password and not actual:
+            raise serializers.ValidationError(
+                {"contrasena_actual": "Escribe tu contraseña actual."}
+            )
+        if actual == attrs["contrasena_nueva"] or user.check_password(attrs["contrasena_nueva"]):
             raise serializers.ValidationError(
                 {"contrasena_nueva": "La contraseña nueva debe ser distinta de la actual."}
             )

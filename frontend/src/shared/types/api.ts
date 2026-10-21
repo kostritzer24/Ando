@@ -2749,7 +2749,7 @@ export interface components {
          */
         CalendarEventTypeEnum: "institucional" | "asignacion_docente";
         ChangePassword: {
-            contrasena_actual: string;
+            contrasena_actual?: string;
             contrasena_nueva: string;
         };
         /**

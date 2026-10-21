@@ -31,12 +31,14 @@ export async function cerrarSesion(): Promise<void> {
   await http.post("/auth/logout/");
 }
 
+/** `contrasenaActual` va en `null` en el cambio obligatorio del primer
+ * ingreso: la sesión ya se probó con la temporal al entrar. */
 export async function cambiarContrasena(
-  contrasenaActual: string,
+  contrasenaActual: string | null,
   contrasenaNueva: string,
 ): Promise<void> {
   await http.post("/auth/change-password/", {
-    contrasena_actual: contrasenaActual,
+    ...(contrasenaActual === null ? {} : { contrasena_actual: contrasenaActual }),
     contrasena_nueva: contrasenaNueva,
   });
 }

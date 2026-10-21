@@ -111,3 +111,62 @@ def test_cambiar_la_contrasena_por_la_misma_se_rechaza():
     )
 
     assert respuesta.status_code == 400
+
+
+@pytest.mark.django_db
+def test_rf27_primer_ingreso_cambia_la_contrasena_sin_volver_a_pedir_la_temporal():
+    usuario = UserFactory(password="Temporal-Segura-2026", must_change_password=True)
+    client = APIClient()
+    client.force_authenticate(user=usuario)
+
+    respuesta = client.post(
+        "/api/v1/auth/change-password/",
+        {"contrasena_nueva": "Definitiva-Aun-Mas-Segura-2026"},
+        format="json",
+    )
+
+    assert respuesta.status_code == 204
+    usuario.refresh_from_db()
+    assert usuario.must_change_password is False
+    assert usuario.check_password("Definitiva-Aun-Mas-Segura-2026")
+
+
+@pytest.mark.django_db
+def test_rf27_primer_ingreso_rechaza_dejar_la_misma_temporal():
+    usuario = UserFactory(password="Temporal-Segura-2026", must_change_password=True)
+    client = APIClient()
+    client.force_authenticate(user=usuario)
+
+    respuesta = client.post(
+        "/api/v1/auth/change-password/",
+        {"contrasena_nueva": "Temporal-Segura-2026"},
+        format="json",
+    )
+
+    assert respuesta.status_code == 400
+    usuario.refresh_from_db()
+    assert usuario.must_change_password is True
+
+
+@pytest.mark.django_db
+def test_rf27_cambio_voluntario_exige_la_contrasena_actual():
+    usuario = UserFactory(password="Clave-Actual-Segura-2026", must_change_password=False)
+    client = APIClient()
+    client.force_authenticate(user=usuario)
+
+    sin_actual = client.post(
+        "/api/v1/auth/change-password/",
+        {"contrasena_nueva": "Definitiva-Aun-Mas-Segura-2026"},
+        format="json",
+    )
+    actual_mala = client.post(
+        "/api/v1/auth/change-password/",
+        {
+            "contrasena_actual": "otra-cosa-cualquiera",
+            "contrasena_nueva": "Definitiva-Aun-Mas-Segura-2026",
+        },
+        format="json",
+    )
+
+    assert sin_actual.status_code == 400
+    assert actual_mala.status_code == 401

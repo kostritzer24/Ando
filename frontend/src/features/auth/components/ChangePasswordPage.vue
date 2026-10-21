@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { isAxiosError } from "axios";
 import { useRouter } from "vue-router";
 
 import { mensajeDelServidor } from "@/shared/api/errores";
@@ -11,28 +10,22 @@ import PantallaAcceso from "./PantallaAcceso.vue";
 
 const router = useRouter();
 
-const contrasenaActual = ref("");
 const contrasenaNueva = ref("");
+const repeticion = ref("");
 const enviando = ref(false);
 const mensajeError = ref("");
 
 async function enviar(): Promise<void> {
   mensajeError.value = "";
-  if (contrasenaActual.value === contrasenaNueva.value) {
-    mensajeError.value =
-      "La contraseña nueva debe ser distinta de la temporal. Revisa que el navegador no haya rellenado el primer campo.";
+  if (contrasenaNueva.value !== repeticion.value) {
+    mensajeError.value = "Las dos contraseñas no coinciden. Escríbelas de nuevo.";
     return;
   }
   enviando.value = true;
   try {
-    await cambiarContrasena(contrasenaActual.value, contrasenaNueva.value);
+    await cambiarContrasena(null, contrasenaNueva.value);
     await router.push("/");
   } catch (error) {
-    if (isAxiosError(error) && error.response?.status === 401) {
-      mensajeError.value =
-        "La contraseña temporal no es correcta. Escríbela tal como te la dieron, sin espacios.";
-      return;
-    }
     mensajeError.value = mensajeDelServidor(
       error,
       "No se pudo cambiar la contraseña. Revisa la contraseña actual y que la nueva cumpla los requisitos.",
@@ -52,18 +45,18 @@ async function enviar(): Promise<void> {
 
     <form class="change-password-page__formulario" @submit.prevent="enviar">
       <FormField
-        id="contrasena-actual"
-        etiqueta="Contraseña temporal"
-        tipo="password"
-        v-model="contrasenaActual"
-        autocomplete="off"
-      />
-      <FormField
         id="contrasena-nueva"
         etiqueta="Contraseña nueva"
         tipo="password"
         v-model="contrasenaNueva"
         pista="Al menos 10 caracteres, y que no sea una contraseña común."
+        autocomplete="new-password"
+      />
+      <FormField
+        id="contrasena-repeticion"
+        etiqueta="Repite la contraseña nueva"
+        tipo="password"
+        v-model="repeticion"
         autocomplete="new-password"
       />
       <AppButton tipo="submit" bloque :deshabilitado="enviando">

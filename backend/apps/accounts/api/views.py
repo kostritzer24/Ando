@@ -155,7 +155,9 @@ class ChangePasswordView(APIView):
     def post(self, request):
         serializer = ChangePasswordSerializer(data=request.data, context={"user": request.user})
         serializer.is_valid(raise_exception=True)
-        if not request.user.check_password(serializer.validated_data["contrasena_actual"]):
+        if not request.user.must_change_password and not request.user.check_password(
+            serializer.validated_data["contrasena_actual"]
+        ):
             raise AuthenticationFailed("La contraseña actual no es correcta.")
         cambiar_contrasena(
             user=request.user,
