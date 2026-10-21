@@ -41,8 +41,9 @@ from datetime import date, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 
 from django.core.management.base import BaseCommand, CommandError
-from django.db import transaction
+from django.db import connection, transaction
 from django.db.models import Sum
+from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
 
 from apps.accounts.models import Role, User
 from apps.attendance.models import Attendance, Justification
@@ -85,6 +86,7 @@ BORRAR_EN_ORDEN = [
     ReportCard, GradeChangeRequest, Grade, Activity, Justification, Attendance, CalendarEvent,
     ScheduleBlock, TeacherAssignment, GuardianStudentLink, Enrollment, Guardian, Student,
     Section, Course, AuditLog, AccessLog,
+    BlacklistedToken, OutstandingToken,
 ]  # fmt: skip
 
 
@@ -124,6 +126,10 @@ class Command(BaseCommand):
                 self._cargar()
                 self._verificar()
                 if not opts["ejecutar"]:
+                    # Revisa las llaves foráneas diferidas igual que un COMMIT real.
+                    if connection.vendor == "postgresql":
+                        with connection.cursor() as cursor:
+                            cursor.execute("SET CONSTRAINTS ALL IMMEDIATE")
                     raise Ensayo
         except Ensayo:
             self.stdout.write(self.style.WARNING(
