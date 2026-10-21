@@ -18,6 +18,11 @@ const mensajeError = ref("");
 
 async function enviar(): Promise<void> {
   mensajeError.value = "";
+  if (contrasenaActual.value === contrasenaNueva.value) {
+    mensajeError.value =
+      "La contraseña nueva debe ser distinta de la temporal. Revisa que el navegador no haya rellenado el primer campo.";
+    return;
+  }
   enviando.value = true;
   try {
     await cambiarContrasena(contrasenaActual.value, contrasenaNueva.value);
@@ -51,7 +56,7 @@ async function enviar(): Promise<void> {
         etiqueta="Contraseña temporal"
         tipo="password"
         v-model="contrasenaActual"
-        autocomplete="current-password"
+        autocomplete="off"
       />
       <FormField
         id="contrasena-nueva"
