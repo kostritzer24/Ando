@@ -23,6 +23,8 @@ const ETIQUETAS_DE_CAMPO: Record<string, string> = {
   number: "Número",
   reason_detail: "Detalle",
   justification_type: "Tipo de justificación",
+  contrasena_nueva: "Contraseña nueva",
+  contrasena_actual: "Contraseña temporal",
 };
 
 function primerMensaje(valor: unknown): string {

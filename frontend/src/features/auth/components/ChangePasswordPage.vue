@@ -2,6 +2,7 @@
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 
+import { mensajeDelServidor } from "@/shared/api/errores";
 import { AppButton, ErrorBanner, FormField } from "@/shared/components";
 
 import { cambiarContrasena } from "../api/authApi";
@@ -20,9 +21,11 @@ async function enviar(): Promise<void> {
   try {
     await cambiarContrasena(contrasenaActual.value, contrasenaNueva.value);
     await router.push("/");
-  } catch {
-    mensajeError.value =
-      "No se pudo cambiar la contraseña. Revisa la contraseña actual y que la nueva cumpla los requisitos.";
+  } catch (error) {
+    mensajeError.value = mensajeDelServidor(
+      error,
+      "No se pudo cambiar la contraseña. Revisa la contraseña actual y que la nueva cumpla los requisitos.",
+    );
   } finally {
     enviando.value = false;
   }
