@@ -138,14 +138,11 @@ test("buzón y RN-16: la familia escribe, el docente responde, y el lenguaje ina
 
   const tokenFamilia = await tokenPara(request, "familia.demo");
   const authFamilia = { Authorization: `Bearer ${tokenFamilia}` };
-  const inscripciones = (
-    await (await request.get(`${API}/enrollments/`, { headers: authFamilia })).json()
-  ).results;
-  const inscripcionDiego = inscripciones.find((i: { student: string }) => i.student === diego.public_id);
 
-  await request.post(`${API}/messages/`, {
+  // RF-37: la conversación va sobre Diego; llega a los docentes de su sección.
+  await request.post(`${API}/conversations/`, {
     headers: authFamilia,
-    data: { section: inscripcionDiego.section, subject: "Consulta", content: "¿Hay actividad el viernes?" },
+    data: { student: diego.public_id, subject: "Consulta", content: "¿Hay actividad el viernes?" },
   });
 
   await entrarComo(page, "docente.demo");
@@ -155,7 +152,7 @@ test("buzón y RN-16: la familia escribe, el docente responde, y el lenguaje ina
   await page.getByRole("button", { name: /Consulta/ }).click();
   await page.getByLabel("Responder").fill("Sí, hay una actividad especial.");
   await page.getByRole("button", { name: "Enviar respuesta" }).click();
-  await expect(page.getByText("Respondido")).toBeVisible();
+  await expect(page.getByText("Sí, hay una actividad especial.")).toBeVisible();
 
   await page.getByRole("button", { name: "Cerrar sesión" }).click();
   await entrarComo(page, "familia.demo");
@@ -171,11 +168,12 @@ test("buzón y RN-16: la familia escribe, el docente responde, y el lenguaje ina
 
   await page.getByRole("button", { name: "Avisos" }).click();
   await expect(page.getByRole("heading", { name: "Avisos" })).toBeVisible();
+  await page.getByRole("button", { name: /Consulta/ }).click();
   await expect(page.getByText("Sí, hay una actividad especial.")).toBeVisible();
 
   await page.getByText("Escribir un mensaje nuevo").click();
   await page.locator("#subject").fill("Otra consulta");
   await page.locator("#content").fill("El maestro es un idiota");
-  await page.getByRole("button", { name: "Enviar" }).click();
+  await page.getByRole("button", { name: "Enviar", exact: true }).click();
   await expect(page.getByText(/lenguaje inapropiado/)).toBeVisible();
 });
