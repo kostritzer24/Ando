@@ -4,6 +4,7 @@ from apps.catalog.models import ConductRuleArticle, Section
 from apps.students.models import Enrollment, Student
 
 from ..models import Announcement, ConductReport, Message
+from ..services.announcement import puede_administrar
 
 
 class AnnouncementSerializer(serializers.ModelSerializer):
@@ -11,6 +12,8 @@ class AnnouncementSerializer(serializers.ModelSerializer):
         slug_field="public_id", queryset=Section.objects.all(), required=False, allow_null=True
     )
     published_by = serializers.CharField(source="published_by.username", read_only=True)
+    published_by_name = serializers.SerializerMethodField()
+    puede_editar = serializers.SerializerMethodField()
 
     class Meta:
         model = Announcement
@@ -23,9 +26,24 @@ class AnnouncementSerializer(serializers.ModelSerializer):
             "published_at",
             "expires_at",
             "published_by",
+            "published_by_name",
+            "puede_editar",
             "is_active",
         ]
         read_only_fields = ["public_id", "published_at", "published_by"]
+
+    def get_published_by_name(self, aviso) -> str:
+        return aviso.published_by.nombre_completo()
+
+    def get_puede_editar(self, aviso) -> bool:
+        """RN-18: la interfaz solo ofrece editar o retirar lo que la API
+        aceptaría; sin `request` (p. ej. al serializar fuera de una vista)
+        no se ofrece nada."""
+        request = self.context.get("request")
+        if request is None or not request.user.is_authenticated:
+            return False
+        tiene_edicion = request.user.role.permissions.get("avisos") == "editar"
+        return tiene_edicion and puede_administrar(aviso, request.user)
 
 
 class ConductReportSerializer(serializers.ModelSerializer):

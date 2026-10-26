@@ -77,7 +77,7 @@ _MATRIZ: dict[str, dict[str, str]] = {
         "modificacion_notas": _S,
         "pagos_solvencia": _S,
         "documentos": _S,
-        "avisos": _V,
+        "avisos": _E,
         "reportes_conducta": _E,
         "buzon": _E,
         "reportes_institucionales": _S,

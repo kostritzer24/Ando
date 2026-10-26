@@ -2,19 +2,27 @@ from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
+from drf_spectacular.utils import extend_schema
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 from weasyprint import HTML
 
+from apps.catalog.api.serializers import SectionSerializer
+from apps.catalog.models import SchoolCycle, Section
 from apps.core.api.mixins import RegistraAccesoMixin, ScopedQuerysetMixin
 from apps.core.permissions import PermisoPorArea
 from apps.students.models import Enrollment
 
-from ..domain.announcement import PublicacionDeAvisoInvalida
+from ..domain.announcement import AvisoAjeno, PublicacionDeAvisoInvalida
 from ..models import Announcement, ConductReport, Message
-from ..services.announcement import avisos_vigentes, crear_aviso
+from ..services.announcement import (
+    actualizar_aviso,
+    avisos_vigentes,
+    crear_aviso,
+    retirar_aviso,
+)
 from ..services.buzon import (
     CuentaBloqueada,
     LenguajeInapropiado,
@@ -70,11 +78,12 @@ def _secciones_de_la_familia(user):
 
 
 class AnnouncementViewSet(RegistraAccesoMixin, ScopedQuerysetMixin, viewsets.ModelViewSet):
-    """RF-13/RF-36. Solo Dirección publica; el resto de los roles con
-    acceso al área (todos salvo Pagos, según la matriz) solo ven los
-    avisos vigentes que les corresponden por destinatario."""
+    """RF-13/RF-36. Publican Dirección y los docentes (los roles con `E` en
+    el área); un docente solo edita y retira lo que publicó (RN-18). El
+    resto de los roles con acceso al área solo ven los avisos vigentes que
+    les corresponden por destinatario."""
 
-    queryset = Announcement.objects.all()
+    queryset = Announcement.objects.select_related("published_by")
     serializer_class = AnnouncementSerializer
     permission_classes = [PermisoPorArea]
     area = "avisos"
@@ -83,12 +92,20 @@ class AnnouncementViewSet(RegistraAccesoMixin, ScopedQuerysetMixin, viewsets.Mod
     def scope_queryset(self, queryset, user):
         if user.role.name in _ROLES_SIN_ALCANCE_LIMITADO:
             return queryset
-        queryset = avisos_vigentes(queryset)
         if user.role.name in _ROLES_DOCENTES:
+            # Los propios se ven siempre, aunque estén vencidos o vayan a
+            # otra sección: si no, el docente no podría administrarlos.
             return queryset.filter(
-                Q(audience=Announcement.AUDIENCIA_TODOS)
-                | Q(target_section_id__in=_secciones_del_docente(user))
+                Q(published_by=user)
+                | (
+                    Q(id__in=avisos_vigentes(queryset).values("id"))
+                    & (
+                        Q(audience=Announcement.AUDIENCIA_TODOS)
+                        | Q(target_section_id__in=_secciones_del_docente(user))
+                    )
+                )
             ).distinct()
+        queryset = avisos_vigentes(queryset)
         if user.role.name == "Padre de familia":
             return queryset.filter(
                 Q(audience=Announcement.AUDIENCIA_TODOS)
@@ -97,26 +114,45 @@ class AnnouncementViewSet(RegistraAccesoMixin, ScopedQuerysetMixin, viewsets.Mod
         return queryset.none()
 
     def create(self, request, *args, **kwargs):
-        if request.user.role.name != ROL_DIRECCION:
-            raise PermissionDenied("Solo Dirección publica avisos.")
         serializer = AnnouncementSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
             aviso = crear_aviso(published_by=request.user, **serializer.validated_data)
         except PublicacionDeAvisoInvalida as exc:
             raise ValidationError(str(exc)) from exc
-        return Response(AnnouncementSerializer(aviso).data, status=status.HTTP_201_CREATED)
+        return Response(
+            AnnouncementSerializer(aviso, context=self.get_serializer_context()).data,
+            status=status.HTTP_201_CREATED,
+        )
 
     def perform_update(self, serializer):
-        if self.request.user.role.name != ROL_DIRECCION:
-            raise PermissionDenied("Solo Dirección edita avisos.")
-        serializer.save()
+        try:
+            actualizar_aviso(
+                serializer.instance, usuario=self.request.user, cambios=serializer.validated_data
+            )
+        except AvisoAjeno as exc:
+            raise PermissionDenied(str(exc)) from exc
+        except PublicacionDeAvisoInvalida as exc:
+            raise ValidationError(str(exc)) from exc
 
     def perform_destroy(self, instance):
-        if self.request.user.role.name != ROL_DIRECCION:
-            raise PermissionDenied("Solo Dirección retira avisos.")
-        instance.is_active = False
-        instance.save(update_fields=["is_active", "updated_at"])
+        try:
+            retirar_aviso(instance, usuario=self.request.user)
+        except AvisoAjeno as exc:
+            raise PermissionDenied(str(exc)) from exc
+
+    @extend_schema(responses=SectionSerializer(many=True))
+    @action(detail=False, methods=["get"], url_path="target-sections")
+    def target_sections(self, request):
+        """Secciones a las que se puede dirigir un aviso: las vigentes del
+        ciclo activo. Va por el área `avisos` y no por el catálogo, que el
+        docente no tiene (excepción documentada en CLAUDE.md)."""
+        if request.user.role.permissions.get("avisos") != "editar":
+            raise PermissionDenied("No puedes publicar avisos.")
+        secciones = Section.objects.filter(
+            is_active=True, cycle__status=SchoolCycle.ESTADO_ACTIVO
+        ).select_related("cycle")
+        return Response(SectionSerializer(secciones, many=True).data)
 
 
 class ConductReportViewSet(
