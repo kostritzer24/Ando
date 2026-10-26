@@ -20,6 +20,7 @@ from ..domain.report_card import (
 from ..domain.scoring import calcular_nota_unidad
 from ..models import Grade, ReportCard
 from ..selectors.avance import asignaciones_que_califican
+from .promedio import puntos_evaluados_si_promediada
 
 ENTIDAD = "grading.ReportCard"
 
@@ -146,10 +147,10 @@ def publicar_boletines(*, section, unit, published_by) -> dict:
     return {"publicados": publicados, "no_publicados": no_publicados}
 
 
-def _notas_por_curso_y_unidad(inscripcion, asignaciones, unidades) -> dict:
-    """`{(assignment_id, unit_id): nota}` en una sola consulta, sumando con
-    la misma función que `nota_de_unidad` (ADR-0003: no se duplica el
-    cálculo, solo se agrupa)."""
+def notas_por_curso_y_unidad(inscripcion, asignaciones, unidades) -> dict:
+    """`{(assignment_id, unit_id): nota}` en una sola consulta (más las dos
+    del promedio, RN-22), con la misma función que `nota_de_unidad`
+    (ADR-0003: no se duplica el cálculo, solo se agrupa)."""
     punteos = defaultdict(list)
     for asignacion_id, unidad_id, punteo in Grade.objects.filter(
         enrollment=inscripcion,
@@ -159,7 +160,11 @@ def _notas_por_curso_y_unidad(inscripcion, asignaciones, unidades) -> dict:
         is_active=True,
     ).values_list("activity__assignment_id", "activity__unit_id", "current_score"):
         punteos[(asignacion_id, unidad_id)].append(punteo)
-    return {clave: calcular_nota_unidad(valores) for clave, valores in punteos.items()}
+    promediadas = puntos_evaluados_si_promediada(asignaciones, unidades)
+    return {
+        clave: calcular_nota_unidad(valores, puntos_evaluados=promediadas.get(clave))
+        for clave, valores in punteos.items()
+    }
 
 
 def contenido_boletin(boletin: ReportCard) -> dict:
@@ -185,7 +190,7 @@ def contenido_boletin(boletin: ReportCard) -> dict:
     asignaciones = list(
         asignaciones_que_califican(secciones=[inscripcion.section], ciclos=[inscripcion.cycle])
     )
-    notas = _notas_por_curso_y_unidad(inscripcion, asignaciones, unidades_visibles.values())
+    notas = notas_por_curso_y_unidad(inscripcion, asignaciones, unidades_visibles.values())
     cursos = []
     for asignacion in asignaciones:
         notas_por_unidad = {

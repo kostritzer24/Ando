@@ -67,7 +67,7 @@ class GradeSerializer(serializers.ModelSerializer):
     unit_number = serializers.IntegerField(source="activity.unit.number", read_only=True)
     activity_name = serializers.CharField(source="activity.name", read_only=True)
     max_score = serializers.DecimalField(
-        source="activity.max_score", max_digits=5, decimal_places=2, read_only=True
+        source="activity.max_score", max_digits=5, decimal_places=2, read_only=True, allow_null=True
     )
 
     class Meta:
@@ -98,6 +98,39 @@ class GradeSerializer(serializers.ModelSerializer):
             for campo in self._SOLO_PERSONAL:
                 datos.pop(campo, None)
         return datos
+
+
+class UnidadDeAsignacionSerializer(serializers.Serializer):
+    """Una unidad de una asignación: lo que reparten y promedian RF-39 y
+    RF-40."""
+
+    assignment = serializers.SlugRelatedField(
+        slug_field="public_id", queryset=TeacherAssignment.objects.all()
+    )
+    unit = serializers.SlugRelatedField(slug_field="public_id", queryset=GradingUnit.objects.all())
+
+
+class PromedioSerializer(UnidadDeAsignacionSerializer):
+    averaged = serializers.BooleanField()
+    deactivate = serializers.SlugRelatedField(
+        slug_field="public_id", queryset=Activity.objects.all(), many=True, required=False
+    )
+
+
+class EstadoDeUnidadSerializer(serializers.Serializer):
+    promediada = serializers.BooleanField()
+    puntos_evaluados = serializers.DecimalField(max_digits=6, decimal_places=2)
+    bloqueada = serializers.BooleanField()
+
+
+class NotaDeUnidadSerializer(serializers.Serializer):
+    """Nota de unidad ya calculada en el servidor (RF-29 / RN-22): el
+    portal no vuelve a sumar en el navegador."""
+
+    course_name = serializers.CharField()
+    unit_number = serializers.IntegerField()
+    nota = serializers.DecimalField(max_digits=6, decimal_places=2)
+    promediada = serializers.BooleanField(required=False)
 
 
 class GradeCreateSerializer(serializers.Serializer):

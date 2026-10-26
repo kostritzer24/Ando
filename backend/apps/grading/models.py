@@ -25,7 +25,11 @@ class Activity(BaseModel):
         ActivityType, verbose_name="tipo de actividad", on_delete=models.PROTECT
     )
     name = models.CharField("nombre", max_length=120)
-    max_score = models.DecimalField("punteo máximo", max_digits=5, decimal_places=2)
+    # Nulo mientras el docente no le asigna punteo (RF-39): no se califica
+    # hasta tenerlo (RN-21).
+    max_score = models.DecimalField(
+        "punteo máximo", max_digits=5, decimal_places=2, null=True, blank=True
+    )
     due_date = models.DateField("fecha de entrega")
 
     class Meta:
@@ -39,6 +43,42 @@ class Activity(BaseModel):
     @property
     def es_prueba_corta(self) -> bool:
         return self.activity_type.counts_as_short_quiz
+
+
+class UnitAveraging(BaseModel):
+    """Unidad promediada (RF-40, RN-22): estado de una unidad para una
+    asignación, aparte de las calificaciones — `raw_score` y
+    `current_score` no se tocan (RN-05/RN-06). La fórmula vive solo en
+    `grading/domain/scoring.py`."""
+
+    assignment = models.ForeignKey(
+        TeacherAssignment,
+        verbose_name="asignación docente",
+        on_delete=models.PROTECT,
+        related_name="unit_averagings",
+    )
+    unit = models.ForeignKey(
+        GradingUnit, verbose_name="unidad", on_delete=models.PROTECT, related_name="averagings"
+    )
+    averaged = models.BooleanField("promediada", default=False)
+    changed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name="cambiado por",
+        on_delete=models.PROTECT,
+        related_name="unit_averagings_changed",
+    )
+
+    class Meta:
+        verbose_name = "unidad promediada"
+        verbose_name_plural = "unidades promediadas"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["assignment", "unit"], name="promedio_unico_por_asignacion_y_unidad"
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.assignment} — {self.unit} — {'promediada' if self.averaged else 'suma'}"
 
 
 class Grade(BaseModel):

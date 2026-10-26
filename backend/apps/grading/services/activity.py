@@ -9,6 +9,7 @@ from apps.core.services import registrar_cambio
 from apps.scheduling.models import TeacherAssignment
 
 from ..domain.unit_design import (
+    repartir_puntos,
     validar_baja_de_actividad,
     validar_cambio_de_punteo_maximo,
     validar_nuevo_punteo_maximo,
@@ -48,7 +49,7 @@ def _foto(actividad: Activity) -> dict:
     return {
         "name": actividad.name,
         "activity_type": actividad.activity_type.name,
-        "max_score": str(actividad.max_score),
+        "max_score": None if actividad.max_score is None else str(actividad.max_score),
         "due_date": actividad.due_date.isoformat(),
     }
 
@@ -60,9 +61,9 @@ def crear_actividad(
     unit: GradingUnit,
     activity_type: ActivityType,
     name: str,
-    max_score: Decimal,
     due_date: date,
     usuario,
+    max_score: Decimal | None = None,
 ) -> Activity:
     _validar_asignacion_califica(assignment)
     # Bloquea la asignación para que dos altas simultáneas no pasen juntas
@@ -93,8 +94,8 @@ def actualizar_actividad(actividad: Activity, *, cambios: dict, usuario) -> Acti
     no cambian: mover una actividad es crear otra en el lugar correcto."""
     TeacherAssignment.objects.select_for_update().get(pk=actividad.assignment_id)
     cambios = {campo: valor for campo, valor in cambios.items() if campo in CAMPOS_EDITABLES}
-    nuevo_maximo = cambios.get("max_score")
-    if nuevo_maximo is not None and nuevo_maximo != actividad.max_score:
+    nuevo_maximo = cambios.get("max_score", actividad.max_score)
+    if nuevo_maximo != actividad.max_score:
         validar_cambio_de_punteo_maximo(tiene_notas=_tiene_notas(actividad))
         suma_sin_esta = _suma_de_la_unidad(
             actividad.assignment, actividad.unit, excluir_id=actividad.id
@@ -128,3 +129,39 @@ def dar_de_baja_actividad(actividad: Activity, *, usuario) -> None:
         accion="eliminar",
         valor_anterior=_foto(actividad),
     )
+
+
+@transaction.atomic
+def repartir_puntos_de_unidad(*, assignment: TeacherAssignment, unit: GradingUnit, usuario):
+    """RF-39 / RN-20: las actividades con notas conservan su punteo; las
+    demás se quedan con partes iguales de lo que sobra de los 100. Cada
+    cambio queda en la bitácora, igual que una edición a mano."""
+    TeacherAssignment.objects.select_for_update().get(pk=assignment.pk)
+    actividades = list(
+        Activity.objects.filter(assignment=assignment, unit=unit, is_active=True).order_by(
+            "due_date", "id"
+        )
+    )
+    calificadas = set(
+        Grade.objects.filter(activity__in=actividades, is_active=True).values_list(
+            "activity_id", flat=True
+        )
+    )
+    fijas = [a for a in actividades if a.id in calificadas]
+    libres = [a for a in actividades if a.id not in calificadas]
+    partes = repartir_puntos([a.max_score for a in fijas], len(libres))
+    for actividad, parte in zip(libres, partes, strict=True):
+        if actividad.max_score == parte:
+            continue
+        anterior = _foto(actividad)
+        actividad.max_score = parte
+        actividad.save(update_fields=["max_score", "updated_at"])
+        registrar_cambio(
+            usuario=usuario,
+            entidad_nombre=ENTIDAD,
+            entidad_id=actividad.id,
+            accion="actualizar",
+            valor_anterior=anterior,
+            valor_nuevo={**_foto(actividad), "motivo": "repartir puntos"},
+        )
+    return actividades

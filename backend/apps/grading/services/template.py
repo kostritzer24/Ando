@@ -58,6 +58,14 @@ def _actividades_de(assignment, unit) -> list[Activity]:
         raise UnidadSinActividades(
             "Esta unidad todavía no tiene actividades definidas para esta asignación."
         )
+    # RN-21: la plantilla valida cada punteo contra su máximo; sin él no
+    # hay plantilla (y su estructura no cambia después al asignárselo).
+    sin_maximo = [a.name for a in actividades if a.max_score is None]
+    if sin_maximo:
+        raise UnidadSinActividades(
+            f"Estas actividades todavía no tienen punteo máximo: {', '.join(sin_maximo)}. "
+            "Asígnaselo o reparte los puntos antes de usar la plantilla."
+        )
     return actividades
 
 

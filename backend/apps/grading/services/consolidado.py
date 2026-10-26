@@ -6,7 +6,7 @@ from apps.students.models import Enrollment, Student
 from ..domain.report_card import NUMERO_DE_UNIDADES, armar_fila_cuadro
 from ..domain.scoring import calcular_nota_final
 from ..selectors.avance import asignaciones_que_califican
-from .report_card import _notas_por_curso_y_unidad
+from .report_card import notas_por_curso_y_unidad
 
 
 def consolidado_de_notas(student: Student) -> dict:
@@ -31,7 +31,7 @@ def consolidado_de_notas(student: Student) -> dict:
         asignaciones = list(
             asignaciones_que_califican(secciones=[inscripcion.section], ciclos=[inscripcion.cycle])
         )
-        notas = _notas_por_curso_y_unidad(inscripcion, asignaciones, unidades)
+        notas = notas_por_curso_y_unidad(inscripcion, asignaciones, unidades)
         cursos = []
         for asignacion in asignaciones:
             por_unidad = {u.number: notas.get((asignacion.id, u.id)) for u in unidades}

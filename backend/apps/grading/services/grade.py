@@ -8,8 +8,10 @@ from apps.students.models import Enrollment
 
 from ..domain.grade_change import validar_correccion_directa
 from ..domain.scoring import calcular_nota_unidad
+from ..domain.unit_design import DefinicionDeUnidadInvalida, validar_actividad_calificable
 from ..models import Activity, Grade
 from .grade_change_request import hay_solicitud_pendiente
+from .promedio import puntos_evaluados_si_promediada
 
 ENTIDAD = "grading.Grade"
 
@@ -31,6 +33,10 @@ class InscripcionAjena(Exception):
 
 
 def _validar_rango(raw_score: Decimal, activity: Activity) -> None:
+    try:
+        validar_actividad_calificable(max_score=activity.max_score, nombre=activity.name)
+    except DefinicionDeUnidadInvalida as exc:
+        raise PunteoFueraDeRango(str(exc)) from exc
     if not (Decimal("0") <= raw_score <= activity.max_score):
         raise PunteoFueraDeRango(
             f"El punteo debe estar entre 0 y {activity.max_score} para '{activity.name}'."
@@ -100,7 +106,8 @@ def nota_de_unidad(*, enrollment: Enrollment, unit, assignment) -> Decimal:
     calificadas. El tope de 100 puntos (RN-01) es por curso, así que hace
     falta filtrar por `assignment`, no solo por unidad: una inscripción
     tiene actividades de varios cursos a la vez en la misma unidad. Solo
-    cuentan actividades vigentes, igual que en el tope de 100 puntos."""
+    cuentan actividades vigentes, igual que en el tope de 100 puntos. Si la
+    unidad está promediada (RN-22), se lleva a 100 sobre lo evaluado."""
     calificaciones = Grade.objects.filter(
         enrollment=enrollment,
         activity__unit=unit,
@@ -108,7 +115,8 @@ def nota_de_unidad(*, enrollment: Enrollment, unit, assignment) -> Decimal:
         activity__is_active=True,
         is_active=True,
     ).values_list("current_score", flat=True)
-    return calcular_nota_unidad(list(calificaciones))
+    puntos = puntos_evaluados_si_promediada([assignment], [unit]).get((assignment.id, unit.id))
+    return calcular_nota_unidad(list(calificaciones), puntos_evaluados=puntos)
 
 
 @transaction.atomic

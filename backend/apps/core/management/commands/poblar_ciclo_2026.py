@@ -61,7 +61,7 @@ from apps.communication.models import (
 from apps.core.models import AccessLog, AuditLog
 from apps.core.services import registrar_cambio
 from apps.documents.models import IssuedDocument
-from apps.grading.models import Activity, Grade, GradeChangeRequest, ReportCard
+from apps.grading.models import Activity, Grade, GradeChangeRequest, ReportCard, UnitAveraging
 from apps.payments.models import Payment
 from apps.scheduling.domain.day_structure import HORARIO_POR_JORNADA, jornada_de_grado
 from apps.scheduling.models import CalendarEvent, ScheduleBlock, TeacherAssignment
@@ -90,8 +90,8 @@ CENTAVO = Decimal("0.01")
 # diferidas, así que solo se revisan al cerrar la transacción.
 BORRAR_EN_ORDEN = [
     ConductReportArticle, ConductReport, ConversationRead, Message, Conversation, Announcement,
-    IssuedDocument, Payment,
-    ReportCard, GradeChangeRequest, Grade, Activity, Justification, Attendance, CalendarEvent,
+    IssuedDocument, Payment, ReportCard, UnitAveraging, GradeChangeRequest, Grade, Activity,
+    Justification, Attendance, CalendarEvent,
     ScheduleBlock, TeacherAssignment, GuardianStudentLink, Enrollment, Guardian, Student,
     Section, Course, AuditLog, AccessLog,
     BlacklistedToken, OutstandingToken,

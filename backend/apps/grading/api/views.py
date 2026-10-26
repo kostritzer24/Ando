@@ -5,7 +5,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
@@ -19,17 +19,19 @@ from apps.catalog.models import GradingUnit
 from apps.core.api.mixins import RegistraAccesoMixin, ScopedQuerysetMixin
 from apps.core.permissions import PermisoPorArea
 from apps.scheduling.models import TeacherAssignment
+from apps.students.models import Enrollment
 
 from ..domain.grade_change import SolicitudDeModificacionInvalida
 from ..domain.report_card import TransicionDeBoletinInvalida
 from ..domain.unit_design import DefinicionDeUnidadInvalida
 from ..models import Activity, Grade, GradeChangeRequest, ReportCard
-from ..selectors.avance import pendientes_por_inscripcion
+from ..selectors.avance import asignaciones_que_califican, pendientes_por_inscripcion
 from ..services.activity import (
     AsignacionNoCalifica,
     actualizar_actividad,
     crear_actividad,
     dar_de_baja_actividad,
+    repartir_puntos_de_unidad,
 )
 from ..services.grade import (
     InscripcionAjena,
@@ -39,12 +41,18 @@ from ..services.grade import (
     registrar_punteo,
 )
 from ..services.grade_change_request import resolver_modificacion, solicitar_modificacion
+from ..services.promedio import (
+    cambiar_promedio_de_unidad,
+    estado_de_unidad,
+    puntos_evaluados_si_promediada,
+)
 from ..services.report_card import (
     aprobar_boletin,
     aprobar_boletines,
     contenido_para_descargar,
     contenido_para_vista_previa,
     generar_boletines,
+    notas_por_curso_y_unidad,
     publicar_boletin,
     publicar_boletines,
 )
@@ -59,12 +67,16 @@ from .serializers import (
     ActivitySerializer,
     ActivityUpdateSerializer,
     CorreccionSerializer,
+    EstadoDeUnidadSerializer,
     GradeChangeRequestSerializer,
     GradeCreateSerializer,
     GradeSerializer,
+    NotaDeUnidadSerializer,
+    PromedioSerializer,
     ReportCardGenerateSerializer,
     ReportCardSerializer,
     ResolucionSerializer,
+    UnidadDeAsignacionSerializer,
 )
 
 _ROLES_SIN_ALCANCE_LIMITADO = {
@@ -75,6 +87,7 @@ _ROLES_SIN_ALCANCE_LIMITADO = {
 _ROLES_SIN_ALCANCE_LIMITADO_BOLETIN = {"Dirección", "Coordinación"}
 _ROLES_DOCENTES_QUE_CALIFICAN = {"Docente"}
 ROL_DIRECCION = "Dirección"
+ROL_FAMILIA = "Padre de familia"
 
 
 class _SoloDireccion(BasePermission):
@@ -105,6 +118,30 @@ def _filtrar(queryset, params, campos: dict[str, str]):
 def _requiere_asignacion_propia(user, assignment: TeacherAssignment) -> None:
     if user.role.name in _ROLES_DOCENTES_QUE_CALIFICAN and assignment.teacher_id != user.id:
         raise PermissionDenied("Esa asignación docente no es tuya.")
+
+
+def _inscripcion_visible(user, enrollment_public_id) -> Enrollment:
+    """La inscripción que se consulta tiene que estar al alcance de quien
+    pregunta: la familia, solo las de sus estudiantes vinculados; un
+    docente, las de las secciones donde da un curso."""
+    try:
+        uuid.UUID(str(enrollment_public_id))
+    except ValueError as exc:
+        raise ValidationError({"enrollment": "Indica una inscripción válida."}) from exc
+    inscripciones = Enrollment.objects.select_related("section", "cycle").filter(is_active=True)
+    if user.role.name == ROL_FAMILIA:
+        inscripciones = inscripciones.filter(
+            student__guardian_links__guardian__user=user,
+            student__guardian_links__is_active=True,
+        )
+    elif user.role.name in _ROLES_DOCENTES_QUE_CALIFICAN:
+        inscripciones = inscripciones.filter(
+            section__assignments__teacher=user,
+            section__assignments__is_active=True,
+        )
+    elif user.role.name not in _ROLES_SIN_ALCANCE_LIMITADO:
+        inscripciones = inscripciones.none()
+    return get_object_or_404(inscripciones.distinct(), public_id=enrollment_public_id)
 
 
 class ActivityViewSet(RegistraAccesoMixin, ScopedQuerysetMixin, viewsets.ModelViewSet):
@@ -170,6 +207,59 @@ class ActivityViewSet(RegistraAccesoMixin, ScopedQuerysetMixin, viewsets.ModelVi
             dar_de_baja_actividad(instance, usuario=self.request.user)
         except DefinicionDeUnidadInvalida as exc:
             raise ValidationError(str(exc)) from exc
+
+    def _unidad_propia(self, serializer_class, datos):
+        serializer = serializer_class(data=datos)
+        serializer.is_valid(raise_exception=True)
+        _requiere_asignacion_propia(self.request.user, serializer.validated_data["assignment"])
+        return serializer.validated_data
+
+    @extend_schema(request=UnidadDeAsignacionSerializer, responses=ActivitySerializer(many=True))
+    @action(detail=False, methods=["post"], url_path="distribute")
+    def distribute(self, request):
+        """RF-39 / RN-20: reparte los 100 puntos entre las actividades de la
+        unidad que todavía no tienen notas."""
+        datos = self._unidad_propia(UnidadDeAsignacionSerializer, request.data)
+        try:
+            actividades = repartir_puntos_de_unidad(
+                assignment=datos["assignment"], unit=datos["unit"], usuario=request.user
+            )
+        except DefinicionDeUnidadInvalida as exc:
+            raise ValidationError(str(exc)) from exc
+        return Response(ActivitySerializer(actividades, many=True).data)
+
+    @extend_schema(parameters=[UnidadDeAsignacionSerializer], responses=EstadoDeUnidadSerializer)
+    @action(detail=False, methods=["get"], url_path="unit-status")
+    def unit_status(self, request):
+        """RF-40: si la unidad está promediada, sobre cuántos puntos, y si ya
+        no se puede cambiar porque hay un boletín aprobado."""
+        datos = self._unidad_propia(UnidadDeAsignacionSerializer, request.query_params)
+        estado = estado_de_unidad(assignment=datos["assignment"], unit=datos["unit"])
+        return Response(EstadoDeUnidadSerializer(estado).data)
+
+    @extend_schema(request=PromedioSerializer, responses=EstadoDeUnidadSerializer)
+    @action(detail=False, methods=["post"], url_path="average")
+    def average(self, request):
+        """RF-40 / RN-22: activa o quita el promedio de la unidad; antes de
+        activarlo se pueden dar de baja actividades sin notas."""
+        datos = self._unidad_propia(PromedioSerializer, request.data)
+        a_dar_de_baja = datos.get("deactivate", [])
+        if any(
+            a.assignment_id != datos["assignment"].id or a.unit_id != datos["unit"].id
+            for a in a_dar_de_baja
+        ):
+            raise ValidationError({"deactivate": "Solo actividades de esta unidad y asignación."})
+        try:
+            estado = cambiar_promedio_de_unidad(
+                assignment=datos["assignment"],
+                unit=datos["unit"],
+                promediar=datos["averaged"],
+                usuario=request.user,
+                dar_de_baja=a_dar_de_baja,
+            )
+        except DefinicionDeUnidadInvalida as exc:
+            raise ValidationError(str(exc)) from exc
+        return Response(EstadoDeUnidadSerializer(estado).data)
 
 
 class GradeViewSet(
@@ -245,6 +335,42 @@ class GradeViewSet(
         except InscripcionAjena as exc:
             raise ValidationError({"enrollment": str(exc)}) from exc
         return Response(GradeSerializer(calificacion).data, status=status.HTTP_201_CREATED)
+
+    @extend_schema(
+        parameters=[OpenApiParameter("enrollment", str, required=True)],
+        responses=NotaDeUnidadSerializer(many=True),
+    )
+    @action(detail=False, methods=["get"], url_path="unit-summary")
+    def unit_summary(self, request):
+        """RF-29 / RN-22: la nota de cada curso y unidad de una inscripción,
+        calculada con la misma función que el boletín. Solo las unidades
+        con alguna nota, como antes hacía el portal al sumar."""
+        inscripcion = _inscripcion_visible(request.user, request.query_params.get("enrollment"))
+        asignaciones = list(
+            asignaciones_que_califican(secciones=[inscripcion.section], ciclos=[inscripcion.cycle])
+        )
+        if request.user.role.name in _ROLES_DOCENTES_QUE_CALIFICAN:
+            asignaciones = [a for a in asignaciones if a.teacher_id == request.user.id]
+        unidades = list(GradingUnit.objects.filter(cycle=inscripcion.cycle, is_active=True))
+        notas = notas_por_curso_y_unidad(inscripcion, asignaciones, unidades)
+        promediadas = puntos_evaluados_si_promediada(asignaciones, unidades)
+        es_familia = request.user.role.name == ROL_FAMILIA
+        filas = []
+        for asignacion in asignaciones:
+            for unidad in sorted(unidades, key=lambda u: u.number):
+                clave = (asignacion.id, unidad.id)
+                if clave not in notas:
+                    continue
+                fila = {
+                    "course_name": asignacion.course.name,
+                    "unit_number": unidad.number,
+                    "nota": notas[clave],
+                }
+                if not es_familia:
+                    # La familia ve solo la nota total (decisión del dueño).
+                    fila["promediada"] = clave in promediadas
+                filas.append(fila)
+        return Response(NotaDeUnidadSerializer(filas, many=True).data)
 
     @extend_schema(request=CorreccionSerializer, responses=GradeSerializer)
     @action(detail=True, methods=["post"], url_path="correct")

@@ -13,7 +13,7 @@ from apps.scheduling.models import TeacherAssignment
 
 from ..domain.report_card import formatear_nota
 from ..domain.unit_design import MAXIMO_PUNTOS_POR_UNIDAD
-from ..models import Activity, Grade
+from ..models import Activity, Grade, UnitAveraging
 
 
 def asignaciones_que_califican(*, secciones, ciclos):
@@ -54,6 +54,13 @@ def pendientes_por_inscripcion(*, inscripciones, unit) -> dict[int, list[dict]]:
         ).values_list("enrollment_id", "activity_id")
     )
 
+    promediadas = {
+        asignacion_id
+        for asignacion_id, _ in UnitAveraging.objects.filter(
+            assignment__in=asignaciones, unit=unit, averaged=True, is_active=True
+        ).values_list("assignment_id", "unit_id")
+    }
+
     pendientes = {}
     for inscripcion in inscripciones:
         cursos = []
@@ -64,16 +71,27 @@ def pendientes_por_inscripcion(*, inscripciones, unit) -> dict[int, list[dict]]:
             ):
                 continue
             actividades = actividades_por_asignacion[asignacion.id]
-            suma = sum((a.max_score for a in actividades), Decimal("0"))
+            suma = sum((a.max_score or Decimal("0") for a in actividades), Decimal("0"))
             faltan = sum(1 for a in actividades if (inscripcion.id, a.id) not in calificadas)
-            diseno_completo = suma == MAXIMO_PUNTOS_POR_UNIDAD
+            # RN-22: una unidad promediada no necesita llegar a 100; se
+            # califica sobre lo evaluado. Una actividad sin punteo máximo
+            # (RN-21) siempre deja la unidad incompleta.
+            sin_maximo = any(a.max_score is None for a in actividades)
+            diseno_completo = not sin_maximo and (
+                suma == MAXIMO_PUNTOS_POR_UNIDAD or asignacion.id in promediadas
+            )
             if faltan or not diseno_completo:
                 cursos.append(
                     {
                         "curso": asignacion.course.name,
                         "faltan": faltan,
                         "diseno_completo": diseno_completo,
-                        "detalle": _detalle(faltan=faltan, suma=suma),
+                        "detalle": _detalle(
+                            faltan=faltan,
+                            suma=suma,
+                            promediada=asignacion.id in promediadas,
+                            sin_maximo=sin_maximo,
+                        ),
                     }
                 )
         if not any(
@@ -93,11 +111,13 @@ def pendientes_por_inscripcion(*, inscripciones, unit) -> dict[int, list[dict]]:
     return pendientes
 
 
-def _detalle(*, faltan: int, suma: Decimal) -> str:
+def _detalle(*, faltan: int, suma: Decimal, promediada: bool, sin_maximo: bool) -> str:
     partes = []
     if faltan:
         partes.append(f"falta{'n' if faltan > 1 else ''} {faltan} nota{'s' if faltan > 1 else ''}")
-    if suma != MAXIMO_PUNTOS_POR_UNIDAD:
+    if sin_maximo:
+        partes.append("hay actividades sin punteo máximo")
+    if suma != MAXIMO_PUNTOS_POR_UNIDAD and not promediada:
         partes.append(
             f"la unidad suma {formatear_nota(suma)} de "
             f"{formatear_nota(MAXIMO_PUNTOS_POR_UNIDAD)} puntos"
