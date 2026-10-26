@@ -121,7 +121,7 @@ def contar_no_leidas(queryset: QuerySet, usuario) -> int:
     return con_no_leido(queryset, usuario).filter(no_leido=True).count()
 
 
-def buscar_destinatarios(texto: str = "", limite: int = 30) -> list[dict]:
+def buscar_destinatarios(texto: str = "") -> list[dict]:
     """RF-38: una fila por vínculo activo encargado–alumno, con el alumno
     inscrito; se busca por el nombre de cualquiera de los dos."""
     vinculos = (
@@ -149,5 +149,5 @@ def buscar_destinatarios(texto: str = "", limite: int = 30) -> list[dict]:
             "student_name": vinculo.student.nombre_completo(),
             "label": f"{vinculo.guardian.full_name} / {vinculo.student.nombre_completo()}",
         }
-        for vinculo in vinculos[:limite]
+        for vinculo in vinculos
     ]

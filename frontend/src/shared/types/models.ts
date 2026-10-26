@@ -32,6 +32,8 @@ export type Justification = components["schemas"]["Justification"];
 
 export type Activity = components["schemas"]["Activity"];
 export type Grade = components["schemas"]["Grade"];
+export type EstadoDeUnidad = components["schemas"]["EstadoDeUnidad"];
+export type NotaDeUnidad = components["schemas"]["NotaDeUnidad"];
 export type GradeChangeRequest = components["schemas"]["GradeChangeRequest"];
 export type ReportCard = components["schemas"]["ReportCard"];
 
@@ -42,6 +44,10 @@ export type Announcement = components["schemas"]["Announcement"];
 export type ConductReport = components["schemas"]["ConductReport"];
 export type ConductReportCreate = components["schemas"]["ConductReportCreate"];
 export type Message = components["schemas"]["Message"];
+export type Conversation = components["schemas"]["Conversation"];
+export type ConversationDetail = components["schemas"]["ConversationDetail"];
+export type ConversationCreate = components["schemas"]["ConversationCreate"];
+export type Recipient = components["schemas"]["Recipient"];
 
 /** Forma común de toda lista paginada del backend (`PageNumberPagination`). */
 export interface Paginada<T> {

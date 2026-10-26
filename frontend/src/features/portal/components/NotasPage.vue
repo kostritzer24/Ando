@@ -5,15 +5,16 @@ import { unidadesApi } from "@/features/catalogo/api/catalogoApi";
 import { descargarArchivo } from "@/features/pagos/api/pagosApi";
 import { usePortalStore } from "@/features/portal/stores/portalStore";
 import { AppButton, CargandoBloque, EmptyState, ErrorBanner, PageHeader } from "@/shared/components";
-import type { Grade, GradingUnit, ReportCard } from "@/shared/types/models";
+import { notasDeUnidad } from "@/features/notas/api/notasApi";
+import type { GradingUnit, NotaDeUnidad, ReportCard } from "@/shared/types/models";
 
-import { descargarBoletin, gradesApi, reportCardsApi } from "../api/portalApi";
+import { descargarBoletin, reportCardsApi } from "../api/portalApi";
 
 const portal = usePortalStore();
 
 const cargando = ref(true);
 const error = ref("");
-const notas = ref<Grade[]>([]);
+const notas = ref<NotaDeUnidad[]>([]);
 const boletines = ref<ReportCard[]>([]);
 const unidades = ref<GradingUnit[]>([]);
 const descargandoId = ref("");
@@ -36,23 +37,17 @@ interface GrupoCurso {
   unidades: FilaUnidad[];
 }
 
+// La nota de cada unidad ya viene calculada del servidor con la misma
+// función que el boletín (suma, o promediada si el docente lo activó,
+// RN-22): aquí solo se agrupa por curso, nunca se vuelve a sumar.
 const notasPorCurso = computed<GrupoCurso[]>(() => {
-  const propias = notas.value.filter((n) => inscripcionesIds.value.has(n.enrollment));
-  const cursos = new Map<string, Map<number, FilaUnidad>>();
-  for (const nota of propias) {
-    const courseName = nota.course_name;
-    const unitNumber = nota.unit_number;
-    if (!cursos.has(courseName)) cursos.set(courseName, new Map());
-    const unidades = cursos.get(courseName)!;
-    if (!unidades.has(unitNumber)) unidades.set(unitNumber, { unidad: unitNumber, nota: 0 });
-    const fila = unidades.get(unitNumber)!;
-    fila.nota += Number(nota.current_score);
+  const cursos = new Map<string, FilaUnidad[]>();
+  for (const nota of notas.value) {
+    if (!cursos.has(nota.course_name)) cursos.set(nota.course_name, []);
+    cursos.get(nota.course_name)!.push({ unidad: nota.unit_number, nota: Number(nota.nota) });
   }
   return Array.from(cursos.entries())
-    .map(([curso, unidades]) => ({
-      curso,
-      unidades: Array.from(unidades.values()).sort((a, b) => a.unidad - b.unidad),
-    }))
+    .map(([curso, unidades]) => ({ curso, unidades: unidades.sort((a, b) => a.unidad - b.unidad) }))
     .sort((a, b) => a.curso.localeCompare(b.curso));
 });
 
@@ -67,8 +62,11 @@ async function cargar(): Promise<void> {
   cargando.value = true;
   error.value = "";
   try {
-    const [notasResp, boletinesResp] = await Promise.all([gradesApi.listar(), reportCardsApi.listar()]);
-    notas.value = notasResp.results;
+    const [notasPorInscripcion, boletinesResp] = await Promise.all([
+      Promise.all(portal.inscripcionesDelSeleccionado.map((i) => notasDeUnidad(i.public_id))),
+      reportCardsApi.listar(),
+    ]);
+    notas.value = notasPorInscripcion.flat();
     boletines.value = boletinesResp.results;
     const cicloId = portal.inscripcionesDelSeleccionado[0]?.cycle;
     unidades.value = cicloId ? (await unidadesApi(cicloId).listar()).results : [];

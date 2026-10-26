@@ -1,9 +1,8 @@
 import type { Jornada } from "@/features/horarios/api/horariosApi";
 import { http } from "@/app/http";
 import { crearRecursoCrud } from "@/shared/api/resource";
-import type { Attendance, CalendarEvent, Grade, ReportCard } from "@/shared/types/models";
+import type { Attendance, CalendarEvent, ReportCard } from "@/shared/types/models";
 
-export const gradesApi = crearRecursoCrud<Grade>("/grades/");
 export const attendanceApi = crearRecursoCrud<Attendance>("/attendance/");
 export const reportCardsApi = crearRecursoCrud<ReportCard>("/report-cards/");
 

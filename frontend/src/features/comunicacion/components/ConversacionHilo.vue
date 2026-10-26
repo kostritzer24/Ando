@@ -3,21 +3,19 @@ import { TagPill } from "@/shared/components";
 import type { Message } from "@/shared/types/models";
 
 /**
- * Un hilo del buzón como conversación: cada mensaje en su burbuja, los
+ * Una conversación del buzón: cada mensaje en su burbuja, los
  * propios a la derecha y los de la otra parte a la izquierda, con el
  * nombre y el cargo de quien escribe (familia, docente o dirección).
  * Las palabras larguísimas se parten dentro de la burbuja en lugar de
  * ensanchar la pantalla.
  */
 const props = defineProps<{
-  hilo: Message;
-  respuestas: Message[];
+  mensajes: Message[];
   /** Nombre de usuario de quien mira, para saber qué burbujas son suyas. */
   usuarioActual: string;
 }>();
 
-// Lo propio se lee "Tú"; a una familia, el lado administrativo la reconoce
-// como "Usuario familia - <estudiante>".
+// Lo propio se lee "Tú"; una familia aparece como "Encargado / Alumno".
 function quien(mensaje: Message): string {
   if (mensaje.sender === props.usuarioActual) return "Tú";
   return mensaje.sender_label || mensaje.sender_name || mensaje.sender;
@@ -50,7 +48,7 @@ function fecha(mensaje: Message): string {
 <template>
   <ol class="conversacion">
     <li
-      v-for="mensaje in [hilo, ...respuestas]"
+      v-for="mensaje in mensajes"
       :key="mensaje.public_id"
       class="conversacion__fila"
       :class="{ 'conversacion__fila--propia': mensaje.sender === usuarioActual }"

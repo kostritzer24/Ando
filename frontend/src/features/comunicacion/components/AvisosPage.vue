@@ -5,16 +5,20 @@ import { seccionesApi } from "@/features/catalogo/api/catalogoApi";
 import { AppButton, AppModal, CargandoBloque, EmptyState, ErrorBanner, FormField, FormSelect, PageHeader } from "@/shared/components";
 import { avisar } from "@/shared/composables/useAvisos";
 import { confirmar } from "@/shared/composables/useConfirmar";
+import { mensajeDelServidor } from "@/shared/api/errores";
 import { usePermisos } from "@/shared/permisos";
 import type { Announcement, Section } from "@/shared/types/models";
 
-import { announcementsApi } from "../api/comunicacionApi";
+import { announcementsApi, seccionesParaAvisos } from "../api/comunicacionApi";
 
 const AUDIENCIA_TODOS = "todos";
 const AUDIENCIA_SECCION = "seccion";
 
-// Publica y retira quien edita Avisos (Dirección); el resto consulta.
-// Los nombres de sección salen de Datos maestros, que no todos alcanzan.
+// Publica quien edita Avisos (Dirección y docentes); cada docente edita y
+// retira solo lo que publicó y Dirección cualquiera (RN-18) — eso lo dice
+// el servidor en `puede_editar`. Las secciones para publicar salen de
+// /announcements/target-sections/; los nombres de avisos viejos, de Datos
+// maestros cuando el rol lo alcanza.
 const permisos = usePermisos();
 const puedePublicar = computed(() => permisos.puedeEditar("avisos"));
 const veSecciones = computed(() => permisos.puedeVer("datos_maestros"));
@@ -23,13 +27,17 @@ const cargando = ref(true);
 const error = ref("");
 const avisos = ref<Announcement[]>([]);
 const secciones = ref<Section[]>([]);
+const seccionesDestino = ref<Section[]>([]);
 
 const opcionesSeccion = computed(() =>
-  secciones.value.map((s) => ({ valor: s.public_id, etiqueta: `${s.grade} ${s.letter ?? ""}`.trimEnd() })),
+  seccionesDestino.value.map((s) => ({
+    valor: s.public_id,
+    etiqueta: `${s.grade} ${s.letter ?? ""}`.trimEnd(),
+  })),
 );
 
 function nombreSeccion(publicId: string | null | undefined): string {
-  const seccion = secciones.value.find((s) => s.public_id === publicId);
+  const seccion = [...seccionesDestino.value, ...secciones.value].find((s) => s.public_id === publicId);
   return seccion ? `${seccion.grade} ${seccion.letter ?? ""}`.trimEnd() : "";
 }
 
@@ -37,12 +45,14 @@ async function cargar(): Promise<void> {
   cargando.value = true;
   error.value = "";
   try {
-    const [avisosResp, seccionesResp] = await Promise.all([
+    const [avisosResp, seccionesResp, destino] = await Promise.all([
       announcementsApi.listar(),
       veSecciones.value ? seccionesApi.listar() : Promise.resolve({ results: [] as Section[] }),
+      puedePublicar.value ? seccionesParaAvisos() : Promise.resolve([] as Section[]),
     ]);
     avisos.value = avisosResp.results;
     secciones.value = seccionesResp.results.filter((s) => s.is_active !== false);
+    seccionesDestino.value = destino;
   } catch {
     error.value = "No se pudo cargar la cartelera de avisos. Inténtalo de nuevo.";
   } finally {
@@ -51,6 +61,7 @@ async function cargar(): Promise<void> {
 }
 
 const modalAbierto = ref(false);
+const editando = ref<Announcement | null>(null);
 const guardando = ref(false);
 const errorGuardado = ref("");
 const formulario = reactive({
@@ -62,6 +73,7 @@ const formulario = reactive({
 });
 
 function abrirNuevo(): void {
+  editando.value = null;
   formulario.title = "";
   formulario.content = "";
   formulario.audience = AUDIENCIA_TODOS;
@@ -71,21 +83,41 @@ function abrirNuevo(): void {
   modalAbierto.value = true;
 }
 
+function abrirEdicion(aviso: Announcement): void {
+  editando.value = aviso;
+  formulario.title = aviso.title;
+  formulario.content = aviso.content;
+  formulario.audience = aviso.audience;
+  formulario.target_section = aviso.target_section ?? "";
+  formulario.expires_at = aviso.expires_at ? aviso.expires_at.slice(0, 10) : "";
+  errorGuardado.value = "";
+  modalAbierto.value = true;
+}
+
 async function guardar(): Promise<void> {
   guardando.value = true;
   errorGuardado.value = "";
   try {
-    await announcementsApi.crear({
+    const datos = {
       title: formulario.title,
       content: formulario.content,
       audience: formulario.audience as Announcement["audience"],
       target_section: formulario.audience === AUDIENCIA_SECCION ? formulario.target_section : null,
       expires_at: formulario.expires_at ? new Date(formulario.expires_at).toISOString() : null,
-    });
+    };
+    if (editando.value) {
+      await announcementsApi.actualizar(editando.value.public_id, datos);
+      avisar("Aviso actualizado.");
+    } else {
+      await announcementsApi.crear(datos);
+    }
     modalAbierto.value = false;
     await cargar();
-  } catch {
-    errorGuardado.value = "No se pudo publicar el aviso. Revisa los datos e inténtalo de nuevo.";
+  } catch (e) {
+    errorGuardado.value = mensajeDelServidor(
+      e,
+      "No se pudo guardar el aviso. Revisa los datos e inténtalo de nuevo.",
+    );
   } finally {
     guardando.value = false;
   }
@@ -140,15 +172,19 @@ onMounted(cargar);
             <p class="avisos-page__texto">{{ aviso.content }}</p>
             <p class="avisos-page__meta">
               {{ new Date(aviso.published_at).toLocaleDateString("es-GT") }} —
-              {{ aviso.audience === "todos" ? "Todos" : nombreSeccion(aviso.target_section) }}
+              {{ aviso.audience === "todos" ? "Todos" : nombreSeccion(aviso.target_section) }} —
+              {{ aviso.published_by_name }}
             </p>
           </div>
-          <AppButton v-if="puedePublicar" variante="discreto" compacto @click="retirar(aviso)">Retirar</AppButton>
+          <div v-if="aviso.puede_editar" class="avisos-page__acciones">
+            <AppButton variante="discreto" compacto @click="abrirEdicion(aviso)">Editar</AppButton>
+            <AppButton variante="discreto" compacto @click="retirar(aviso)">Retirar</AppButton>
+          </div>
         </li>
       </ul>
     </template>
 
-    <AppModal v-if="modalAbierto" titulo="Publicar aviso" @cerrar="modalAbierto = false">
+    <AppModal v-if="modalAbierto" :titulo="editando ? 'Editar aviso' : 'Publicar aviso'" @cerrar="modalAbierto = false">
       <form class="avisos-page__formulario" @submit.prevent="guardar">
         <ErrorBanner v-if="errorGuardado" :mensaje="errorGuardado" />
         <FormField id="title" etiqueta="Título" v-model="formulario.title" />
@@ -176,7 +212,7 @@ onMounted(cargar);
           v-model="formulario.expires_at"
         />
         <AppButton tipo="submit" :deshabilitado="guardando">
-          {{ guardando ? "Publicando…" : "Publicar" }}
+          {{ guardando ? "Guardando…" : editando ? "Guardar cambios" : "Publicar" }}
         </AppButton>
       </form>
     </AppModal>
@@ -184,6 +220,12 @@ onMounted(cargar);
 </template>
 
 <style scoped>
+.avisos-page__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espacio-xs);
+  flex: none;
+}
 
 .avisos-page__lista {
   list-style: none;

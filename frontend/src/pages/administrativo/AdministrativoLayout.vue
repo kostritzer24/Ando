@@ -21,6 +21,7 @@ import {
   Users,
   Wallet,
 } from "lucide-vue-next";
+import { useInsigniaBuzon } from "@/features/comunicacion/stores/buzonStore";
 import { AdminShell } from "@/shared/components";
 import type { GrupoNavegacion } from "@/shared/components/AdminShell.vue";
 
@@ -101,10 +102,17 @@ const navegacion: GrupoNavegacion[] = [
     ],
   },
 ];
+
+const insignias = useInsigniaBuzon("/administrativo/buzon");
 </script>
 
 <template>
-  <AdminShell portal="Portal administrativo" :navegacion="navegacion" ruta-cuenta="/administrativo/cuenta">
+  <AdminShell
+    portal="Portal administrativo"
+    :navegacion="navegacion"
+    ruta-cuenta="/administrativo/cuenta"
+    :insignias="insignias"
+  >
     <RouterView />
   </AdminShell>
 </template>

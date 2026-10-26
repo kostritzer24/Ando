@@ -41,6 +41,7 @@ defineEmits<{ "update:modelValue": [string] }>();
 }
 
 .bottom-tab-bar__item {
+  position: relative;
   flex: 1;
   display: flex;
   flex-direction: column;

@@ -14,11 +14,11 @@ import {
 import { computed, onMounted, ref, type Component } from "vue";
 
 import { useAuthStore } from "@/features/auth/stores/authStore";
-import { messagesApi } from "@/features/comunicacion/api/comunicacionApi";
+import { contarNoLeidas } from "@/features/comunicacion/api/comunicacionApi";
 import { gradeChangeRequestsApi } from "@/features/notas/api/notasApi";
 import { CargandoBloque, ErrorBanner, PageHeader } from "@/shared/components";
 import { type Area, usePermisos } from "@/shared/permisos";
-import type { GradeChangeRequest, Message } from "@/shared/types/models";
+import type { GradeChangeRequest } from "@/shared/types/models";
 
 interface Acceso {
   a: string;
@@ -44,21 +44,21 @@ const muestraPendientes = computed(() => resuelveModificaciones.value || respond
 const cargando = ref(false);
 const error = ref("");
 const modificacionesPendientes = ref(0);
-const mensajesSinResponder = ref(0);
+const conversacionesSinLeer = ref(0);
 
 async function cargarPendientes(): Promise<void> {
   if (!muestraPendientes.value) return;
   cargando.value = true;
   error.value = "";
   try {
-    const [solicitudes, mensajes] = await Promise.all([
+    const [solicitudes, sinLeer] = await Promise.all([
       resuelveModificaciones.value ? gradeChangeRequestsApi.listar() : Promise.resolve({ results: [] }),
-      respondeBuzon.value ? messagesApi.listar() : Promise.resolve({ results: [] }),
+      respondeBuzon.value ? contarNoLeidas() : Promise.resolve(0),
     ]);
     modificacionesPendientes.value = (solicitudes.results as GradeChangeRequest[]).filter(
       (s) => s.status === "pendiente",
     ).length;
-    mensajesSinResponder.value = (mensajes.results as Message[]).filter((m) => m.status !== "respondido").length;
+    conversacionesSinLeer.value = sinLeer;
   } catch {
     error.value = "No se pudieron cargar los pendientes.";
   } finally {
@@ -77,8 +77,8 @@ const pendientes = computed(() =>
     },
     {
       a: "/administrativo/buzon",
-      cantidad: mensajesSinResponder.value,
-      texto: (n: number) => (n === 1 ? "mensaje de familia sin responder" : "mensajes de familias sin responder"),
+      cantidad: conversacionesSinLeer.value,
+      texto: (n: number) => (n === 1 ? "conversación sin leer en el buzón" : "conversaciones sin leer en el buzón"),
       icono: Inbox,
     },
   ].filter((p) => p.cantidad > 0),

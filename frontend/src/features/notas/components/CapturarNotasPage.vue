@@ -3,14 +3,25 @@ import { computed, onMounted, reactive, ref, watch } from "vue";
 
 import { assignmentsApi } from "@/features/asignaciones/api/asignacionesApi";
 import { enrollmentsApi } from "@/features/estudiantes/api/estudiantesApi";
-import { AppButton, AppModal, CargandoBloque, ErrorBanner, FormField, FormSelect, PageHeader } from "@/shared/components";
+import {
+  AppButton,
+  AppModal,
+  CargandoBloque,
+  ErrorBanner,
+  FormField,
+  FormSelect,
+  PageHeader,
+  TagPill,
+} from "@/shared/components";
 import { avisar } from "@/shared/composables/useAvisos";
-import type { Activity, Enrollment, Grade, GradingUnit, TeacherAssignment } from "@/shared/types/models";
+import type { Activity, Enrollment, EstadoDeUnidad, Grade, GradingUnit, TeacherAssignment } from "@/shared/types/models";
 
 import {
   activitiesApi,
   corregirNota,
   enPlazoDeEntrega,
+  estadoDeUnidad,
+  etiquetaPromedio,
   gradesApi,
   motivoDelRechazo,
   registrarPunteo,
@@ -27,6 +38,10 @@ const unidadElegida = ref("");
 const unidades = ref<GradingUnit[]>([]);
 const actividades = ref<Activity[]>([]);
 const actividadElegida = ref("");
+const estado = ref<EstadoDeUnidad | null>(null);
+const etiquetaDelPromedio = computed(() => etiquetaPromedio(estado.value));
+// RN-21: una actividad sin punteo máximo todavía no se califica.
+const sinPunteo = computed(() => actividades.value.filter((a) => a.max_score === null));
 
 const inscripciones = ref<Enrollment[]>([]);
 const notas = ref<Grade[]>([]);
@@ -46,7 +61,9 @@ const unidadesDisponibles = computed(() =>
   unidades.value.map((u) => ({ valor: u.public_id, etiqueta: `Unidad ${u.number}` })),
 );
 const opcionesActividad = computed(() =>
-  actividades.value.map((a) => ({ valor: a.public_id, etiqueta: `${a.name} (${a.max_score} pts)` })),
+  actividades.value
+    .filter((a) => a.max_score !== null)
+    .map((a) => ({ valor: a.public_id, etiqueta: `${a.name} (${a.max_score} pts)` })),
 );
 
 const actividadElegidaObj = computed(() => actividades.value.find((a) => a.public_id === actividadElegida.value));
@@ -97,8 +114,12 @@ async function cargarActividadesDeLaUnidad(): Promise<void> {
     actividades.value = [];
     return;
   }
-  const respuesta = await activitiesApi.listar({ assignment: asignacionElegida.value, unit: unidadElegida.value });
+  const [respuesta, estadoActual] = await Promise.all([
+    activitiesApi.listar({ assignment: asignacionElegida.value, unit: unidadElegida.value }),
+    estadoDeUnidad(asignacionElegida.value, unidadElegida.value),
+  ]);
   actividades.value = respuesta.results.filter((a) => a.is_active !== false);
+  estado.value = estadoActual;
   actividadElegida.value = opcionesActividad.value[0]?.valor ?? "";
 }
 
@@ -221,6 +242,14 @@ onMounted(async () => {
         />
       </div>
 
+      <p v-if="etiquetaDelPromedio" class="capturar-notas__plazo">
+        <TagPill variante="aviso">{{ etiquetaDelPromedio }}</TagPill>
+      </p>
+      <p v-if="sinPunteo.length" class="capturar-notas__plazo">
+        Sin punteo máximo todavía (no se pueden calificar): {{ sinPunteo.map((a) => a.name).join(", ") }}.
+        Asígnalo o reparte los puntos en «Diseñar la unidad».
+      </p>
+
       <p v-if="actividadElegida && fechaEntrega" class="capturar-notas__plazo">
         <template v-if="enPlazo">
           Puedes corregir una nota ya guardada hasta el {{ fechaEntrega }}, fecha de entrega de notas.
@@ -267,7 +296,7 @@ onMounted(async () => {
               inputmode="decimal"
               step="0.01"
               min="0"
-              :max="actividadElegidaObj?.max_score"
+              :max="actividadElegidaObj?.max_score ?? undefined"
               :value="notaDe(inscripcion)?.current_score ?? ''"
               class="capturar-notas__input"
               :disabled="guardandoPorEstudiante[inscripcion.public_id]"

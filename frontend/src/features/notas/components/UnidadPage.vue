@@ -2,13 +2,33 @@
 import { computed, onMounted, reactive, ref, watch } from "vue";
 
 import { assignmentsApi } from "@/features/asignaciones/api/asignacionesApi";
-import { AppButton, AppModal, CargandoBloque, DataTable, ErrorBanner, FormField, FormSelect, PageHeader } from "@/shared/components";
-import type { Activity, ActivityType, GradingUnit, TeacherAssignment } from "@/shared/types/models";
+import {
+  AppButton,
+  AppModal,
+  CargandoBloque,
+  DataTable,
+  ErrorBanner,
+  FormField,
+  FormSelect,
+  PageHeader,
+  TagPill,
+} from "@/shared/components";
+import type { Activity, ActivityType, EstadoDeUnidad, GradingUnit, TeacherAssignment } from "@/shared/types/models";
 
 import { avisar } from "@/shared/composables/useAvisos";
 import { confirmar } from "@/shared/composables/useConfirmar";
 
-import { activitiesApi, activityTypesApi, motivoDelRechazo, unidadesDeCiclo } from "../api/notasApi";
+import {
+  activitiesApi,
+  activityTypesApi,
+  cambiarPromedio,
+  estadoDeUnidad,
+  etiquetaPromedio,
+  gradesApi,
+  motivoDelRechazo,
+  repartirPuntos,
+  unidadesDeCiclo,
+} from "../api/notasApi";
 
 const cargando = ref(true);
 const error = ref("");
@@ -37,13 +57,18 @@ const opcionesTipo = computed(() =>
 );
 
 const puntosUsados = computed(() =>
-  actividades.value.reduce((total, act) => total + Number(act.max_score), 0),
+  actividades.value.reduce((total, act) => total + Number(act.max_score ?? 0), 0),
 );
 const puntosDisponibles = computed(() => 100 - puntosUsados.value);
 // Al editar, los puntos de la propia actividad vuelven a estar disponibles.
 const puntosParaElFormulario = computed(
-  () => puntosDisponibles.value + (editando.value ? Number(editando.value.max_score) : 0),
+  () => puntosDisponibles.value + (editando.value ? Number(editando.value.max_score ?? 0) : 0),
 );
+const sinPunteo = computed(() => actividades.value.filter((a) => a.max_score === null).length);
+
+// RF-40: estado del promedio de esta unidad para esta asignación.
+const estado = ref<EstadoDeUnidad | null>(null);
+const etiquetaDelPromedio = computed(() => etiquetaPromedio(estado.value));
 const cantidadPruebasCortas = computed(() => {
   const idsPruebaCorta = new Set(
     tiposActividad.value.filter((t) => t.counts_as_short_quiz).map((t) => t.public_id),
@@ -100,11 +125,12 @@ async function cargarActividades(): Promise<void> {
   cargandoActividades.value = true;
   error.value = "";
   try {
-    const respuesta = await activitiesApi.listar({
-      assignment: asignacionElegida.value,
-      unit: unidadElegida.value,
-    });
+    const [respuesta, estadoActual] = await Promise.all([
+      activitiesApi.listar({ assignment: asignacionElegida.value, unit: unidadElegida.value }),
+      estadoDeUnidad(asignacionElegida.value, unidadElegida.value),
+    ]);
     actividades.value = respuesta.results.filter((a) => a.is_active !== false);
+    estado.value = estadoActual;
   } catch {
     error.value = "No se pudieron cargar las actividades de la unidad. Inténtalo de nuevo.";
   } finally {
@@ -117,7 +143,7 @@ function abrirEdicion(actividad: Activity): void {
   errorFormulario.value = "";
   formulario.name = actividad.name;
   formulario.activity_type = actividad.activity_type;
-  formulario.max_score = actividad.max_score;
+  formulario.max_score = actividad.max_score ?? "";
   formulario.due_date = actividad.due_date;
   modalAbierto.value = true;
 }
@@ -125,7 +151,9 @@ function abrirEdicion(actividad: Activity): void {
 async function darDeBaja(actividad: Activity): Promise<void> {
   const seguir = await confirmar({
     titulo: `¿Quitar "${actividad.name}"?`,
-    mensaje: `Libera ${actividad.max_score} puntos de la unidad. Solo se puede si todavía no tiene notas.`,
+    mensaje: actividad.max_score
+      ? `Libera ${actividad.max_score} puntos de la unidad. Solo se puede si todavía no tiene notas.`
+      : "Solo se puede si todavía no tiene notas.",
     etiquetaConfirmar: "Quitar actividad",
     peligro: true,
   });
@@ -157,7 +185,7 @@ async function guardar(): Promise<void> {
       await activitiesApi.actualizar(editando.value.public_id, {
         name: formulario.name,
         activity_type: formulario.activity_type,
-        max_score: formulario.max_score,
+        max_score: formulario.max_score || null,
         due_date: formulario.due_date,
       });
       modalAbierto.value = false;
@@ -170,7 +198,8 @@ async function guardar(): Promise<void> {
       unit: unidadElegida.value,
       activity_type: formulario.activity_type,
       name: formulario.name,
-      max_score: formulario.max_score,
+      // RF-39: se puede crear sin punteo y repartir después.
+      max_score: formulario.max_score || null,
       due_date: formulario.due_date,
     });
     modalAbierto.value = false;
@@ -182,6 +211,75 @@ async function guardar(): Promise<void> {
   } finally {
     guardando.value = false;
   }
+}
+
+async function repartir(): Promise<void> {
+  const seguir = await confirmar({
+    titulo: "¿Repartir los 100 puntos?",
+    mensaje:
+      "Las actividades que ya tienen notas conservan su punteo; lo que sobra se divide en partes iguales entre las demás. Después puedes ajustar cada una a mano.",
+    etiquetaConfirmar: "Repartir puntos",
+  });
+  if (!seguir) return;
+  try {
+    await repartirPuntos(asignacionElegida.value, unidadElegida.value);
+    avisar("Puntos repartidos.");
+    await cargarActividades();
+  } catch (e) {
+    error.value = motivoDelRechazo(e, "No se pudieron repartir los puntos. Inténtalo de nuevo.");
+  }
+}
+
+// RF-40: antes de promediar se ofrece quitar las actividades sin notas
+// que ya no se harán (las calificadas no se pueden quitar).
+const modalPromedio = ref(false);
+const sinNotas = ref<Activity[]>([]);
+const aQuitar = ref<string[]>([]);
+const cambiandoPromedio = ref(false);
+const errorPromedio = ref("");
+
+async function abrirPromedio(): Promise<void> {
+  errorPromedio.value = "";
+  aQuitar.value = [];
+  try {
+    const notas = await gradesApi.listar({ assignment: asignacionElegida.value, unit: unidadElegida.value });
+    const calificadas = new Set(notas.results.map((n) => n.activity));
+    sinNotas.value = actividades.value.filter((a) => !calificadas.has(a.public_id));
+    modalPromedio.value = true;
+  } catch (e) {
+    error.value = motivoDelRechazo(e, "No se pudieron revisar las notas de la unidad. Inténtalo de nuevo.");
+  }
+}
+
+async function guardarPromedio(promediar: boolean): Promise<void> {
+  cambiandoPromedio.value = true;
+  errorPromedio.value = "";
+  try {
+    estado.value = await cambiarPromedio({
+      assignment: asignacionElegida.value,
+      unit: unidadElegida.value,
+      averaged: promediar,
+      deactivate: promediar ? aQuitar.value : [],
+    });
+    modalPromedio.value = false;
+    avisar(promediar ? "La unidad quedó promediada." : "La unidad vuelve a sumar los punteos.");
+    await cargarActividades();
+  } catch (e) {
+    const motivo = motivoDelRechazo(e, "No se pudo cambiar el promedio. Inténtalo de nuevo.");
+    if (modalPromedio.value) errorPromedio.value = motivo;
+    else error.value = motivo;
+  } finally {
+    cambiandoPromedio.value = false;
+  }
+}
+
+async function quitarPromedio(): Promise<void> {
+  const seguir = await confirmar({
+    titulo: "¿Quitar el promedio?",
+    mensaje: "La nota de la unidad vuelve a ser la suma de los punteos.",
+    etiquetaConfirmar: "Quitar promedio",
+  });
+  if (seguir) await guardarPromedio(false);
 }
 
 watch(asignacionElegida, cargarUnidades);
@@ -215,18 +313,49 @@ onMounted(async () => {
 
       <template v-else-if="unidadElegida">
         <div class="unidad-page__resumen">
+          <p v-if="etiquetaDelPromedio">
+            <TagPill variante="aviso">{{ etiquetaDelPromedio }}</TagPill>
+          </p>
           <p>
             <strong>{{ puntosUsados }}</strong> de 100 puntos usados
             ({{ puntosDisponibles }} disponibles).
+          </p>
+          <p v-if="sinPunteo" class="unidad-page__aviso">
+            {{ sinPunteo === 1 ? "1 actividad no tiene" : `${sinPunteo} actividades no tienen` }} punteo
+            todavía; no se puede calificar hasta asignárselo o repartir los puntos.
+          </p>
+          <p v-if="estado?.bloqueada" class="unidad-page__nota">
+            Dirección ya aprobó boletines de esta unidad: el promedio ya no se puede cambiar.
           </p>
           <p :class="{ 'unidad-page__aviso': cantidadPruebasCortas < 4 }">
             {{ cantidadPruebasCortas }} de 4 pruebas cortas como mínimo.
           </p>
         </div>
 
-        <AppButton :deshabilitado="puntosDisponibles <= 0" @click="abrirNueva">
-          Agregar actividad
-        </AppButton>
+        <div class="unidad-page__botones">
+          <AppButton :deshabilitado="puntosDisponibles <= 0 && sinPunteo === 0" @click="abrirNueva">
+            Agregar actividad
+          </AppButton>
+          <AppButton variante="secundario" :deshabilitado="actividades.length === 0" @click="repartir">
+            Repartir puntos
+          </AppButton>
+          <AppButton
+            v-if="estado?.promediada"
+            variante="secundario"
+            :deshabilitado="estado.bloqueada || cambiandoPromedio"
+            @click="quitarPromedio"
+          >
+            Quitar promedio
+          </AppButton>
+          <AppButton
+            v-else
+            variante="secundario"
+            :deshabilitado="!estado || estado.bloqueada || actividades.length === 0"
+            @click="abrirPromedio"
+          >
+            Promediar unidad
+          </AppButton>
+        </div>
 
         <DataTable
           v-if="actividades.length > 0"
@@ -238,6 +367,9 @@ onMounted(async () => {
           ]"
           :filas="actividades"
         >
+          <template #celda-max_score="{ fila }">
+            {{ (fila as unknown as Activity).max_score ?? "Sin punteo" }}
+          </template>
           <template #acciones="{ fila }">
             <button type="button" class="unidad-page__accion" @click="abrirEdicion(fila as unknown as Activity)">
               Editar
@@ -269,9 +401,9 @@ onMounted(async () => {
           />
           <FormField
             id="max_score"
-            etiqueta="Punteo máximo"
+            etiqueta="Punteo máximo (opcional)"
             tipo="number"
-            :pista="`Quedan ${puntosParaElFormulario} puntos disponibles en esta unidad.`"
+            :pista="`Quedan ${puntosParaElFormulario} puntos disponibles. Si lo dejas vacío, puedes repartir los puntos después.`"
             v-model="formulario.max_score"
           />
           <FormField id="due_date" etiqueta="Fecha de entrega" tipo="date" v-model="formulario.due_date" />
@@ -279,6 +411,26 @@ onMounted(async () => {
             {{ guardando ? "Guardando…" : "Guardar" }}
           </AppButton>
         </form>
+      </AppModal>
+
+      <AppModal v-if="modalPromedio" titulo="Promediar la unidad" @cerrar="modalPromedio = false">
+        <div class="unidad-page__formulario">
+          <ErrorBanner v-if="errorPromedio" :mensaje="errorPromedio" />
+          <p class="unidad-page__nota">
+            La nota de la unidad será lo que cada estudiante obtuvo sobre los puntos de las actividades que
+            quedan, llevado a 100. Los punteos registrados no cambian.
+          </p>
+          <fieldset v-if="sinNotas.length > 0" class="unidad-page__quitar">
+            <legend>¿Quitar actividades sin notas que ya no se harán?</legend>
+            <label v-for="actividad in sinNotas" :key="actividad.public_id" class="unidad-page__opcion">
+              <input v-model="aQuitar" type="checkbox" :value="actividad.public_id" />
+              {{ actividad.name }} ({{ actividad.max_score ?? "sin punteo" }})
+            </label>
+          </fieldset>
+          <AppButton :deshabilitado="cambiandoPromedio" @click="guardarPromedio(true)">
+            {{ cambiandoPromedio ? "Guardando…" : "Promediar unidad" }}
+          </AppButton>
+        </div>
       </AppModal>
     </template>
   </section>
@@ -329,6 +481,28 @@ onMounted(async () => {
   color: var(--color-tinta-suave);
   font-size: var(--texto-sm);
   margin: 0;
+}
+
+.unidad-page__botones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espacio-sm);
+}
+
+.unidad-page__quitar {
+  border: 1px solid var(--color-linea);
+  border-radius: var(--radio-md);
+  padding: var(--espacio-sm) var(--espacio-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-xs);
+}
+
+.unidad-page__opcion {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-xs);
+  min-height: var(--area-tactil-minima);
 }
 
 .unidad-page__formulario {

@@ -4,6 +4,7 @@ import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import { useAuthStore } from "@/features/auth/stores/authStore";
+import { useInsigniaBuzon } from "@/features/comunicacion/stores/buzonStore";
 import { usePortalStore } from "@/features/portal/stores/portalStore";
 import { AppModal, BottomTabBar, CargandoBloque, EmptyState, ErrorBanner, ListRow, TopAppBar } from "@/shared/components";
 
@@ -33,6 +34,9 @@ const pestanas = [
   { valor: "/portal/pagos", etiqueta: "Pagos", icono: Wallet },
   { valor: "/portal/avisos", etiqueta: "Avisos", icono: Megaphone },
 ];
+
+// RN-19: conversaciones sin leer, en la pestaña donde vive el buzón.
+const insignias = useInsigniaBuzon("/portal/avisos");
 
 function elegir(publicId: string): void {
   portal.elegirEstudiante(publicId);
@@ -89,7 +93,13 @@ onMounted(() => {
         :items="pestanas"
         :model-value="route.path"
         @update:model-value="(valor) => router.push(valor)"
-      />
+      >
+        <template v-for="(cantidad, ruta) in insignias" :key="ruta" #[ruta]>
+          <span v-if="cantidad" class="portal-layout__insignia">
+            {{ cantidad }}<span class="solo-lector"> sin leer</span>
+          </span>
+        </template>
+      </BottomTabBar>
     </template>
 
     <AppModal v-if="modalAbierto" titulo="Cambiar estudiante" @cerrar="modalAbierto = false">
@@ -110,6 +120,19 @@ onMounted(() => {
 </template>
 
 <style scoped>
+.portal-layout__insignia {
+  position: absolute;
+  transform: translate(0.9rem, -0.2rem);
+  min-width: 1.2rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  background: var(--color-accion);
+  color: var(--color-papel);
+  font-size: var(--texto-xs);
+  font-weight: 700;
+  line-height: 1.2rem;
+}
+
 /* Mobile-first (RNF-01): una columna de teléfono. En pantallas grandes
    se queda en esa columna, centrada, en vez de estirarse. */
 .portal-layout {

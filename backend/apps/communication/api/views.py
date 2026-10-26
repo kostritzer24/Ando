@@ -150,7 +150,7 @@ class AnnouncementViewSet(RegistraAccesoMixin, ScopedQuerysetMixin, viewsets.Mod
             raise PermissionDenied(str(exc)) from exc
 
     @extend_schema(responses=SectionSerializer(many=True))
-    @action(detail=False, methods=["get"], url_path="target-sections")
+    @action(detail=False, methods=["get"], url_path="target-sections", pagination_class=None)
     def target_sections(self, request):
         """Secciones a las que se puede dirigir un aviso: las vigentes del
         ciclo activo. Va por el área `avisos` y no por el catálogo, que el
@@ -373,7 +373,7 @@ class ConversationViewSet(
         parameters=[OpenApiParameter("q", str, description="Nombre del encargado o del alumno")],
         responses=RecipientSerializer(many=True),
     )
-    @action(detail=False, methods=["get"], url_path="recipients")
+    @action(detail=False, methods=["get"], url_path="recipients", pagination_class=None)
     def recipients(self, request):
         """RF-38: a quién puede escribirle un docente o Dirección."""
         if request.user.role.name not in {ROL_DIRECCION, "Docente"}:

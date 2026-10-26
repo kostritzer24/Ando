@@ -86,6 +86,66 @@ export interface paths {
         patch: operations["v1_activities_partial_update"];
         trace?: never;
     };
+    "/api/v1/activities/average/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description RF-40 / RN-22: activa o quita el promedio de la unidad; antes de
+         *     activarlo se pueden dar de baja actividades sin notas.
+         */
+        post: operations["v1_activities_average_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/activities/distribute/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description RF-39 / RN-20: reparte los 100 puntos entre las actividades de la
+         *     unidad que todavía no tienen notas.
+         */
+        post: operations["v1_activities_distribute_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/activities/unit-status/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description RF-40: si la unidad está promediada, sobre cuántos puntos, y si ya
+         *     no se puede cambiar porque hay un boletín aprobado.
+         */
+        get: operations["v1_activities_unit_status_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/activity-types/": {
         parameters: {
             query?: never;
@@ -156,16 +216,18 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * @description RF-13/RF-36. Solo Dirección publica; el resto de los roles con
-         *     acceso al área (todos salvo Pagos, según la matriz) solo ven los
-         *     avisos vigentes que les corresponden por destinatario.
+         * @description RF-13/RF-36. Publican Dirección y los docentes (los roles con `E` en
+         *     el área); un docente solo edita y retira lo que publicó (RN-18). El
+         *     resto de los roles con acceso al área solo ven los avisos vigentes que
+         *     les corresponden por destinatario.
          */
         get: operations["v1_announcements_list"];
         put?: never;
         /**
-         * @description RF-13/RF-36. Solo Dirección publica; el resto de los roles con
-         *     acceso al área (todos salvo Pagos, según la matriz) solo ven los
-         *     avisos vigentes que les corresponden por destinatario.
+         * @description RF-13/RF-36. Publican Dirección y los docentes (los roles con `E` en
+         *     el área); un docente solo edita y retira lo que publicó (RN-18). El
+         *     resto de los roles con acceso al área solo ven los avisos vigentes que
+         *     les corresponden por destinatario.
          */
         post: operations["v1_announcements_create"];
         delete?: never;
@@ -182,32 +244,57 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * @description RF-13/RF-36. Solo Dirección publica; el resto de los roles con
-         *     acceso al área (todos salvo Pagos, según la matriz) solo ven los
-         *     avisos vigentes que les corresponden por destinatario.
+         * @description RF-13/RF-36. Publican Dirección y los docentes (los roles con `E` en
+         *     el área); un docente solo edita y retira lo que publicó (RN-18). El
+         *     resto de los roles con acceso al área solo ven los avisos vigentes que
+         *     les corresponden por destinatario.
          */
         get: operations["v1_announcements_retrieve"];
         /**
-         * @description RF-13/RF-36. Solo Dirección publica; el resto de los roles con
-         *     acceso al área (todos salvo Pagos, según la matriz) solo ven los
-         *     avisos vigentes que les corresponden por destinatario.
+         * @description RF-13/RF-36. Publican Dirección y los docentes (los roles con `E` en
+         *     el área); un docente solo edita y retira lo que publicó (RN-18). El
+         *     resto de los roles con acceso al área solo ven los avisos vigentes que
+         *     les corresponden por destinatario.
          */
         put: operations["v1_announcements_update"];
         post?: never;
         /**
-         * @description RF-13/RF-36. Solo Dirección publica; el resto de los roles con
-         *     acceso al área (todos salvo Pagos, según la matriz) solo ven los
-         *     avisos vigentes que les corresponden por destinatario.
+         * @description RF-13/RF-36. Publican Dirección y los docentes (los roles con `E` en
+         *     el área); un docente solo edita y retira lo que publicó (RN-18). El
+         *     resto de los roles con acceso al área solo ven los avisos vigentes que
+         *     les corresponden por destinatario.
          */
         delete: operations["v1_announcements_destroy"];
         options?: never;
         head?: never;
         /**
-         * @description RF-13/RF-36. Solo Dirección publica; el resto de los roles con
-         *     acceso al área (todos salvo Pagos, según la matriz) solo ven los
-         *     avisos vigentes que les corresponden por destinatario.
+         * @description RF-13/RF-36. Publican Dirección y los docentes (los roles con `E` en
+         *     el área); un docente solo edita y retira lo que publicó (RN-18). El
+         *     resto de los roles con acceso al área solo ven los avisos vigentes que
+         *     les corresponden por destinatario.
          */
         patch: operations["v1_announcements_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/announcements/target-sections/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Secciones a las que se puede dirigir un aviso: las vigentes del
+         *     ciclo activo. Va por el área `avisos` y no por el catálogo, que el
+         *     docente no tiene (excepción documentada en CLAUDE.md).
+         */
+        get: operations["v1_announcements_target_sections_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/assignments/": {
@@ -691,6 +778,107 @@ export interface paths {
          *     guía. Administrar el catálogo sigue siendo exclusivo de Dirección.
          */
         patch: operations["v1_conduct_rule_articles_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/conversations/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description RF-25/RF-37/RF-38, RN-19. Ven la conversación el encargado al que
+         *     pertenece, los docentes de la sección, quien la inició y Dirección;
+         *     todos ellos responden. La bandeja va del último mensaje al primero,
+         *     con el "no leído" de quien consulta.
+         */
+        get: operations["v1_conversations_list"];
+        put?: never;
+        /**
+         * @description RF-25/RF-37/RF-38, RN-19. Ven la conversación el encargado al que
+         *     pertenece, los docentes de la sección, quien la inició y Dirección;
+         *     todos ellos responden. La bandeja va del último mensaje al primero,
+         *     con el "no leído" de quien consulta.
+         */
+        post: operations["v1_conversations_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/conversations/{public_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description RF-25/RF-37/RF-38, RN-19. Ven la conversación el encargado al que
+         *     pertenece, los docentes de la sección, quien la inició y Dirección;
+         *     todos ellos responden. La bandeja va del último mensaje al primero,
+         *     con el "no leído" de quien consulta.
+         */
+        get: operations["v1_conversations_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/conversations/{public_id}/reply/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Cualquier participante con acceso a la conversación responde. */
+        post: operations["v1_conversations_reply_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/conversations/recipients/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description RF-38: a quién puede escribirle un docente o Dirección. */
+        get: operations["v1_conversations_recipients_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/conversations/unread-count/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description El contador del menú del buzón. */
+        get: operations["v1_conversations_unread_count_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/courses/": {
@@ -1315,6 +1503,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/grades/unit-summary/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description RF-29 / RN-22: la nota de cada curso y unidad de una inscripción,
+         *     calculada con la misma función que el boletín. Solo las unidades
+         *     con alguna nota, como antes hacía el portal al sumar.
+         */
+        get: operations["v1_grades_unit_summary_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/guardians/": {
         parameters: {
             query?: never;
@@ -1599,70 +1808,6 @@ export interface paths {
          *     resolución la decide Dirección, caso por caso.
          */
         post: operations["v1_justifications_resolve_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/messages/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * @description RF-25/RF-37. Un hilo es del encargado que lo empezó — lo ven él, los
-         *     docentes de la sección y Dirección (HU-25/HU-37).
-         */
-        get: operations["v1_messages_list"];
-        put?: never;
-        /**
-         * @description RF-25/RF-37. Un hilo es del encargado que lo empezó — lo ven él, los
-         *     docentes de la sección y Dirección (HU-25/HU-37).
-         */
-        post: operations["v1_messages_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/messages/{public_id}/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * @description RF-25/RF-37. Un hilo es del encargado que lo empezó — lo ven él, los
-         *     docentes de la sección y Dirección (HU-25/HU-37).
-         */
-        get: operations["v1_messages_retrieve"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/messages/{public_id}/reply/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * @description RF-25/RF-37. Un hilo es del encargado que lo empezó — lo ven él, los
-         *     docentes de la sección y Dirección (HU-25/HU-37).
-         */
-        post: operations["v1_messages_reply_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2591,7 +2736,7 @@ export interface components {
              * Punteo máximo
              * Format: decimal
              */
-            max_score: string;
+            max_score?: string | null;
             /**
              * Fecha de entrega
              * Format: date
@@ -2626,7 +2771,7 @@ export interface components {
              * Punteo máximo
              * Format: decimal
              */
-            max_score: string;
+            max_score?: string | null;
             /**
              * Fecha de entrega
              * Format: date
@@ -2655,6 +2800,13 @@ export interface components {
              */
             expires_at?: string | null;
             readonly published_by: string;
+            readonly published_by_name: string;
+            /**
+             * @description RN-18: la interfaz solo ofrece editar o retirar lo que la API
+             *     aceptaría; sin `request` (p. ej. al serializar fuera de una vista)
+             *     no se ofrece nada.
+             */
+            readonly puede_editar: boolean;
             /** Activo */
             is_active?: boolean;
         };
@@ -2834,6 +2986,80 @@ export interface components {
             /** Activo */
             is_active?: boolean;
         };
+        /**
+         * @description RF-25/RF-37/RF-38. `no_leido` es de quien consulta (RN-19), nunca de
+         *     los demás participantes.
+         */
+        Conversation: {
+            /** Format: uuid */
+            readonly public_id: string;
+            /** Asunto */
+            readonly subject: string;
+            /** Format: uuid */
+            readonly student: string;
+            readonly student_name: string;
+            /** Format: uuid */
+            readonly guardian: string;
+            readonly guardian_name: string;
+            readonly family_label: string;
+            /** Format: uuid */
+            readonly section: string;
+            readonly section_label: string;
+            readonly created_by_name: string;
+            /** Format: date-time */
+            readonly created_at: string;
+            /**
+             * Fecha del último mensaje
+             * Format: date-time
+             */
+            readonly last_message_at: string;
+            readonly no_leido: boolean;
+        };
+        /**
+         * @description La familia manda solo el estudiante (el encargado es su propia
+         *     cuenta); un docente o Dirección eligen también el encargado (RF-38).
+         */
+        ConversationCreate: {
+            /** Format: uuid */
+            student: string;
+            /** Format: uuid */
+            guardian?: string;
+            subject: string;
+            content: string;
+        };
+        /**
+         * @description RF-25/RF-37/RF-38. `no_leido` es de quien consulta (RN-19), nunca de
+         *     los demás participantes.
+         */
+        ConversationDetail: {
+            /** Format: uuid */
+            readonly public_id: string;
+            /** Asunto */
+            readonly subject: string;
+            /** Format: uuid */
+            readonly student: string;
+            readonly student_name: string;
+            /** Format: uuid */
+            readonly guardian: string;
+            readonly guardian_name: string;
+            readonly family_label: string;
+            /** Format: uuid */
+            readonly section: string;
+            readonly section_label: string;
+            readonly created_by_name: string;
+            /** Format: date-time */
+            readonly created_at: string;
+            /**
+             * Fecha del último mensaje
+             * Format: date-time
+             */
+            readonly last_message_at: string;
+            readonly no_leido: boolean;
+            readonly messages: components["schemas"]["Message"][];
+        };
+        ConversationReply: {
+            content: string;
+        };
         Correccion: {
             /** Format: decimal */
             score: string;
@@ -2919,6 +3145,12 @@ export interface components {
          * @enum {string}
          */
         EnrollmentStatusEnum: "activo" | "retirado" | "graduado" | "trasladado";
+        EstadoDeUnidad: {
+            promediada: boolean;
+            /** Format: decimal */
+            puntos_evaluados: string;
+            bloqueada: boolean;
+        };
         /**
          * @description RN-06: nunca expone `raw_score` — solo `current_score`, la nota
          *     vigente que entra en los promedios y la única que ve la familia.
@@ -2949,7 +3181,7 @@ export interface components {
             readonly unit_number: number;
             readonly activity_name: string;
             /** Format: decimal */
-            readonly max_score: string;
+            readonly max_score: string | null;
             /** Activo */
             is_active?: boolean;
         };
@@ -3169,40 +3401,33 @@ export interface components {
             readonly last_login: string | null;
             readonly permissions: unknown;
         };
+        /**
+         * @description Un mensaje dice quién lo escribió (HU-25): nombre y rol; una familia
+         *     aparece como "Encargado / Alumno".
+         */
         Message: {
             /** Format: uuid */
             readonly public_id: string;
             readonly sender: string;
             readonly sender_name: string;
-            /**
-             * @description Cómo se reconoce a quien escribe en el lado administrativo: una
-             *     familia aparece como "Usuario familia - <estudiante(s)>" (los de esa
-             *     sección vinculados a la cuenta), el resto por su nombre.
-             */
             readonly sender_label: string;
             readonly sender_role: string;
-            /** Format: uuid */
-            section: string;
-            /** Asunto */
-            subject?: string;
             /** Contenido */
-            content: string;
-            /** Format: uuid */
-            readonly original_message: string;
-            /** Estado */
-            readonly status: components["schemas"]["MessageStatusEnum"];
+            readonly content: string;
             /** Format: date-time */
             readonly created_at: string;
-            /** Activo */
-            is_active?: boolean;
         };
         /**
-         * @description * `enviado` - Enviado
-         *     * `leido` - Leído
-         *     * `respondido` - Respondido
-         * @enum {string}
+         * @description Nota de unidad ya calculada en el servidor (RF-29 / RN-22): el
+         *     portal no vuelve a sumar en el navegador.
          */
-        MessageStatusEnum: "enviado" | "leido" | "respondido";
+        NotaDeUnidad: {
+            course_name: string;
+            unit_number: number;
+            /** Format: decimal */
+            nota: string;
+            promediada?: boolean;
+        };
         PaginatedAccessLogList: {
             /** @example 123 */
             count: number;
@@ -3337,6 +3562,21 @@ export interface components {
              */
             previous?: string | null;
             results: components["schemas"]["ConductRuleArticle"][];
+        };
+        PaginatedConversationList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["Conversation"][];
         };
         PaginatedCourseList: {
             /** @example 123 */
@@ -3487,21 +3727,6 @@ export interface components {
              */
             previous?: string | null;
             results: components["schemas"]["JustificationType"][];
-        };
-        PaginatedMessageList: {
-            /** @example 123 */
-            count: number;
-            /**
-             * Format: uri
-             * @example http://api.example.org/accounts/?page=4
-             */
-            next?: string | null;
-            /**
-             * Format: uri
-             * @example http://api.example.org/accounts/?page=2
-             */
-            previous?: string | null;
-            results: components["schemas"]["Message"][];
         };
         PaginatedPaymentList: {
             /** @example 123 */
@@ -3679,7 +3904,7 @@ export interface components {
              * Punteo máximo
              * Format: decimal
              */
-            max_score?: string;
+            max_score?: string | null;
             /**
              * Fecha de entrega
              * Format: date
@@ -3708,6 +3933,13 @@ export interface components {
              */
             expires_at?: string | null;
             readonly published_by?: string;
+            readonly published_by_name?: string;
+            /**
+             * @description RN-18: la interfaz solo ofrece editar o retirar lo que la API
+             *     aceptaría; sin `request` (p. ej. al serializar fuera de una vista)
+             *     no se ofrece nada.
+             */
+            readonly puede_editar?: boolean;
             /** Activo */
             is_active?: boolean;
         };
@@ -4081,6 +4313,27 @@ export interface components {
             readonly receipt_number: string;
             readonly recorded_by: string;
         };
+        /**
+         * @description Una unidad de una asignación: lo que reparten y promedian RF-39 y
+         *     RF-40.
+         */
+        Promedio: {
+            /** Format: uuid */
+            assignment: string;
+            /** Format: uuid */
+            unit: string;
+            averaged: boolean;
+            deactivate?: string[];
+        };
+        Recipient: {
+            /** Format: uuid */
+            guardian: string;
+            /** Format: uuid */
+            student: string;
+            guardian_name: string;
+            student_name: string;
+            label: string;
+        };
         ReportCard: {
             /** Format: uuid */
             readonly public_id: string;
@@ -4327,6 +4580,19 @@ export interface components {
             /** Activo */
             is_active?: boolean;
         };
+        /**
+         * @description Una unidad de una asignación: lo que reparten y promedian RF-39 y
+         *     RF-40.
+         */
+        UnidadDeAsignacion: {
+            /** Format: uuid */
+            assignment: string;
+            /** Format: uuid */
+            unit: string;
+        };
+        UnreadCount: {
+            no_leidas: number;
+        };
         User: {
             /** Format: uuid */
             readonly public_id: string;
@@ -4539,6 +4805,83 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Activity"];
+                };
+            };
+        };
+    };
+    v1_activities_average_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Promedio"];
+                "application/x-www-form-urlencoded": components["schemas"]["Promedio"];
+                "multipart/form-data": components["schemas"]["Promedio"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EstadoDeUnidad"];
+                };
+            };
+        };
+    };
+    v1_activities_distribute_create: {
+        parameters: {
+            query?: {
+                /** @description Un número de página dentro del conjunto de resultados paginado. */
+                page?: number;
+                /** @description Número de resultados a devolver por página. */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UnidadDeAsignacion"];
+                "application/x-www-form-urlencoded": components["schemas"]["UnidadDeAsignacion"];
+                "multipart/form-data": components["schemas"]["UnidadDeAsignacion"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedActivityList"];
+                };
+            };
+        };
+    };
+    v1_activities_unit_status_retrieve: {
+        parameters: {
+            query: {
+                assignment: string;
+                unit: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EstadoDeUnidad"];
                 };
             };
         };
@@ -4827,6 +5170,25 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Announcement"];
+                };
+            };
+        };
+    };
+    v1_announcements_target_sections_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Section"][];
                 };
             };
         };
@@ -5711,6 +6073,144 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ConductRuleArticle"];
+                };
+            };
+        };
+    };
+    v1_conversations_list: {
+        parameters: {
+            query?: {
+                /** @description Un número de página dentro del conjunto de resultados paginado. */
+                page?: number;
+                /** @description Número de resultados a devolver por página. */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedConversationList"];
+                };
+            };
+        };
+    };
+    v1_conversations_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConversationCreate"];
+                "application/x-www-form-urlencoded": components["schemas"]["ConversationCreate"];
+                "multipart/form-data": components["schemas"]["ConversationCreate"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationDetail"];
+                };
+            };
+        };
+    };
+    v1_conversations_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                public_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationDetail"];
+                };
+            };
+        };
+    };
+    v1_conversations_reply_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                public_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConversationReply"];
+                "application/x-www-form-urlencoded": components["schemas"]["ConversationReply"];
+                "multipart/form-data": components["schemas"]["ConversationReply"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+        };
+    };
+    v1_conversations_recipients_list: {
+        parameters: {
+            query?: {
+                /** @description Nombre del encargado o del alumno */
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Recipient"][];
+                };
+            };
+        };
+    };
+    v1_conversations_unread_count_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnreadCount"];
                 };
             };
         };
@@ -6867,6 +7367,27 @@ export interface operations {
             };
         };
     };
+    v1_grades_unit_summary_list: {
+        parameters: {
+            query: {
+                enrollment: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotaDeUnidad"][];
+                };
+            };
+        };
+    };
     v1_guardians_list: {
         parameters: {
             query?: {
@@ -7412,103 +7933,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Justification"];
-                };
-            };
-        };
-    };
-    v1_messages_list: {
-        parameters: {
-            query?: {
-                /** @description Un número de página dentro del conjunto de resultados paginado. */
-                page?: number;
-                /** @description Número de resultados a devolver por página. */
-                page_size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedMessageList"];
-                };
-            };
-        };
-    };
-    v1_messages_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["Message"];
-                "application/x-www-form-urlencoded": components["schemas"]["Message"];
-                "multipart/form-data": components["schemas"]["Message"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Message"];
-                };
-            };
-        };
-    };
-    v1_messages_retrieve: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                public_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Message"];
-                };
-            };
-        };
-    };
-    v1_messages_reply_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                public_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["Message"];
-                "application/x-www-form-urlencoded": components["schemas"]["Message"];
-                "multipart/form-data": components["schemas"]["Message"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Message"];
                 };
             };
         };

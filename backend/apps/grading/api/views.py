@@ -340,7 +340,7 @@ class GradeViewSet(
         parameters=[OpenApiParameter("enrollment", str, required=True)],
         responses=NotaDeUnidadSerializer(many=True),
     )
-    @action(detail=False, methods=["get"], url_path="unit-summary")
+    @action(detail=False, methods=["get"], url_path="unit-summary", pagination_class=None)
     def unit_summary(self, request):
         """RF-29 / RN-22: la nota de cada curso y unidad de una inscripción,
         calculada con la misma función que el boletín. Solo las unidades

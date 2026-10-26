@@ -2,7 +2,15 @@ import { isAxiosError } from "axios";
 
 import { http } from "@/app/http";
 import { crearRecursoCrud } from "@/shared/api/resource";
-import type { Activity, ActivityType, Grade, GradeChangeRequest, GradingUnit } from "@/shared/types/models";
+import type {
+  Activity,
+  ActivityType,
+  EstadoDeUnidad,
+  Grade,
+  GradeChangeRequest,
+  GradingUnit,
+  NotaDeUnidad,
+} from "@/shared/types/models";
 
 export const activitiesApi = crearRecursoCrud<Activity>("/activities/");
 export const activityTypesApi = crearRecursoCrud<ActivityType>("/activity-types/");
@@ -11,6 +19,44 @@ export const gradeChangeRequestsApi = crearRecursoCrud<GradeChangeRequest>("/gra
 
 export function unidadesDeCiclo(cyclePublicId: string) {
   return crearRecursoCrud<GradingUnit>(`/cycles/${cyclePublicId}/units/`);
+}
+
+/** RF-39: reparte los 100 puntos entre las actividades sin notas. */
+export async function repartirPuntos(assignment: string, unit: string): Promise<Activity[]> {
+  const { data } = await http.post<Activity[]>("/activities/distribute/", { assignment, unit });
+  return data;
+}
+
+/** RF-40: si la unidad está promediada, sobre cuántos puntos, y si ya no
+ * se puede cambiar (hay un boletín aprobado). */
+export async function estadoDeUnidad(assignment: string, unit: string): Promise<EstadoDeUnidad> {
+  const { data } = await http.get<EstadoDeUnidad>("/activities/unit-status/", {
+    params: { assignment, unit },
+  });
+  return data;
+}
+
+export async function cambiarPromedio(payload: {
+  assignment: string;
+  unit: string;
+  averaged: boolean;
+  deactivate?: string[];
+}): Promise<EstadoDeUnidad> {
+  const { data } = await http.post<EstadoDeUnidad>("/activities/average/", payload);
+  return data;
+}
+
+/** RF-29 / RN-22: nota de cada curso y unidad calculada en el servidor,
+ * promediada o no — el portal no vuelve a sumar en el navegador. */
+export async function notasDeUnidad(enrollment: string): Promise<NotaDeUnidad[]> {
+  const { data } = await http.get<NotaDeUnidad[]>("/grades/unit-summary/", { params: { enrollment } });
+  return data;
+}
+
+/** "Promediada sobre 70 pts" — la misma etiqueta en diseñar y en capturar. */
+export function etiquetaPromedio(estado: EstadoDeUnidad | null): string {
+  if (!estado?.promediada) return "";
+  return `Promediada sobre ${Number(estado.puntos_evaluados)} pts`;
 }
 
 export async function registrarPunteo(payload: {

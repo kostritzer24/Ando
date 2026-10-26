@@ -33,6 +33,9 @@ const props = defineProps<{
   navegacion: GrupoNavegacion[];
   /** Pantalla "Mi cuenta" del portal (datos propios y cambio de contraseña). */
   rutaCuenta: string;
+  /** Contadores junto a una opción del menú, por ruta (p. ej. las
+   * conversaciones sin leer del buzón). Un cero no se muestra. */
+  insignias?: Record<string, number>;
 }>();
 
 const auth = useAuthStore();
@@ -184,6 +187,10 @@ async function salir(): Promise<void> {
           >
             <component :is="item.icono" class="admin-shell__enlace-icono" aria-hidden="true" />
             {{ item.etiqueta }}
+            <span v-if="insignias?.[item.a]" class="admin-shell__insignia">
+              {{ insignias[item.a] }}
+              <span class="solo-lector">sin leer</span>
+            </span>
           </RouterLink>
         </div>
       </nav>
@@ -463,6 +470,19 @@ async function salir(): Promise<void> {
 
 .admin-shell__enlace:hover {
   background: var(--color-hover);
+}
+
+.admin-shell__insignia {
+  margin-left: auto;
+  min-width: 1.4rem;
+  padding: 0 var(--espacio-xs);
+  border-radius: 999px;
+  background: var(--color-accion);
+  color: var(--color-papel);
+  font-size: var(--texto-xs);
+  font-weight: 700;
+  line-height: 1.4rem;
+  text-align: center;
 }
 
 .admin-shell__enlace-icono {

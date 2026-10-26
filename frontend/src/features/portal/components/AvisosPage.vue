@@ -1,43 +1,42 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, watch } from "vue";
+import { onMounted, reactive, ref, watch } from "vue";
 
-import { announcementsApi, messagesApi } from "@/features/comunicacion/api/comunicacionApi";
+import {
+  abrirConversacion,
+  announcementsApi,
+  conversationsApi,
+  iniciarConversacion,
+  responderConversacion,
+} from "@/features/comunicacion/api/comunicacionApi";
 import ConversacionHilo from "@/features/comunicacion/components/ConversacionHilo.vue";
+import { useBuzonStore } from "@/features/comunicacion/stores/buzonStore";
 import { useAuthStore } from "@/features/auth/stores/authStore";
 import { mensajeDelServidor } from "@/shared/api/errores";
 import { usePortalStore } from "@/features/portal/stores/portalStore";
 import { AppButton, CargandoBloque, EmptyState, ErrorBanner, FormField, PageHeader, TagPill } from "@/shared/components";
-import type { Announcement, Message } from "@/shared/types/models";
+import type { Announcement, Conversation, ConversationDetail } from "@/shared/types/models";
 
 const portal = usePortalStore();
 const auth = useAuthStore();
+const buzon = useBuzonStore();
 
 const cargando = ref(true);
 const error = ref("");
 const avisos = ref<Announcement[]>([]);
-const mensajes = ref<Message[]>([]);
-
-const hilos = computed(() =>
-  mensajes.value.filter((m) => !m.original_message).sort((a, b) => b.created_at.localeCompare(a.created_at)),
-);
-function respuestasDe(hilo: Message): Message[] {
-  return mensajes.value
-    .filter((m) => m.original_message === hilo.public_id)
-    .sort((a, b) => a.created_at.localeCompare(b.created_at));
-}
-
-const seccionActual = computed(
-  () => portal.inscripcionesDelSeleccionado.find((i) => i.section_type === "academica")?.section,
-);
+const conversaciones = ref<Conversation[]>([]);
 
 async function cargar(): Promise<void> {
   if (!portal.estudianteSeleccionadoId) return;
   cargando.value = true;
   error.value = "";
   try {
-    const [avisosResp, mensajesResp] = await Promise.all([announcementsApi.listar(), messagesApi.listar()]);
+    const [avisosResp, conversacionesResp] = await Promise.all([
+      announcementsApi.listar(),
+      conversationsApi.listar(),
+    ]);
     avisos.value = avisosResp.results;
-    mensajes.value = mensajesResp.results;
+    conversaciones.value = conversacionesResp.results;
+    void buzon.actualizar();
   } catch {
     error.value = "No se pudo cargar los avisos y el buzón. Inténtalo de nuevo.";
   } finally {
@@ -45,17 +44,19 @@ async function cargar(): Promise<void> {
   }
 }
 
+// RF-37: la familia escribe sobre el estudiante elegido; la conversación
+// llega a los docentes de su sección y a Dirección.
 const enviando = ref(false);
 const errorEnvio = ref("");
 const formulario = reactive({ subject: "", content: "" });
 
 async function enviar(): Promise<void> {
-  if (!seccionActual.value) return;
+  if (!portal.estudianteSeleccionadoId) return;
   enviando.value = true;
   errorEnvio.value = "";
   try {
-    await messagesApi.crear({
-      section: seccionActual.value,
+    abierta.value = await iniciarConversacion({
+      student: portal.estudianteSeleccionadoId,
       subject: formulario.subject,
       content: formulario.content,
     });
@@ -66,6 +67,46 @@ async function enviar(): Promise<void> {
     errorEnvio.value = mensajeDelServidor(err, "No se pudo enviar el mensaje. Inténtalo de nuevo.");
   } finally {
     enviando.value = false;
+  }
+}
+
+// RF-37: abrir una conversación la marca como leída y deja responder.
+const abierta = ref<ConversationDetail | null>(null);
+const respondiendo = ref(false);
+const errorRespuesta = ref("");
+const respuesta = reactive({ texto: "" });
+
+async function alternar(conversacion: Conversation): Promise<void> {
+  respuesta.texto = "";
+  errorRespuesta.value = "";
+  if (abierta.value?.public_id === conversacion.public_id) {
+    abierta.value = null;
+    return;
+  }
+  try {
+    abierta.value = await abrirConversacion(conversacion.public_id);
+    conversaciones.value = conversaciones.value.map((c) =>
+      c.public_id === conversacion.public_id ? { ...c, no_leido: false } : c,
+    );
+    void buzon.actualizar();
+  } catch {
+    error.value = "No se pudo abrir la conversación. Inténtalo de nuevo.";
+  }
+}
+
+async function responder(): Promise<void> {
+  if (!abierta.value) return;
+  respondiendo.value = true;
+  errorRespuesta.value = "";
+  try {
+    await responderConversacion(abierta.value.public_id, respuesta.texto);
+    respuesta.texto = "";
+    abierta.value = await abrirConversacion(abierta.value.public_id);
+    conversaciones.value = (await conversationsApi.listar()).results;
+  } catch (err) {
+    errorRespuesta.value = mensajeDelServidor(err, "No se pudo enviar la respuesta. Inténtalo de nuevo.");
+  } finally {
+    respondiendo.value = false;
   }
 }
 
@@ -113,8 +154,10 @@ onMounted(cargar);
       </ul>
 
       <h2>Buzón</h2>
-      <p class="avisos-page__ayuda">Escríbele a la sección de tu hijo o hija. Te responde su docente o Dirección.</p>
-      <details class="avisos-page__nuevo" :open="hilos.length === 0">
+      <p class="avisos-page__ayuda">
+        Escríbele a la sección de tu hijo o hija. Te responde su docente o Dirección, y el centro también puede escribirte.
+      </p>
+      <details class="avisos-page__nuevo" :open="conversaciones.length === 0">
         <summary>Escribir un mensaje nuevo</summary>
         <ErrorBanner v-if="errorEnvio" :mensaje="errorEnvio" />
         <form class="avisos-page__formulario" @submit.prevent="enviar">
@@ -127,23 +170,39 @@ onMounted(cargar);
       </details>
 
       <EmptyState
-        v-if="hilos.length === 0"
+        v-if="conversaciones.length === 0"
         titulo="No hay mensajes"
-        descripcion="Los mensajes que envíes y sus respuestas van a aparecer aquí."
+        descripcion="Los mensajes que envíes o que te envíe el centro van a aparecer aquí."
       />
       <ul v-else class="avisos-page__hilos">
-        <li v-for="hilo in hilos" :key="hilo.public_id" class="avisos-page__hilo">
-          <div class="avisos-page__hilo-cabecera">
-            <h3 class="avisos-page__asunto">{{ hilo.subject }}</h3>
-            <TagPill :variante="respuestasDe(hilo).length > 0 ? 'taller' : 'aviso'">
-              {{ respuestasDe(hilo).length > 0 ? "Respondido" : "Esperando respuesta" }}
-            </TagPill>
+        <li
+          v-for="conversacion in conversaciones"
+          :key="conversacion.public_id"
+          class="avisos-page__hilo"
+          :class="{ 'avisos-page__hilo--no-leido': conversacion.no_leido }"
+        >
+          <button
+            type="button"
+            class="avisos-page__hilo-cabecera"
+            :aria-expanded="abierta?.public_id === conversacion.public_id"
+            @click="alternar(conversacion)"
+          >
+            <span class="avisos-page__resumen">
+              <span class="avisos-page__asunto">{{ conversacion.subject }}</span>
+              <span class="avisos-page__sobre">Sobre {{ conversacion.student_name }}</span>
+            </span>
+            <TagPill v-if="conversacion.no_leido" variante="aviso">Sin leer</TagPill>
+          </button>
+          <div v-if="abierta?.public_id === conversacion.public_id" class="avisos-page__detalle">
+            <ConversacionHilo :mensajes="abierta.messages" :usuario-actual="auth.usuario?.username ?? ''" />
+            <ErrorBanner v-if="errorRespuesta" :mensaje="errorRespuesta" />
+            <form class="avisos-page__formulario" @submit.prevent="responder">
+              <FormField id="respuesta" etiqueta="Responder" multilinea v-model="respuesta.texto" />
+              <AppButton tipo="submit" :deshabilitado="respondiendo || !respuesta.texto.trim()">
+                {{ respondiendo ? "Enviando…" : "Enviar respuesta" }}
+              </AppButton>
+            </form>
           </div>
-          <ConversacionHilo
-            :hilo="hilo"
-            :respuestas="respuestasDe(hilo)"
-            :usuario-actual="auth.usuario?.username ?? ''"
-          />
         </li>
       </ul>
     </template>
@@ -266,15 +325,50 @@ onMounted(cargar);
   border-radius: var(--radio-lg);
 }
 
+.avisos-page__hilo--no-leido {
+  border-left: 4px solid #d9a400;
+}
+
 .avisos-page__hilo-cabecera {
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--espacio-sm);
-  margin-bottom: var(--espacio-sm);
+  min-height: var(--area-tactil-minima);
+  padding: 0;
+  background: none;
+  border: none;
+  text-align: left;
+  font-family: var(--fuente-cuerpo);
+  color: inherit;
+  cursor: pointer;
+}
+
+.avisos-page__resumen {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 
 .avisos-page__hilo-cabecera .avisos-page__asunto {
   margin: 0;
+  font-weight: 700;
+}
+
+.avisos-page__hilo--no-leido .avisos-page__asunto {
+  font-weight: 800;
+}
+
+.avisos-page__sobre {
+  font-size: var(--texto-sm);
+  color: var(--color-tinta-suave);
+}
+
+.avisos-page__detalle {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-md);
+  margin-top: var(--espacio-md);
 }
 </style>
