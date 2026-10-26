@@ -66,7 +66,7 @@ Los tres portales viven en una sola aplicación de página única con control de
 
 ## 4. Requerimientos funcionales
 
-Treinta y siete requerimientos, con su prioridad MoSCoW. La lista es la especificación aprobada, no una propuesta.
+Cuarenta requerimientos, con su prioridad MoSCoW. La lista es la especificación aprobada, no una propuesta. Los treinta y siete originales vienen del Capítulo IV; RF-38 a RF-40 se agregaron tras la capacitación con docentes (oct 2026, ver al final de esta sección).
 
 ### Portal administrativo
 
@@ -84,7 +84,7 @@ Treinta y siete requerimientos, con su prioridad MoSCoW. La lista es la especifi
 | RF-10 | Autorizar o rechazar las modificaciones de notas | Debe tener |
 | RF-11 | Emitir constancias de estudio y de buena conducta y cartas membretadas | Debería tener |
 | RF-12 | Registrar las justificaciones de faltas y su resolución | Debe tener |
-| RF-13 | Publicar avisos en la cartelera del centro | Debería tener |
+| RF-13 | Publicar avisos en la cartelera del centro (Dirección y docentes, **revisado oct 2026**) | Debería tener |
 | RF-14 | Verificar la autenticidad de un documento por su código QR | Debería tener |
 | RF-15 | Generar los reportes y consultas del centro | Debe tener |
 
@@ -101,7 +101,7 @@ Treinta y siete requerimientos, con su prioridad MoSCoW. La lista es la especifi
 | RF-22 | Publicar las asignaciones de cada curso en el calendario semanal | Debe tener |
 | RF-23 | Solicitar la corrección de una nota registrada | Debería tener |
 | RF-24 | Registrar reportes de conducta por sección | Debería tener |
-| RF-25 | Leer y responder los mensajes del buzón | Debería tener |
+| RF-25 | Leer y responder las conversaciones del buzón (**revisado oct 2026**: conversaciones de dos vías) | Debería tener |
 | RF-26 | Consultar el horario propio del docente | Podría tener |
 
 ### Portal público
@@ -118,7 +118,17 @@ Treinta y siete requerimientos, con su prioridad MoSCoW. La lista es la especifi
 | RF-34 | Descargar el boletín cuando esté habilitado | Debe tener |
 | RF-35 | Consultar los reportes de conducta del estudiante | Debería tener |
 | RF-36 | Consultar la cartelera de avisos | Debería tener |
-| RF-37 | Enviar mensajes al buzón y consultar la respuesta | Debería tener |
+| RF-37 | Iniciar conversaciones en el buzón, consultarlas y responderlas (**revisado oct 2026**) | Debería tener |
+
+### Agregados tras la capacitación con docentes (oct 2026)
+
+| Código | Requerimiento | Portal | Prioridad |
+|---|---|---|---|
+| RF-38 | Iniciar una conversación con un encargado desde el centro (docentes y dirección) | Operativo y administrativo | Debería tener |
+| RF-39 | Repartir en partes iguales los 100 puntos de la unidad entre sus actividades | Operativo | Debería tener |
+| RF-40 | Promediar la nota de una unidad que no completó sus 100 puntos | Operativo | Debería tener |
+
+Contexto: Dirección encarga a una docente la comunicación con los padres, sin crear un rol nuevo; por eso lo que antes era exclusivo de Dirección en avisos (RF-13) y en iniciar conversaciones (RF-38) lo puede hacer cualquier docente. En notas, a veces no da tiempo de hacer todas las actividades de la unidad, o hay que promediarla (RF-39, RF-40).
 
 El orden de construcción sigue la prioridad: primero todo lo que es "debe tener", después lo que es "debería tener", y al final RF-26, que es lo único marcado como "podría tener".
 
@@ -167,12 +177,19 @@ Diecisiete reglas acordadas con la dirección. Van en la capa de dominio, cada u
 | RN-15 | Los documentos se firman y se sellan a mano, el sistema no genera firmas ni sellos digitales |
 | RN-16 | Quien infringe las normas de uso del buzón queda bloqueado de forma temporal |
 | RN-17 | Cada docente edita solo las asignaciones que publicó y la dirección puede editar todo el calendario |
+| RN-18 | Cada docente edita y retira solo los avisos que publicó; la dirección puede editar y retirar cualquiera (oct 2026) |
+| RN-19 | Una conversación del buzón la ven el encargado, los docentes de la sección, quien la inició y la dirección; cada persona lleva su propio "no leído" (oct 2026) |
+| RN-20 | Al repartir puntos, las actividades ya calificadas conservan su punteo y el resto de los 100 se divide en partes iguales con dos decimales, con el residuo en la última (oct 2026) |
+| RN-21 | No se califica una actividad que todavía no tiene punteo máximo (oct 2026) |
+| RN-22 | Una unidad promediada vale (suma de punteos obtenidos ÷ suma de punteos máximos de sus actividades vigentes) × 100, sin tocar ningún punteo; se activa o se quita mientras ningún boletín de esa unidad esté aprobado (oct 2026) |
 
 Cuatro de estas reglas son las que más fácil se implementan mal, así que reciben atención especial:
 
 - **RN-02 y RN-04.** El total de la unidad no puede pasar de 100 puntos. Las cuatro pruebas cortas de 10 puntos son práctica institucional y el docente decide cómo aplicarlas; los 60 restantes los reparte como quiera. La nota final del ciclo se redondea sin decimales, y el criterio de redondeo debe quedar explícito y probado.
 - **RN-05 y RN-06.** La calificación guarda el punteo real. Una corrección no sobrescribe: crea un registro de modificación con la nota original, la propuesta, el motivo, quién autorizó y la fecha. La nota corregida es la que entra en los promedios. Las familias nunca ven ese historial.
 - **RN-09 y RN-10.** La habilitación del boletín en el portal público depende de dos condiciones que se evalúan juntas: que hayan pasado los plazos y que el estudiante esté solvente.
+- **RN-19.** La conversación pertenece a un estudiante y a un encargado (el usuario de la familia), y queda amarrada a la sección activa del estudiante al iniciarla: los docentes de esa sección son los que la ven. La familia la inicia hacia la sección de su hijo; un docente o la dirección la inician hacia un encargado puntual. Todos los participantes responden, la familia incluida, y RN-16 aplica a cualquier mensaje de cualquier rol. El "no leído" es por persona y nunca le dice a los demás si alguien ya leyó (HU-25: no hay indicador de visto).
+- **RN-20 a RN-22.** Repartir puntos no toca las actividades con notas (su punteo máximo ya no cambia, RN-05) y cualquier ajuste posterior sigue las reglas de RN-02. Promediar es un estado de la unidad para esa asignación, no una modificación de nota: `raw_score` y la nota vigente se conservan (RN-05 y RN-06), y la fórmula vive en una sola función que usan el boletín, el consolidado, los reportes, el portal público y el cálculo de puntos faltantes. Se bloquea en cuanto Dirección aprueba un boletín de esa sección y unidad, porque aprobar congela su contenido.
 - **RN-11.** Eliminada por decisión del dueño (oct 2026): la asistencia no distingue tardanza. Se marca a cualquier hora y es una sola por estudiante y día (no por clase): la marque Dirección o un docente, todos los docentes de la sección la ven.
 
 ---
@@ -190,7 +207,7 @@ Detalles definidos en las historias de usuario y que son parte del alcance aprob
 - **HU-14.** El código QR abre una página pública de verificación que muestra tipo de documento, fecha y estudiante, sin datos sensibles. Un código inexistente indica que el documento no es válido.
 - **HU-16.** Los estados de asistencia son presente, ausente y justificado. Se puede registrar durante la clase o al final de la jornada.
 - **HU-19 y HU-20.** La plantilla trae la lista de estudiantes con su código. Los códigos y la estructura no se pueden modificar. El sistema valida códigos, punteos y estructura, y muestra una vista previa con los errores por fila antes de guardar. La plantilla no sustituye al sistema: respeta la costumbre del docente de llevar su propio cuadro de notas.
-- **HU-25 y HU-37.** Cada mensaje del buzón lo ven solo el encargado que lo envió, los docentes de la sección y la dirección; la respuesta indica quién respondió. La respuesta queda en el mismo hilo. No hay conversación en tiempo real, ni indicador de escritura, ni de visto.
+- **HU-25 y HU-37 (revisadas oct 2026).** Cada conversación del buzón la ven solo el encargado al que pertenece, los docentes de la sección, quien la inició y la dirección (RN-19). Cada mensaje indica quién lo escribió y todos quedan en la misma conversación, ordenada por el último mensaje, con un indicador de no leídos propio de cada persona. Al elegir destinatario se muestra «Encargado / Alumno» y se busca por cualquiera de los dos nombres. No hay conversación en tiempo real, ni indicador de escritura, ni de visto.
 - **HU-27.** Un encargado con varios estudiantes vinculados cambia entre ellos con un selector, sin volver a iniciar sesión, y no ve información de estudiantes ajenos.
 - **HU-30.** El cálculo de puntos faltantes toma como referencia los 60 puntos mínimos y se muestra curso por curso. Los cursos en riesgo se distinguen a simple vista.
 - **HU-36.** Los avisos se muestran del más reciente al más antiguo, y los vencidos dejan de mostrarse.
@@ -235,7 +252,9 @@ Veinticinco entidades en cuatro áreas. La **Inscripción ocupa el centro del mo
 | Evento de calendario | título, tipo, fecha y hora, sección, actividad, materiales, publicado por |
 | Aviso | título, contenido, destinatario, fecha de publicación, fecha de vencimiento, publicado por |
 | Reporte de conducta | inscripción, fecha, descripción, emitido por |
-| Mensaje de buzón | remitente, sección, asunto, contenido, mensaje original, fecha y hora, estado |
+| Conversación de buzón (oct 2026) | estudiante, encargado, sección, asunto, iniciada por, fecha del último mensaje |
+| Mensaje de buzón | conversación, remitente, contenido, fecha y hora |
+| Lectura de conversación (oct 2026) | conversación, usuario, leída hasta |
 
 ### 8.4 Área de seguridad y registro (4 entidades)
 
@@ -250,7 +269,8 @@ Veinticinco entidades en cuatro áreas. La **Inscripción ocupa el centro del mo
 
 - El atributo `origen` en Calificación y en Asistencia distingue el registro manual del que entró por plantilla. Sirve para auditoría y para los indicadores.
 - El calendario semanal se arma con eventos de dos tipos: actividades institucionales y asignaciones de los docentes. Cada evento guarda quién lo publicó, porque de ahí sale la regla RN-17.
-- El buzón se almacena como mensajes enlazados entre sí a través de `mensaje original`, no como una conversación.
+- ~~El buzón se almacena como mensajes enlazados entre sí a través de `mensaje original`, no como una conversación.~~ **Revisado (oct 2026, ADR-0008):** el buzón se almacena como conversaciones con sus mensajes y una lectura por usuario, porque la comunicación pasó a ser de dos vías (RN-19).
+- La unidad promediada (RN-22) se guarda como un estado por asignación y unidad, aparte de las calificaciones.
 - Los datos de salud y socioeconómicos del estudiante viven en campos con acceso reservado a la dirección. No se exponen en ningún serializer que alcance otro rol, ni siquiera de solo lectura.
 - Identificador interno numérico e identificador público en UUID para todo lo que aparece en una URL.
 - Normalización hasta la tercera forma normal. Índices en las columnas por las que se filtra con frecuencia: código del estudiante, ciclo, unidad y sección.
@@ -519,6 +539,8 @@ Cada fase cierra con un punto de control. No avanzas sin aprobación.
 **Fase 13. Endurecimiento.** Revisión contra OWASP, pruebas de carga básicas, revisión de accesibilidad, revisión de rendimiento en conexión lenta, limpieza de dependencias.
 
 **Fase 14. Despliegue y entrega.** Producción en Render y Neon, datos de demostración, manuales de usuario por perfil y guía de mantenimiento.
+
+**Fase 17. Comunicación de dos vías y promedio de unidad (oct 2026).** Docentes publican avisos y comienzan conversaciones; buzón por conversaciones con lectura por usuario; repartir puntos y promediar unidad. RF-13, RF-25, RF-37 revisados; RF-38 a RF-40; RN-18 a RN-22.
 
 ---
 

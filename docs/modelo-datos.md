@@ -77,7 +77,7 @@ Restricción: `unique(assignment_id, day_of_week, period_number)`. Regla de domi
 | unit_id | FK → GradingUnit | |
 | activity_type_id | FK → catalog.ActivityType | |
 | name | varchar | |
-| max_score | decimal(5,2) | |
+| max_score | decimal(5,2), nullable | nulo = todavía sin punteo; no se califica hasta tenerlo (RN-21). Se puede llenar con «Repartir puntos» (RF-39, RN-20) |
 | is_short_quiz | boolean | derivado de `ActivityType`, ver ADR-0003 |
 | due_date | date | |
 
@@ -94,6 +94,16 @@ Regla de dominio (ADR-0003, RN-01/RN-02/RN-04 revisada): por cada `(assignment_i
 | recorded_by_id | FK → accounts.User | |
 
 Restricción: `unique(enrollment_id, activity_id)`.
+
+### `grading.UnitAveraging` — Unidad promediada (oct 2026, RF-40)
+| Columna | Tipo | Notas |
+|---|---|---|
+| assignment_id | FK → scheduling.TeacherAssignment | |
+| unit_id | FK → catalog.GradingUnit | |
+| averaged | boolean | verdadero = la nota de la unidad se calcula como (suma obtenida ÷ suma de máximos vigentes) × 100 (RN-22) |
+| changed_by_id | FK → accounts.User | último que la activó o la quitó; cada cambio queda además en la bitácora |
+
+Restricción: `unique(assignment_id, unit_id)`. No toca `Grade`: la nota real y la vigente se conservan (RN-05/RN-06). No se puede cambiar si algún boletín de esa sección y unidad ya está aprobado o publicado.
 
 ### `grading.GradeChangeRequest` — Modificación de nota
 | Columna | Tipo | Notas |
@@ -287,15 +297,33 @@ Es el octavo dato maestro parametrizable, no estaba en los 7 de la sección 9 or
 
 Restricción: `unique(conduct_report_id, article_id)`. Un reporte de conducta marca cero o más artículos del catálogo (checklist del formato original), además del texto libre de `other_violation_detail`.
 
+### `communication.Conversation` — Conversación de buzón (oct 2026, ADR-0008)
+| Columna | Tipo | Notas |
+|---|---|---|
+| student_id | FK → students.Student | estudiante del que trata la conversación |
+| guardian_id | FK → students.Guardian | encargado (su usuario es la cuenta familia que participa) |
+| section_id | FK → Section | sección activa del estudiante al iniciarla; define qué docentes la ven (RN-19) |
+| subject | varchar | |
+| created_by_id | FK → accounts.User | quien la inició: la familia, un docente o Dirección; si es docente, la ve aunque no dé clase en la sección |
+| last_message_at | datetime, indexado | orden de la bandeja y referencia del "no leído" |
+
 ### `communication.Message` — Mensaje de buzón
 | Columna | Tipo | Notas |
 |---|---|---|
-| sender_id | FK → accounts.User | encargado que envía, o Dirección/docente que responde (la API devuelve su nombre y rol) |
-| section_id | FK → Section | define quién más ve el hilo: los docentes de esa sección (con asignación o a cargo) y Dirección (HU-25) |
-| subject | varchar | solo en el mensaje raíz |
-| content | text | |
-| original_message_id | FK → Message, nullable, self | nulo = mensaje raíz del hilo |
-| status | enum: `enviado, leido, respondido` | |
+| conversation_id | FK → Conversation | |
+| sender_id | FK → accounts.User | cualquier participante (la API devuelve su nombre y rol) |
+| content | text | filtrado por RN-16 antes de guardarse |
+
+La fecha y hora del mensaje es `created_at`. Hasta la Fase 16 el mensaje llevaba `section_id`, `subject`, `original_message_id` y `status`; una migración de datos de `communication` convirtió cada mensaje raíz en una conversación.
+
+### `communication.ConversationRead` — Lectura de conversación (oct 2026)
+| Columna | Tipo | Notas |
+|---|---|---|
+| conversation_id | FK → Conversation | |
+| user_id | FK → accounts.User | |
+| last_read_at | datetime | la conversación está sin leer para ese usuario si `last_message_at` es posterior |
+
+Restricción: `unique(conversation_id, user_id)`. Nadie más ve esta lectura (sin indicador de visto, HU-25).
 
 ---
 
@@ -379,7 +407,12 @@ erDiagram
     Enrollment ||--o{ ConductReport : recibe
     ConductReport ||--o{ ConductReportArticle : marca
     ConductRuleArticle ||--o{ ConductReportArticle : es_marcado_en
-    Section ||--o{ Message : agrupa_hilo
+    Section ||--o{ Conversation : agrupa
+    Student ||--o{ Conversation : trata_de
+    Guardian ||--o{ Conversation : participa
+    Conversation ||--o{ Message : contiene
+    Conversation ||--o{ ConversationRead : leida_por
+    TeacherAssignment ||--o{ UnitAveraging : promedia
 
     Role ||--o{ User : clasifica
     User ||--o{ Guardian : es

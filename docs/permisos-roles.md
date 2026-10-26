@@ -26,9 +26,9 @@ Dirección (DIR), Coordinación (COORD), Encargado de pagos (PAGOS), Docente (DO
 | Modificación de notas (autorizar/rechazar) | E | S | S | S ⁷ | S | S |
 | Pagos y solvencia | E | V | E | S | S | V ³ |
 | Documentos emitidos | E | V | E ¹ | S | S | V ³ |
-| Avisos (cartelera) | E | `¿?` | S | V | V | V |
+| Avisos (cartelera) | E | `¿?` | S | E ¹⁰ | V | V |
 | Reportes de conducta | E | `¿?` | S | E ² | S | V ³ |
-| Buzón | E | S | S | E ² | S | E ³ |
+| Buzón | E | S | S | E ² ¹¹ | S | E ³ |
 | Reportes institucionales (RF-15) | E | V | S ⁸ | S | S | S |
 | Bitácora y registro de acceso | V | S | S | S | S | S |
 
@@ -43,6 +43,8 @@ Dirección (DIR), Coordinación (COORD), Encargado de pagos (PAGOS), Docente (DO
 7. `DOC` tiene `E` en "solicitar modificación de nota" (RF-23) pero no en "autorizar" — son acciones distintas; la matriz separa ambas filas a propósito.
 8. `PAGOS` no ve los reportes institucionales generales, solo el reporte de estudiantes insolventes, que en la práctica es una vista dentro de Pagos y solvencia, no de Reportes — **resuelto en la Fase 12** (`docs/fase-12-frontend-cierre.md`): ese reporte puntual vive en el área `pagos_solvencia`, con su propio botón en la pantalla de Pagos, en vez de en `reportes_institucionales`.
 9. ~~`ADMIN` con `V` en datos sensibles~~ — el rol Administrador del sistema se eliminó en la ronda de pruebas de octubre de 2026; los datos sensibles quedan solo para `DIR`.
+10. **Cambio de la capacitación docente (oct 2026, RF-13 revisado, RN-18):** `DOC` publica avisos para todos o para cualquier sección, pero solo edita y retira los que él publicó; `DIR` edita y retira cualquiera. Además de los avisos que le corresponden por destinatario, el docente ve los que publicó. Aplica a todos los docentes (no hay rol nuevo); `TALL` sigue en `V`. En producción el cambio entra por la migración `accounts/0004`, porque los roles ya sembrados no releen `seed_fase3.py`.
+11. **Buzón por conversaciones (oct 2026, RN-19, RF-38):** `DOC` ve las conversaciones de las secciones donde da clase o es docente a cargo, más las que él inició con cualquier encargado. Para elegir destinatario busca entre todos los encargados de estudiantes con inscripción activa. `FAM` solo ve las conversaciones de su propia cuenta y puede responderlas.
 
 > **Cambio de la demostración al director (oct. 2026):** el Docente solo *consulta* la asistencia que marcó Dirección; ya no la marca. El Tallerista sí la marca, en sus talleres.
 
