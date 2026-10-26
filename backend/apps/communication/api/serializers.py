@@ -1,9 +1,10 @@
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from apps.catalog.models import ConductRuleArticle, Section
-from apps.students.models import Enrollment, Student
+from apps.students.models import Enrollment, Guardian, Student
 
-from ..models import Announcement, ConductReport, Message
+from ..models import Announcement, ConductReport, Conversation, Message
 from ..services.announcement import puede_administrar
 
 
@@ -110,13 +111,17 @@ class ConductReportCreateSerializer(serializers.Serializer):
     )
 
 
+ROL_FAMILIA = "Padre de familia"
+
+
 class MessageSerializer(serializers.ModelSerializer):
+    """Un mensaje dice quién lo escribió (HU-25): nombre y rol; una familia
+    aparece como "Encargado / Alumno"."""
+
     sender = serializers.CharField(source="sender.username", read_only=True)
     sender_name = serializers.SerializerMethodField()
     sender_label = serializers.SerializerMethodField()
     sender_role = serializers.CharField(source="sender.role.name", read_only=True)
-    section = serializers.SlugRelatedField(slug_field="public_id", queryset=Section.objects.all())
-    original_message = serializers.SlugRelatedField(slug_field="public_id", read_only=True)
 
     class Meta:
         model = Message
@@ -126,38 +131,105 @@ class MessageSerializer(serializers.ModelSerializer):
             "sender_name",
             "sender_label",
             "sender_role",
-            "section",
-            "subject",
             "content",
-            "original_message",
-            "status",
             "created_at",
-            "is_active",
         ]
-        read_only_fields = ["public_id", "sender", "original_message", "status", "created_at"]
+        read_only_fields = fields
 
     def get_sender_name(self, mensaje) -> str:
         return mensaje.sender.nombre_completo()
 
     def get_sender_label(self, mensaje) -> str:
-        """Cómo se reconoce a quien escribe en el lado administrativo: una
-        familia aparece como "Usuario familia - <estudiante(s)>" (los de esa
-        sección vinculados a la cuenta), el resto por su nombre."""
-        if mensaje.sender.role.name != "Padre de familia":
-            return mensaje.sender.nombre_completo()
-        cache = self.context.setdefault("_etiquetas_familia", {})
-        clave = (mensaje.sender_id, mensaje.section_id)
-        if clave not in cache:
-            estudiantes = Student.objects.filter(
-                guardian_links__guardian__user_id=mensaje.sender_id,
-                guardian_links__is_active=True,
-                enrollments__section_id=mensaje.section_id,
-                enrollments__is_active=True,
-            ).distinct()
-            nombres = ", ".join(e.nombre_completo() for e in estudiantes)
-            cache[clave] = f"Usuario familia - {nombres}" if nombres else "Usuario familia"
-        return cache[clave]
+        conversacion = mensaje.conversation
+        if mensaje.sender.role.name == ROL_FAMILIA and mensaje.sender_id == (
+            conversacion.guardian.user_id
+        ):
+            return etiqueta_familia(conversacion)
+        return mensaje.sender.nombre_completo()
 
 
-class MessageReplySerializer(serializers.Serializer):
+def etiqueta_familia(conversacion) -> str:
+    return f"{conversacion.guardian.full_name} / {conversacion.student.nombre_completo()}"
+
+
+class ConversationSerializer(serializers.ModelSerializer):
+    """RF-25/RF-37/RF-38. `no_leido` es de quien consulta (RN-19), nunca de
+    los demás participantes."""
+
+    student = serializers.SlugRelatedField(slug_field="public_id", read_only=True)
+    guardian = serializers.SlugRelatedField(slug_field="public_id", read_only=True)
+    section = serializers.SlugRelatedField(slug_field="public_id", read_only=True)
+    student_name = serializers.CharField(source="student.nombre_completo", read_only=True)
+    guardian_name = serializers.CharField(source="guardian.full_name", read_only=True)
+    family_label = serializers.SerializerMethodField()
+    section_label = serializers.CharField(source="section.__str__", read_only=True)
+    created_by_name = serializers.CharField(source="created_by.nombre_completo", read_only=True)
+    no_leido = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Conversation
+        fields = [
+            "public_id",
+            "subject",
+            "student",
+            "student_name",
+            "guardian",
+            "guardian_name",
+            "family_label",
+            "section",
+            "section_label",
+            "created_by_name",
+            "created_at",
+            "last_message_at",
+            "no_leido",
+        ]
+        read_only_fields = fields
+
+    def get_family_label(self, conversacion) -> str:
+        return etiqueta_familia(conversacion)
+
+    def get_no_leido(self, conversacion) -> bool:
+        return bool(getattr(conversacion, "no_leido", False))
+
+
+class ConversationDetailSerializer(ConversationSerializer):
+    messages = serializers.SerializerMethodField()
+
+    class Meta(ConversationSerializer.Meta):
+        fields = [*ConversationSerializer.Meta.fields, "messages"]
+        read_only_fields = fields
+
+    @extend_schema_field(MessageSerializer(many=True))
+    def get_messages(self, conversacion):
+        mensajes = conversacion.messages.filter(is_active=True).select_related(
+            "sender__role", "conversation__guardian", "conversation__student"
+        )
+        return MessageSerializer(mensajes, many=True).data
+
+
+class ConversationCreateSerializer(serializers.Serializer):
+    """La familia manda solo el estudiante (el encargado es su propia
+    cuenta); un docente o Dirección eligen también el encargado (RF-38)."""
+
+    student = serializers.SlugRelatedField(slug_field="public_id", queryset=Student.objects.all())
+    guardian = serializers.SlugRelatedField(
+        slug_field="public_id", queryset=Guardian.objects.all(), required=False
+    )
+    subject = serializers.CharField(max_length=150)
     content = serializers.CharField()
+
+
+class ConversationReplySerializer(serializers.Serializer):
+    content = serializers.CharField()
+
+
+class RecipientSerializer(serializers.Serializer):
+    guardian = serializers.UUIDField()
+    student = serializers.UUIDField()
+    guardian_name = serializers.CharField()
+    student_name = serializers.CharField()
+    label = serializers.CharField()
+
+
+class UnreadCountSerializer(serializers.Serializer):
+    no_leidas = serializers.IntegerField()

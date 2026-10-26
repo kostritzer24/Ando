@@ -50,7 +50,14 @@ from apps.attendance.models import Attendance, Justification
 from apps.catalog.models import ActivityType, Course, GradingUnit, SchoolCycle, Section
 from apps.catalog.services.grading_unit import actualizar_unidad, crear_unidad
 from apps.catalog.services.section import crear_seccion
-from apps.communication.models import Announcement, ConductReport, ConductReportArticle, Message
+from apps.communication.models import (
+    Announcement,
+    ConductReport,
+    ConductReportArticle,
+    Conversation,
+    ConversationRead,
+    Message,
+)
 from apps.core.models import AccessLog, AuditLog
 from apps.core.services import registrar_cambio
 from apps.documents.models import IssuedDocument
@@ -79,10 +86,11 @@ CENTAVO = Decimal("0.01")
 
 # Orden de borrado: primero lo que depende de otras tablas. Se usa
 # _raw_delete (DELETE directo) porque las llaves foráneas son PROTECT y
-# Message se referencia a sí misma; las restricciones de Postgres son
+# los mensajes cuelgan de la conversación; las restricciones de Postgres son
 # diferidas, así que solo se revisan al cerrar la transacción.
 BORRAR_EN_ORDEN = [
-    ConductReportArticle, ConductReport, Message, Announcement, IssuedDocument, Payment,
+    ConductReportArticle, ConductReport, ConversationRead, Message, Conversation, Announcement,
+    IssuedDocument, Payment,
     ReportCard, GradeChangeRequest, Grade, Activity, Justification, Attendance, CalendarEvent,
     ScheduleBlock, TeacherAssignment, GuardianStudentLink, Enrollment, Guardian, Student,
     Section, Course, AuditLog, AccessLog,

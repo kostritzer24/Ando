@@ -5,6 +5,6 @@ from . import views
 router = DefaultRouter()
 router.register("announcements", views.AnnouncementViewSet, basename="announcement")
 router.register("conduct-reports", views.ConductReportViewSet, basename="conduct-report")
-router.register("messages", views.MessageViewSet, basename="message")
+router.register("conversations", views.ConversationViewSet, basename="conversation")
 
 urlpatterns = router.urls

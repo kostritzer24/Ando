@@ -159,45 +159,68 @@ class ConductReportArticle(BaseModel):
         return f"{self.conduct_report} — {self.article}"
 
 
+class Conversation(BaseModel):
+    """Conversación de buzón (RF-25/RF-37/RF-38, RN-19, ADR-0008). Es de un
+    estudiante y de un encargado (cuyo usuario es la cuenta familia que
+    participa); `section` es la sección activa del estudiante al iniciarla
+    y define qué docentes la ven, además de quien la inició y Dirección.
+    `last_message_at` ordena la bandeja y es la referencia del "no
+    leído" de cada persona (`ConversationRead`)."""
+
+    student = models.ForeignKey(
+        "students.Student",
+        verbose_name="estudiante",
+        on_delete=models.PROTECT,
+        related_name="conversations",
+    )
+    guardian = models.ForeignKey(
+        "students.Guardian",
+        verbose_name="encargado",
+        on_delete=models.PROTECT,
+        related_name="conversations",
+    )
+    section = models.ForeignKey(
+        Section, verbose_name="sección", on_delete=models.PROTECT, related_name="conversations"
+    )
+    subject = models.CharField("asunto", max_length=150)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name="iniciada por",
+        on_delete=models.PROTECT,
+        related_name="conversations_started",
+    )
+    last_message_at = models.DateTimeField("fecha del último mensaje", db_index=True)
+
+    class Meta:
+        verbose_name = "conversación de buzón"
+        verbose_name_plural = "conversaciones de buzón"
+        ordering = ["-last_message_at"]
+
+    def __str__(self) -> str:
+        return self.subject
+
+
 class Message(BaseModel):
-    """Mensaje de buzón (RF-25/RF-37, HU-25/HU-37). Un hilo es una cadena
-    de mensajes enlazados por `original_message`, no un objeto de
-    conversación aparte — el mensaje raíz (`original_message=None`) trae
-    el `subject`; las respuestas heredan el mismo `section`. RN-16: un
-    mensaje con lenguaje inapropiado nunca se crea — se rechaza en
+    """Mensaje de una conversación del buzón. RN-16: un mensaje con
+    lenguaje inapropiado nunca se crea — se rechaza en
     `communication/domain/buzon.py`, que además bloquea la cuenta de
     quien lo envió (reusa `User.locked_until`, el mismo campo del límite
-    de intentos de inicio de sesión, sección 14.1)."""
+    de intentos de inicio de sesión, sección 14.1). La fecha del mensaje
+    es `created_at`."""
 
-    ESTADO_ENVIADO = "enviado"
-    ESTADO_LEIDO = "leido"
-    ESTADO_RESPONDIDO = "respondido"
-    ESTADOS = [
-        (ESTADO_ENVIADO, "Enviado"),
-        (ESTADO_LEIDO, "Leído"),
-        (ESTADO_RESPONDIDO, "Respondido"),
-    ]
-
+    conversation = models.ForeignKey(
+        Conversation,
+        verbose_name="conversación",
+        on_delete=models.PROTECT,
+        related_name="messages",
+    )
     sender = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         verbose_name="remitente",
         on_delete=models.PROTECT,
         related_name="messages_sent",
     )
-    section = models.ForeignKey(
-        Section, verbose_name="sección", on_delete=models.PROTECT, related_name="messages"
-    )
-    subject = models.CharField("asunto", max_length=150, blank=True)
     content = models.TextField("contenido")
-    original_message = models.ForeignKey(
-        "self",
-        verbose_name="mensaje original",
-        on_delete=models.PROTECT,
-        related_name="replies",
-        null=True,
-        blank=True,
-    )
-    status = models.CharField("estado", max_length=20, choices=ESTADOS, default=ESTADO_ENVIADO)
 
     class Meta:
         verbose_name = "mensaje de buzón"
@@ -205,4 +228,32 @@ class Message(BaseModel):
         ordering = ["created_at"]
 
     def __str__(self) -> str:
-        return f"{self.sender} — {self.subject or '(respuesta)'}"
+        return f"{self.sender} — {self.content[:40]}"
+
+
+class ConversationRead(BaseModel):
+    """Hasta cuándo leyó cada persona una conversación (RN-19). Nadie más
+    la ve: no hay indicador de "visto" (HU-25)."""
+
+    conversation = models.ForeignKey(
+        Conversation, verbose_name="conversación", on_delete=models.CASCADE, related_name="reads"
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name="usuario",
+        on_delete=models.CASCADE,
+        related_name="conversation_reads",
+    )
+    last_read_at = models.DateTimeField("leída hasta")
+
+    class Meta:
+        verbose_name = "lectura de conversación"
+        verbose_name_plural = "lecturas de conversación"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["conversation", "user"], name="lectura_unica_por_usuario"
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.user} — {self.conversation}"
